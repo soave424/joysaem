@@ -31,9 +31,9 @@ if st.button('Search'):
 
         # 앱 세부 정보 표시
         st.write(f"**App Name:** {app_details['title']}")
-        st.write(f"**Developer:** {app_details['developer']}")
-        st.write(f"**Rating:** {app_details['score']}")
-        st.write(f"**Description:** {app_details['description']}")
+        # st.write(f"**Developer:** {app_details['developer']}")
+        # st.write(f"**Rating:** {app_details['score']}")
+        # st.write(f"**Description:** {app_details['description']}")
         st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
         st.write(f"**Download Link:** [Link](https://play.google.com/store/apps/details?id={app_id})")
     except NotFoundError:

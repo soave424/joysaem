@@ -30,7 +30,7 @@ def search_books(book_titles):
             publisher = item.get('publisher', "No Publisher Found")
             pubdate = item.get('pubdate', "")
             price = item.get('discount', "0")
-            pages = item.get('page', "No Page Info")  
+            isbn = item.get('isbn', "No ISBN Info")  
 
 
             # 출간일 처리 (연도와 월만 추출)
@@ -50,7 +50,7 @@ def search_books(book_titles):
                 'publisher': publisher,
                 'pub_date': formatted_date,
                 'price': price_text,
-                'pages': pages,   
+                'isbn': isbn,   
 
             })
 

@@ -31,7 +31,7 @@ if st.button('Search'):
 
         # 앱 세부 정보 표시
         st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
-        st.markdown(f"**App Name:<br><br>** {app_details['title']}<br>", unsafe_allow_html=True)
+        st.markdown(f"**App Name:** {app_details['title']}<br>", unsafe_allow_html=True)
         st.write(f"**Developer:** {app_details['developer']}")
         st.write(f"**Rating:** {app_details['score']}")
         st.write(f"**Description:** {app_details['description']}")

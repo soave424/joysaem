@@ -2,7 +2,6 @@ from urllib.parse import quote_plus
 import streamlit as st
 from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
-import pandas as pd
 
 st.title('Google Play Store App Searcher')
 
@@ -30,22 +29,14 @@ if st.button('Search'):
             country='kr'
         )
 
-        # 데이터를 DataFrame으로 만들기
-        data = {
-            "Category": ["App Name", "Developer", "Rating", "Description", "Download Link"],
-            "Details": [
-                app_details['title'],
-                app_details['developer'],
-                app_details['score'],
-                app_details['description'],
-                f"[Link](https://play.google.com/store/apps/details?id={app_id})"
-            ]
-        }
-        df = pd.DataFrame(data)
-
-        # 앱 아이콘과 함께 표 표시
+        # 앱 세부 정보 표시
         st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
-        st.table(df)  # 데이터프레임을 표로 표시
+        st.markdown(f"**App Name:** {app_details['title']}<br>", unsafe_allow_html=True)
+        st.write(f"**App Name:** {app_details['title']}")
+        st.write(f"**Developer:** {app_details['developer']}")
+        st.write(f"**Rating:** {app_details['score']}")
+        st.write(f"**Description:** {app_details['description']}")
+        st.write(f"**Download Link:** [Link](https://play.google.com/store/apps/details?id={app_id})")
     except NotFoundError:
         st.error('App not found. Please check the name and try again.')
     except Exception as e:

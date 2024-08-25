@@ -22,9 +22,9 @@ if st.button('Search'):
         # 검색 결과를 딕셔너리로 저장
         app_options = {f"{app['title']} ({app['appId']})": app['appId'] for app in search_results}
         
-        # 사용자가 앱을 선택할 수 있게 selectbox를 생성
-        app_id = st.selectbox("Select an app from the list:", options=list(app_options.values()), 
-                              format_func=lambda x: app_options.get(x, "Select an app"))
+        # # 사용자가 앱을 선택할 수 있게 selectbox를 생성
+        # app_id = st.selectbox("Select an app from the list:", options=list(app_options.values()), 
+        #                       format_func=lambda x: app_options.get(x, "Select an app"))
 
         if app_id:
             # 선택된 앱 ID로 앱 세부 정보 검색

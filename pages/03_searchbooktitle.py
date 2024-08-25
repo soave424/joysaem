@@ -2,6 +2,18 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
+def calculate_original_price(discounted_price):
+    if discounted_price:
+        try:
+            # 가격에서 쉼표 제거 후 정수로 변환
+            price_numeric = int(discounted_price.replace(",", "").replace("원", "").strip())
+            # 10% 할인된 가격에서 원래 가격을 계산
+            original_price = int(price_numeric / 0.9)  # 10% 할인을 역산
+            return f"{original_price:,}원"
+        except ValueError:
+            return discounted_price  # 변환에 실패할 경우, 원래 문자열 반환
+    return "No Price Found"
+
 def fetch_book_details(url):
     try:
         response = requests.get(url)
@@ -25,7 +37,8 @@ def fetch_book_details(url):
             pub_date = pub_date_tag.text.strip() if pub_date_tag else "No Pub Date Found"
 
             price_tag = item.select_one('.goods_price .yes_b')
-            price = price_tag.text.strip() if price_tag else "No Price Found"
+            discounted_price = price_tag.text.strip() if price_tag else "No Price Found"
+            original_price = calculate_original_price(discounted_price)
 
             books.append({
                 'title': title,
@@ -33,7 +46,7 @@ def fetch_book_details(url):
                 'author': author,
                 'publisher': publisher,
                 'pub_date': pub_date,
-                'price': price
+                'price': original_price
             })
 
         return books

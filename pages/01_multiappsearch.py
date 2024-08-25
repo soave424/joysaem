@@ -16,7 +16,7 @@ if st.button('Search for Apps'):
         st.stop()
 
     results = []
-    html_rows = []
+    display_data = []
 
     for app_name in app_names:
         try:
@@ -32,65 +32,24 @@ if st.button('Search for Apps'):
                 download_link = f"https://play.google.com/store/apps/details?id={app_id}"
                 icon_url = app_details['icon']
 
-                # Append data for CSV
-                results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link, icon_url])
-
-                # Create HTML row with an image
-                html_rows.append(f"""
-                <tr>
-                    <td><img src="{icon_url}" style="height:50px;"></td>
-                    <td>{app_name}</td>
-                    <td>{app_details['title']}</td>
-                    <td>{app_details['developer']}</td>
-                    <td>{app_details['score']}</td>
-                    <td><a href="{download_link}" target="_blank">Download</a></td>
-                </tr>
-                """)
+                # Append data for CSV and display
+                results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link])
+                display_data.append([app_name, download_link, icon_url])
             else:
-                results.append([app_name, "No app found", "", "", "", ""])
-                html_rows.append(f"<tr><td></td><td>{app_name}</td><td>No app found</td><td></td><td></td><td></td></tr>")
+                results.append([app_name, "No app found", "", "", ""])
+                display_data.append([app_name, "No app found", ""])
         except NotFoundError:
-            results.append([app_name, "App not found", "", "", "", ""])
-            html_rows.append(f"<tr><td></td><td>{app_name}</td><td>App not found</td><td></td><td></td><td></td></tr>")
+            results.append([app_name, "App not found", "", "", ""])
+            display_data.append([app_name, "App not found", ""])
         except Exception as e:
-            results.append([app_name, f"An error occurred: {str(e)}", "", "", "", ""])
-            html_rows.append(f"<tr><td></td><td>{app_name}</td><td>Error: {str(e)}</td><td></td><td></td><td></td></tr>")
+            results.append([app_name, f"An error occurred: {str(e)}", "", "", ""])
+            display_data.append([app_name, f"An error occurred: {str(e)}", ""])
 
-    # Display HTML Table
-    html_table = f"""
-    <style>
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-        }}
-        th, td {{
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }}
-        th {{
-            background-color: #f2f2f2;
-        }}
-    </style>
-    <table>
-        <thead>
-            <tr>
-                <th>Icon</th>
-                <th>Search Query</th>
-                <th>App Name</th>
-                <th>Developer</th>
-                <th>Rating</th>
-                <th>Download Link</th>
-            </tr>
-        </thead>
-        <tbody>
-            {''.join(html_rows)}
-        </tbody>
-    </table>
-    """
-    st.markdown(html_table, unsafe_allow_html=True)
+    # Display table
+    df_display = pd.DataFrame(display_data, columns=['App Name', 'Download Link', 'Icon URL'])
+    st.table(df_display)
 
     # Create DataFrame for CSV download
-    df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link', 'Icon URL'])
+    df = pd.DataFrame(results, columns=['App Name', 'Developer', 'Rating', 'Download Link'])
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("Download Results as CSV", csv, "google_play_results.csv", "text/csv", key='download-csv')

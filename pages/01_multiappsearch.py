@@ -48,7 +48,6 @@ if st.button('Search for Apps'):
             if details:
                 st.write(f"**App Name:** {details['title']}")
                 st.image(details['icon'], width=100)  # Display app icon
-                st.write(f"**Download Link:** [Download]({link})")
                 st.text(link)  # Also display the download link as plain text for easy copying
             else:
                 st.write(f"**{app_name}:** {link}")

@@ -1,7 +1,7 @@
+from urllib.parse import quote_plus
 import streamlit as st
 from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
-from urllib.parse import quote_plus
 
 st.title('Google Play Store App Searcher')
 
@@ -19,25 +19,29 @@ if st.button('Search'):
             st.error("No apps found. Try a different query.")
             st.stop()
 
-        # 검색 결과를 표시하고 사용자가 선택할 수 있게 함
+        # 검색 결과를 딕셔너리로 저장
         app_options = {f"{app['title']} ({app['appId']})": app['appId'] for app in search_results}
-        app_id = st.selectbox("Select an app from the list:", options=list(app_options.values()), format_func=lambda x: app_options[x])
+        
+        # 사용자가 앱을 선택할 수 있게 selectbox를 생성
+        app_id = st.selectbox("Select an app from the list:", options=list(app_options.values()), 
+                              format_func=lambda x: app_options.get(x, "Select an app"))
 
-        # 선택된 앱 ID로 앱 세부 정보 검색
-        app_details = app(
-            app_id,
-            lang='ko',
-            country='kr'
-        )
+        if app_id:
+            # 선택된 앱 ID로 앱 세부 정보 검색
+            app_details = app(
+                app_id,
+                lang='ko',
+                country='kr'
+            )
 
-        # 앱 세부 정보 표시
-        st.write(f"**App Name:** {app_details['title']}")
-        # st.write(f"**Developer:** {app_details['developer']}")
-        # st.write(f"**Rating:** {app_details['score']}")
-        # st.write(f"**Description:** {app_details['description']}")
-        st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
-        st.write(f"**Download Link:** [Link](https://play.google.com/store/apps/details?id={app_id})")
+            # 앱 세부 정보 표시
+            st.write(f"**App Name:** {app_details['title']}")
+            st.write(f"**Developer:** {app_details['developer']}")
+            st.write(f"**Rating:** {app_details['score']}")
+            st.write(f"**Description:** {app_details['description']}")
+            st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
+            st.write(f"**Download Link:** [Link](https://play.google.com/store/apps/details?id={app_id})")
     except NotFoundError:
         st.error('App not found. Please check the name and try again.')
-    # except Exception as e:
-    #     st.error(f"An error occurred: {str(e)}")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")

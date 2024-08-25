@@ -27,7 +27,7 @@ def search_books(book_titles):
                 author = item.get('author', "No Author Found")
                 publisher = item.get('publisher', "No Publisher Found")
                 pubdate = item.get('pubdate', "")
-                price = item.get('price', "0")
+                price = item.get('discount', "0")
 
                 # 출간일 처리 (연도와 월만 추출)
                 formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate

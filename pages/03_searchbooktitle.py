@@ -77,7 +77,7 @@ if st.button('Fetch Books'):
         if books:
             csv_data = convert_to_csv(books)
             st.download_button(label="Download as CSV", data=csv_data, file_name='books.csv', mime='text/csv')
-        else:
-            st.error('No books found or bad URL')
+        # else:
+        #     st.error('No books found or bad URL')
     else:
         st.error('Please ensure the URL is correct and the start page is less than or equal to the end page.')

@@ -18,7 +18,7 @@ def fetch_books_from_pages(base_url, start_page, end_page):
     books = []
     for page_number in range(start_page, end_page + 1):
         # 페이지 번호를 URL에 동적으로 추가
-        page_url = f"{base_url}?FetchSize=40&PageNumber={page_number}"
+        page_url = f"{base_url}&PageNumber={page_number}"
         try:
             response = requests.get(page_url)
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -64,7 +64,7 @@ def convert_to_csv(books):
 
 st.title('Fetch Book Details from Yes24 Across Pages')
 
-base_url = st.text_input('Enter the base URL:')
+base_url = st.text_input('Enter the base URL (without page number parameter):')
 start_page = st.number_input('Start Page Number', min_value=1, value=1)
 end_page = st.number_input('End Page Number', min_value=1, value=1)
 

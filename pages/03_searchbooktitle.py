@@ -16,9 +16,12 @@ def calculate_original_price(discounted_price):
 
 def fetch_books_from_pages(base_url, start_page, end_page):
     books = []
-    for page_number in range(start_page, end_page + 1):
-        # 페이지 번호를 URL에 동적으로 추가
-        page_url = f"{base_url}&PageNumber={page_number}"
+    if start_page == 0:
+        urls_to_fetch = [base_url]
+    else:
+        urls_to_fetch = [f"{base_url}&PageNumber={page_number}" for page_number in range(start_page, end_page + 1)]
+    
+    for page_url in urls_to_fetch:
         try:
             response = requests.get(page_url)
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -52,7 +55,7 @@ def fetch_books_from_pages(base_url, start_page, end_page):
                     'price': original_price
                 })
         except Exception as e:
-            st.error(f"Failed to fetch data from page {page_number}: {str(e)}")
+            st.error(f"Failed to fetch data from URL {page_url}: {str(e)}")
 
     return books
 
@@ -62,14 +65,14 @@ def convert_to_csv(books):
         return df.to_csv(index=False)
     return None
 
-st.title('Fetch Book Details from Yes24 Across Pages')
+st.title('Fetch Book Details from Yes24')
 
 base_url = st.text_input('Enter the base URL (without page number parameter):')
-start_page = st.number_input('Start Page Number', min_value=1, value=1)
-end_page = st.number_input('End Page Number', min_value=1, value=1)
+start_page = st.number_input('Start Page Number', min_value=0, value=1)
+end_page = st.number_input('End Page Number', min_value=0, value=1)
 
 if st.button('Fetch Books'):
-    if base_url and start_page <= end_page:
+    if base_url and (start_page == 0 or start_page <= end_page):
         books = fetch_books_from_pages(base_url, start_page, end_page)
         if books:
             csv_data = convert_to_csv(books)

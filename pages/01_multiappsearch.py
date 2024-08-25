@@ -3,6 +3,8 @@ from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
 import re
 import pandas as pd
+import base64
+from io import BytesIO
 
 st.title('Multiple Google Play Store App Searcher')
 
@@ -16,13 +18,14 @@ if st.button('Search for Apps'):
         st.stop()
 
     results = []
+    html_images = []
 
     for app_name in app_names:
         try:
             search_results = search(
                 app_name,
-                lang='ko',  # Language setting
-                country='kr'  # Country setting
+                lang='ko',
+                country='kr'
             )
             if search_results:
                 most_relevant_app = search_results[0]
@@ -31,27 +34,33 @@ if st.button('Search for Apps'):
                 download_link = f"https://play.google.com/store/apps/details?id={app_id}"
                 icon_url = app_details['icon']
 
-                results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link, icon_url])
+                # Create an HTML image element with the icon
+                html_img = f"<img src='{icon_url}' style='height: 100px;'>"
+                html_images.append(html_img)
+
+                results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link])
             else:
-                results.append([app_name, "No app found", "", "", "", ""])
+                results.append([app_name, "No app found", "", "", ""])
+                html_images.append("")
         except NotFoundError:
-            results.append([app_name, "App not found", "", "", "", ""])
+            results.append([app_name, "App not found", "", "", ""])
+            html_images.append("")
         except Exception as e:
-            results.append([app_name, f"An error occurred: {str(e)}", "", "", "", ""])
+            results.append([app_name, f"An error occurred: {str(e)}", "", "", ""])
+            html_images.append("")
 
     # Create DataFrame
-    df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link', 'Icon URL'])
+    df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link'])
+    df['Icon'] = html_images  # Add HTML image tags to DataFrame
 
-    # Display results in table
-    st.table(df)
+    # Convert DataFrame to HTML
+    html_data = df.to_html(escape=False)  # 'escape=False' to render HTML tags
 
-    # Convert DataFrame to CSV
-    csv = df.to_csv(index=False).encode('utf-8')
+    # Encode HTML to base64
+    b64_html = base64.b64encode(html_data.encode()).decode()
 
-    # Download button for CSV file
-    st.download_button(
-        label="Download search results as CSV",
-        data=csv,
-        file_name='google_play_search_results.csv',
-        mime='text/csv',
+    # Create download button for HTML file
+    st.markdown(
+        f'<a href="data:text/html;base64,{b64_html}" download="app_details.html">Download HTML file with images</a>',
+        unsafe_allow_html=True
     )

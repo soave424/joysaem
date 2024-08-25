@@ -30,6 +30,8 @@ def search_books(book_titles):
             publisher = item.get('publisher', "No Publisher Found")
             pubdate = item.get('pubdate', "")
             price = item.get('discount', "0")
+            pages = item.get('page', "No Page Info")  
+
 
             # 출간일 처리 (연도와 월만 추출)
             formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
@@ -47,7 +49,9 @@ def search_books(book_titles):
                 'author': author,
                 'publisher': publisher,
                 'pub_date': formatted_date,
-                'price': price_text
+                'price': price_text,
+                'pages': pages,   
+
             })
 
     return pd.DataFrame(books_info)

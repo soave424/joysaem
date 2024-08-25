@@ -1,6 +1,8 @@
 import streamlit as st
 from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
+from urllib.parse import quote_plus
+
 
 st.title('Google Play Store App Searcher')
 

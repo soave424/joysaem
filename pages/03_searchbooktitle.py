@@ -24,8 +24,9 @@ def fetch_books_from_pages(base_url, start_page, end_page):
             title_tag = item.select_one('.gd_name')
             title = title_tag.text.strip() if title_tag else "No Title Found"
 
-            img_tag = item.select_one('img')
-            img_url = img_tag['lazy'] if img_tag else "No Image Found"
+            img_tag = item.select_one('img.lazy')  # Use lazy loading images
+            img_url = img_tag['data-original'] if img_tag and 'data-original' in img_tag.attrs else "No Image Found"
+
 
             author_tag = item.select_one('.info_pubGrp .info_auth a')
             author = author_tag.text.strip() if author_tag else "No Author Found"

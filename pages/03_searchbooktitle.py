@@ -25,7 +25,7 @@ def fetch_books_from_pages(base_url, start_page, end_page):
             title = title_tag.text.strip() if title_tag else "No Title Found"
 
             img_tag = item.select_one('img')
-            img_url = img_tag['src'] if img_tag else "No Image Found"
+            img_url = img_tag['img_bdr'] if img_tag else "No Image Found"
 
             author_tag = item.select_one('.info_pubGrp .info_auth a')
             author = author_tag.text.strip() if author_tag else "No Author Found"

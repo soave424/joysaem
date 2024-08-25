@@ -1,22 +1,23 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
+from io import StringIO
 
 def calculate_original_price(discounted_price):
     if discounted_price:
         try:
-            # 가격에서 쉼표 제거 후 정수로 변환
             price_numeric = int(discounted_price.replace(",", "").replace("원", "").strip())
-            # 10% 할인된 가격에서 원래 가격을 계산
-            original_price = int(price_numeric / 0.9)  # 10% 할인을 역산
+            original_price = int(price_numeric / 0.9)  # 10% 할인된 가격에서 원래 가격을 역산
             return f"{original_price:,}원"
         except ValueError:
-            return discounted_price  # 변환에 실패할 경우, 원래 문자열 반환
+            return discounted_price
     return "No Price Found"
 
 def fetch_books_from_pages(base_url, start_page, end_page):
     books = []
     for page_number in range(start_page, end_page + 1):
+        # 페이지 번호를 URL에 동적으로 추가
         page_url = f"{base_url}?FetchSize=40&PageNumber={page_number}"
         try:
             response = requests.get(page_url)
@@ -55,9 +56,14 @@ def fetch_books_from_pages(base_url, start_page, end_page):
 
     return books
 
+def convert_to_csv(books):
+    if books:
+        df = pd.DataFrame(books)
+        return df.to_csv(index=False)
+    return None
+
 st.title('Fetch Book Details from Yes24 Across Pages')
 
-# User inputs
 base_url = st.text_input('Enter the base URL:')
 start_page = st.number_input('Start Page Number', min_value=1, value=1)
 end_page = st.number_input('End Page Number', min_value=1, value=1)
@@ -66,9 +72,8 @@ if st.button('Fetch Books'):
     if base_url and start_page <= end_page:
         books = fetch_books_from_pages(base_url, start_page, end_page)
         if books:
-            st.write('Books Found:')
-            for book in books:
-                st.write(book)
+            csv_data = convert_to_csv(books)
+            st.download_button(label="Download as CSV", data=csv_data, file_name='books.csv', mime='text/csv')
         else:
             st.error('No books found or bad URL')
     else:

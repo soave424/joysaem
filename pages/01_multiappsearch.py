@@ -43,7 +43,6 @@ if st.button('Search for Apps'):
 
     # Display results
     if results:
-        st.write("Download Links for Entered Apps:")
         for result in results:
             app_name, link, details = result
             if details:

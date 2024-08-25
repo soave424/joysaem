@@ -36,7 +36,7 @@ if st.button('Search for Apps'):
 
                 # Display results
                 st.write(f"**App Name:** {app_details['title']}")
-                st.write(f"**Download Link:** [Here]({download_link})")
+                st.write({download_link})
                 st.write(f"**Icon URL:** {icon_url}")
                 st.image(icon_url, width=100)  # Display app icon
                 st.write("---")  # Separator

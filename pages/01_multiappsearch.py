@@ -3,8 +3,6 @@ from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
 import re
 import pandas as pd
-import base64
-from io import BytesIO
 
 st.title('Multiple Google Play Store App Searcher')
 
@@ -18,7 +16,7 @@ if st.button('Search for Apps'):
         st.stop()
 
     results = []
-    html_images = []
+    html_rows = []  # To hold rows of HTML data including images
 
     for app_name in app_names:
         try:
@@ -34,33 +32,52 @@ if st.button('Search for Apps'):
                 download_link = f"https://play.google.com/store/apps/details?id={app_id}"
                 icon_url = app_details['icon']
 
-                # Create an HTML image element with the icon
-                html_img = f"<img src='{icon_url}' style='height: 100px;'>"
-                html_images.append(html_img)
-
+                # Append data for CSV
                 results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link])
+
+                # Create HTML row with an image
+                html_row = f"""
+                <tr>
+                    <td><img src="{icon_url}" style="height:50px;"></td>
+                    <td>{app_name}</td>
+                    <td>{app_details['title']}</td>
+                    <td>{app_details['developer']}</td>
+                    <td>{app_details['score']}</td>
+                    <td><a href="{download_link}">Link</a></td>
+                </tr>
+                """
+                html_rows.append(html_row)
             else:
                 results.append([app_name, "No app found", "", "", ""])
-                html_images.append("")
+                html_rows.append(f"<tr><td></td><td>{app_name}</td><td>No app found</td><td></td><td></td><td></td></tr>")
         except NotFoundError:
             results.append([app_name, "App not found", "", "", ""])
-            html_images.append("")
+            html_rows.append(f"<tr><td></td><td>{app_name}</td><td>App not found</td><td></td><td></td><td></td></tr>")
         except Exception as e:
             results.append([app_name, f"An error occurred: {str(e)}", "", "", ""])
-            html_images.append("")
+            html_rows.append(f"<tr><td></td><td>{app_name}</td><td>Error: {str(e)}</td><td></td><td></td><td></td></tr>")
 
-    # Create DataFrame
+    # Display HTML Table
+    html_table = f"""
+    <table>
+        <thead>
+            <tr>
+                <th>Icon</th>
+                <th>Search Query</th>
+                <th>App Name</th>
+                <th>Developer</th>
+                <th>Rating</th>
+                <th>Download Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {''.join(html_rows)}
+        </tbody>
+    </table>
+    """
+    st.markdown(html_table, unsafe_allow_html=True)
+
+    # Create DataFrame for CSV download
     df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link'])
-    df['Icon'] = html_images  # Add HTML image tags to DataFrame
-
-    # Convert DataFrame to HTML
-    html_data = df.to_html(escape=False)  # 'escape=False' to render HTML tags
-
-    # Encode HTML to base64
-    b64_html = base64.b64encode(html_data.encode()).decode()
-
-    # Create download button for HTML file
-    st.markdown(
-        f'<a href="data:text/html;base64,{b64_html}" download="app_details.html">Download HTML file with images</a>',
-        unsafe_allow_html=True
-    )
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Download Results as CSV", csv, "google_play_results.csv", "text/csv", key='download-csv')

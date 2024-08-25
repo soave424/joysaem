@@ -1,5 +1,6 @@
 import streamlit as st
-from google_play_scraper import app, NotFoundError
+from google_play_scraper import app
+from google_play_scraper.exceptions import NotFoundError
 
 st.title('Google Play Store App Searcher')
 

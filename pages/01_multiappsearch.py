@@ -2,6 +2,7 @@ import streamlit as st
 from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
 import re
+import pandas as pd
 
 st.title('Multiple Google Play Store App Searcher')
 
@@ -33,23 +34,27 @@ if st.button('Search for Apps'):
                 app_details = app(app_id, lang='ko', country='kr')
                 download_link = f"https://play.google.com/store/apps/details?id={app_id}"
                 # Append both app details and download link to the results
-                results.append((app_name, download_link, app_details))
+                results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link])
             else:
-                results.append((app_name, "No app found.", None))
+                results.append([app_name, "No app found", "", "", ""])
         except NotFoundError:
-            results.append((app_name, "App not found.", None))
+            results.append([app_name, "App not found", "", "", ""])
         except Exception as e:
-            results.append((app_name, f"An error occurred: {str(e)}", None))
+            results.append([app_name, f"An error occurred: {str(e)}", "", "", ""])
 
-    # Display results
-    if results:
-        for result in results:
-            app_name, link, details = result
-            if details:
-                st.write(f"**App Name:** {details['title']}")
-                st.image(details['icon'], width=100)  # Display app icon
-                st.text(link)  # Also display the download link as plain text for easy copying
-            else:
-                st.write(f"**{app_name}:** {link}")
-                if "http" in link:
-                    st.text(link)  # Display plain text link if it's a URL
+    # Create DataFrame
+    df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link'])
+
+    # Display results in table
+    st.table(df)
+
+    # Convert DataFrame to CSV
+    csv = df.to_csv(index=False).encode('utf-8')
+
+    # Download button for CSV file
+    st.download_button(
+        label="Download search results as CSV",
+        data=csv,
+        file_name='google_play_search_results.csv',
+        mime='text/csv',
+    )

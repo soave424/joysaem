@@ -21,34 +21,35 @@ def fetch_books_from_pages(base_url, start_page, end_page):
         soup = BeautifulSoup(response.text, 'html.parser')
         list_items = soup.select('.info_row.info_name')
         for item in list_items:
-            title_tag = item.select_one('.gd_name')
-            title = title_tag.text.strip() if title_tag else "No Title Found"
+          title_tag = item.select_one('.gd_name')
+          title = title_tag.text.strip() if title_tag else "No Title Found"
 
-            img_tag = item.select_one('img.lazy')  # Use lazy loading images
-            img_url = img_tag['data-original'] if img_tag and 'data-original' in img_tag.attrs else "No Image Found"
+          img_tag = item.select_one('img.lazy')
+          img_url = img_tag['data-original'] if img_tag else "No Image Found"
 
+          author_tag = item.select_one('.info_pubGrp .info_auth a')
+          author = author_tag.text.strip() if author_tag else "No Author Found"
 
-            author_tag = item.select_one('.info_pubGrp .info_auth a')
-            author = author_tag.text.strip() if author_tag else "No Author Found"
+          publisher_tag = item.select_one('.info_pubGrp .info_pub a')
+          publisher = publisher_tag.text.strip() if publisher_tag else "No Publisher Found"
 
-            publisher_tag = item.select_one('.info_pubGrp .info_pub')
-            publisher = publisher_tag.text.strip() if publisher_tag else "No Publisher Found"
+          pub_date_tag = item.select_one('.info_pubGrp .info_date')
+          pub_date = pub_date_tag.text.strip() if pub_date_tag else "No Pub Date Found"
 
-            pub_date_tag = item.select_one('.info_pubGrp .info_date')
-            pub_date = pub_date_tag.text.strip() if pub_date_tag else "No Pub Date Found"
+          price_tag = item.select_one('.info_price .yes_b')
+          discount_tag = item.select_one('.info_price .txt_sale em')
+          discounted_price = price_tag.text.strip() if price_tag else "No Price Found"
+          discount_percentage = discount_tag.text if discount_tag else "0%"
+          original_price = calculate_original_price(discounted_price, discount_percentage)
 
-            price_tag = item.select_one('.info_price .yes_b')
-            discounted_price = price_tag.text.strip() if price_tag else "No Price Found"
-            original_price = calculate_original_price(discounted_price)
-
-            books.append({
-                'Title': title,
-                'Image URL': img_url,
-                'Author': author,
-                'Publisher': publisher,
-                'Publication Date': pub_date,
-                'Price': original_price
-            })
+        books.append({
+            'Title': title,
+            'Image URL': img_url,
+            'Author': author,
+            'Publisher': publisher,
+            'Publication Date': pub_date,
+            'Price': original_price
+        })
     else:  # Pages with pagination
         for page_number in range(start_page, end_page + 1):
             page_url = f"{base_url}&PageNumber={page_number}"

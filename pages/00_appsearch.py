@@ -19,20 +19,15 @@ if st.button('Search'):
             st.error("No apps found. Try a different query.")
             st.stop()
 
-        # 검색 결과를 딕셔너리로 저장
-        app_options = {f"{app['title']} ({app['appId']})": app['appId'] for app in search_results}
-        
-        # # 사용자가 앱을 선택할 수 있게 selectbox를 생성
-        # app_id = st.selectbox("Select an app from the list:", options=list(app_options.values()), 
-        #                       format_func=lambda x: app_options.get(x, "Select an app"))
+        # 가장 관련성 높은 앱의 세부 정보를 검색
+        most_relevant_app = search_results[0]  # 첫 번째 검색 결과 선택
+        app_id = most_relevant_app['appId']
 
-        if app_id:
-            # 선택된 앱 ID로 앱 세부 정보 검색
-            app_details = app(
-                app_id,
-                lang='ko',
-                country='kr'
-            )
+        app_details = app(
+            app_id,
+            lang='ko',
+            country='kr'
+        )
 
             # 앱 세부 정보 표시
             st.write(f"**App Name:** {app_details['title']}")

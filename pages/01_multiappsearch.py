@@ -16,7 +16,6 @@ if st.button('Search for Apps'):
         st.stop()
 
     results = []
-    display_data = []
 
     for app_name in app_names:
         try:
@@ -32,24 +31,29 @@ if st.button('Search for Apps'):
                 download_link = f"https://play.google.com/store/apps/details?id={app_id}"
                 icon_url = app_details['icon']
 
-                # Append data for CSV and display
+                # Append data for CSV
                 results.append([app_name, app_details['title'], app_details['developer'], app_details['score'], download_link])
-                display_data.append([app_name, download_link, icon_url])
+
+                # Display results
+                st.write(f"**App Name:** {app_details['title']}")
+                st.write(f"**Download Link:** [Here]({download_link})")
+                st.write(f"**Icon URL:** {icon_url}")
+                st.image(icon_url, width=100)  # Display app icon
+                st.write("---")  # Separator
             else:
                 results.append([app_name, "No app found", "", "", ""])
-                display_data.append([app_name, "No app found", ""])
+                st.write(f"**{app_name}:** No app found.")
+                st.write("---")
         except NotFoundError:
             results.append([app_name, "App not found", "", "", ""])
-            display_data.append([app_name, "App not found", ""])
+            st.write(f"**{app_name}:** App not found.")
+            st.write("---")
         except Exception as e:
             results.append([app_name, f"An error occurred: {str(e)}", "", "", ""])
-            display_data.append([app_name, f"An error occurred: {str(e)}", ""])
-
-    # Display table
-    df_display = pd.DataFrame(display_data, columns=['App Name', 'Download Link', 'Icon URL'])
-    st.table(df_display)
+            st.write(f"**{app_name}:** An error occurred: {str(e)}")
+            st.write("---")
 
     # Create DataFrame for CSV download
-    df = pd.DataFrame(results, columns=['App Name', 'Developer', 'Rating', 'Download Link'])
+    df = pd.DataFrame(results, columns=['Search Query', 'App Name', 'Developer', 'Rating', 'Download Link'])
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("Download Results as CSV", csv, "google_play_results.csv", "text/csv", key='download-csv')

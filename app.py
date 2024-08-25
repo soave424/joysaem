@@ -1,5 +1,5 @@
 import streamlit as st
-from google_play_scraper import app, search, AppNotFound
+from google_play_scraper import app, search
 from google_play_scraper.exceptions import NotFoundError
 
 st.title('Google Play Store App Searcher')
@@ -36,7 +36,7 @@ if st.button('Search'):
         st.write(f"**Description:** {app_details['description']}")
         st.image(app_details['icon'], width=100)  # 앱 아이콘 표시
         st.write(f"**Download Link:** [Link](https://play.google.com/store/apps/details?id={app_id})")
-    except AppNotFound:
-        st.error('App not found with the given ID. Please try again.')
+    except NotFoundError:
+        st.error('App not found. Please check the name and try again.')
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")

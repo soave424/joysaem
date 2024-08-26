@@ -12,7 +12,7 @@ st.markdown("""
         padding: 8px 16px;
         margin: 2px;
     }
-    .stButton.displayed > button {
+    .stButton > button.displayed {
         background-color: red;
         color: white;
     }
@@ -44,8 +44,20 @@ if base_url:
     for i in range(1, 17):
         with cols[i]:
             button_label = f"{i:02}"
-            if st.button(button_label, key=f"btn_{i}", css_classes=["displayed" if st.session_state['show_pdf'][i] else ""]):
+            if st.button(button_label, key=f"btn_{i}"):
                 st.session_state['show_pdf'][i] = not st.session_state['show_pdf'][i]
+                
+                # Add or remove the "displayed" class using JavaScript based on the state
+                st.markdown(f"""
+                    <script>
+                    var btn = window.parent.document.querySelectorAll('button[key="btn_{i}"]')[0];
+                    if ({str(st.session_state['show_pdf'][i]).lower()}) {{
+                        btn.classList.add("displayed");
+                    }} else {{
+                        btn.classList.remove("displayed");
+                    }}
+                    </script>
+                    """, unsafe_allow_html=True)
 
     # Display PDFs based on button clicks
     for i in range(1, 17):

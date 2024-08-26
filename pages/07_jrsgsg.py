@@ -1,8 +1,7 @@
 import streamlit as st
 import requests
-from pypdf import PdfMerger
 
-st.title('View and Download PDFs')
+st.title('View PDFs')
 
 # Create an input field for the base URL
 base_url = st.text_input('Enter the base URL without the PDF number (e.g., https://jrsgsg.hankyung.com/pdfdata/2024/08/26/20240826_0110_010):')
@@ -26,31 +25,5 @@ if base_url:
             st.markdown(f'<iframe src="{pdf_url}" width="700" height="1000" type="application/pdf"></iframe>', unsafe_allow_html=True)
         else:
             st.write(f"PDF {i:02} is hidden")
-
-    # Download and merge all PDFs
-    if st.button("Download All PDFs as One"):
-        pdf_urls = [f"{base_url}{i:02}.pdf" for i in range(1, 17)]
-        output_filename = "merged.pdf"
-        merger = PdfMerger()
-
-        for url in pdf_urls:
-            response = requests.get(url)
-            if response.status_code == 200:
-                with open(f'temp_{i:02}.pdf', 'wb') as f:
-                    f.write(response.content)
-                merger.append(f'temp_{i:02}.pdf')
-
-        merger.write(output_filename)
-        merger.close()
-
-        with open(output_filename, "rb") as f:
-            st.download_button(
-                label="Download Merged PDF",
-                data=f,
-                file_name=output_filename,
-                mime="application/pdf"
-            )
-
-        st.success(f"Merged PDF created and ready to download!")
 else:
-    st.write("Please enter a base URL to display and download the PDFs.")
+    st.write("Please enter a base URL to display the PDFs.")

@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from PyPDF2 import PdfMerger
+from pypdf import PdfMerger
 import os
 
 st.title('View and Download PDFs')

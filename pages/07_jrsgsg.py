@@ -1,13 +1,27 @@
 import streamlit as st
+import pdfplumber
+import requests
+from io import BytesIO
 
-st.title('View PDF')
+st.title('Extract Text from PDF')
 
-# Create an input field for the URL
+# Input field for the PDF URL
 pdf_url = st.text_input('Enter the PDF URL')
 
-# Check if a URL has been entered and display it
+def extract_text_from_pdf(url):
+    response = requests.get(url)
+    with pdfplumber.open(BytesIO(response.content)) as pdf:
+        pages = pdf.pages
+        text = ''
+        for page in pages:
+            text += page.extract_text() + '\n'  # Extract text from each page
+        return text
+
 if pdf_url:
-    # Embed the PDF in an iframe within the Streamlit app
-    st.markdown(f'<iframe src="{pdf_url}" width="700" height="1000" type="application/pdf"></iframe>', unsafe_allow_html=True)
+    extracted_text = extract_text_from_pdf(pdf_url)
+    if extracted_text:
+        st.text_area("Extracted Text", extracted_text, height=300)
+    else:
+        st.error("No text could be extracted from the PDF.")
 else:
-    st.write("Please enter a URL to display the PDF.")
+    st.write("Please enter a URL to extract text from a PDF.")

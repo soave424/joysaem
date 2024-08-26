@@ -20,7 +20,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Create an input field for the base URL
-base_url = st.text_input('Enter the base URL without the PDF number (e.g., https://jrsgsg.hankyung.com/pdfdata/2024/08/26/20240826_0110_010):')
+base_url = st.text_input('Enter the base URL without the PDF number (e.g., https://jrsgsg.hankyung.com/js/pdfjs/web/viewer.html?file=/pdfdata/2024/08/26/20240826_0110_010):')
 
 # Initialize session state to keep track of displayed PDFs
 if 'show_pdf' not in st.session_state:

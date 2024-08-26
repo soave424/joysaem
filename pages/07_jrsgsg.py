@@ -1,7 +1,7 @@
 import streamlit as st
 import datetime
 import requests
-from PyPDF2.merger import PdfMerger # type: ignore
+from PyPDF2.merger import PdfMerger
 
 def generate_pdf_urls(base_date, issue_number):
     pdf_base_url = "https://jrsgsg.hankyung.com/js/pdfjs/web/viewer.html?file="

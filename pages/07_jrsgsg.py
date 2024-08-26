@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from pypdf import PdfMerger
+import pdfkit
 import os
 
 st.title('View and Download PDFs')
@@ -32,7 +32,7 @@ if base_url:
     if st.button("Download All PDFs as One"):
         pdf_urls = [f"{base_url}{i:02}.pdf" for i in range(1, 17)]
         output_filename = "merged.pdf"
-        merger = PdfMerger()
+        pdfs = []
 
         for url in pdf_urls:
             response = requests.get(url)
@@ -40,14 +40,12 @@ if base_url:
                 temp_filename = f'temp_{os.path.basename(url)}'
                 with open(temp_filename, 'wb') as f:
                     f.write(response.content)
-                merger.append(temp_filename)
+                pdfs.append(temp_filename)
 
-        merger.write(output_filename)
-        merger.close()
+        pdfkit.from_file(pdfs, output_filename)
 
         # Clean up temp files
-        for i in range(1, 17):
-            temp_filename = f'temp_{os.path.basename(pdf_urls[i-1])}'
+        for temp_filename in pdfs:
             if os.path.exists(temp_filename):
                 os.remove(temp_filename)
 

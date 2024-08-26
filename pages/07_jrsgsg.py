@@ -1,26 +1,13 @@
 import streamlit as st
-import requests
-from streamlit import download_button
 
-def download_pdf(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.content
-    return None
+st.title('View PDF')
 
-st.title('Download PDF')
+# Create an input field for the URL
+pdf_url = st.text_input('Enter the PDF URL')
 
-# URL of the PDF file
-pdf_url = "https://jrsgsg.hankyung.com/js/pdfjs/web/viewer.html?file=/pdfdata/2024/08/26/20240826_0110_01001.pdf"  # Replace with your actual URL
-
-if st.button('Download PDF'):
-    pdf_data = download_pdf(pdf_url)
-    if pdf_data:
-        st.download_button(
-            label="Download PDF",
-            data=pdf_data,
-            file_name="downloaded_file.pdf",
-            mime="application/octet-stream"
-        )
-    else:
-        st.error("Failed to download PDF")
+# Check if a URL has been entered and display it
+if pdf_url:
+    # Embed the PDF in an iframe within the Streamlit app
+    st.markdown(f'<iframe src="{pdf_url}" width="700" height="1000" type="application/pdf"></iframe>', unsafe_allow_html=True)
+else:
+    st.write("Please enter a URL to display the PDF.")

@@ -62,7 +62,7 @@ def search_books(book_titles):
 # 엑셀 파일 생성 함수
 def to_excel(df):
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False)
     processed_data = output.getvalue()
     return processed_data

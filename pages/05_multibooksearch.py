@@ -53,7 +53,6 @@ def search_books(book_titles):
                 'publisher': publisher,
                 'pub_date': formatted_date,
                 'price': price_text,
-                'isbn': isbn,
                 'image': image,  # 이미지 열 추가
                 'note': note  # 비고란 추가
             })

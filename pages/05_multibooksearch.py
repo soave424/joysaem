@@ -21,6 +21,7 @@ def search_books(book_titles):
         response = requests.get(base_url + title, headers=headers)
         result = response.json()
         items = result.get('items')
+
         if items:
             # 첫 번째 검색 결과만 사용
             item = items[0]
@@ -53,8 +54,19 @@ def search_books(book_titles):
                 '출판사': publisher,
                 '발행': formatted_date,
                 '가격': price_text,
-                '표지': image,  # 이미지 열 추가
-                '비고': note  # 비고란 추가
+                '표지': image,
+                '비고': note
+            })
+        else:
+            # 검색 결과가 없을 경우
+            books_info.append({
+                '도서명': title,
+                '저자': "검색 결과 없음",
+                '출판사': "검색 결과 없음",
+                '발행': "검색 결과 없음",
+                '가격': "검색 결과 없음",
+                '표지': "",
+                '비고': "검색 결과 없음"
             })
 
     return pd.DataFrame(books_info)
@@ -71,8 +83,8 @@ def to_csv(df):
 def format_images(df):
     return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]  # 'image' 대신 '표지' 사용
 
-st.title('여러권의 한번에 검색하기')
-book_titles_input = st.text_area("줄바꿈 혹은 , 로 구분된 책 목록을 아래 입력창에 넣어주세요. 검색하기 버튼을 눌러 책 목록을 확인한 후 csv파일로 다운 받으실 수 있습니다. 책 제목이 완벽하게 일치하지 않는 경우 비고란에 확인필요가 뜹니다.")
+st.title('여러 권의 책을 한 번에 검색하기')
+book_titles_input = st.text_area("줄바꿈 혹은 ','로 구분된 책 목록을 아래 입력창에 넣어주세요. 검색하기 버튼을 눌러 책 목록을 확인한 후 csv파일로 다운 받으실 수 있습니다. 책 제목이 완벽하게 일치하지 않는 경우 비고란에 확인필요가 뜹니다.")
 
 if st.button('책 검색'):
     # 책 제목 파싱
@@ -83,7 +95,7 @@ if st.button('책 검색'):
         books_df = search_books(book_titles)
         if not books_df.empty:
             # 이미지 열을 HTML 형식으로 변환하여 표시
-            books_df['표지'] = format_images(books_df)  # 'image' 대신 '표지' 사용
+            books_df['표지'] = format_images(books_df)
             st.write(
                 books_df.to_html(escape=False, index=False), 
                 unsafe_allow_html=True

@@ -5,17 +5,18 @@ import pandas as pd
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
-def kdc_description(kdc_code):
-    descriptions = {
-        '0': '총류', '1': '철학', '2': '종교', '3': '사회과학',
-        '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어',
-        '8': '문학', '9': '역사'
-    }
+
+# def kdc_description(kdc_code):
+#     descriptions = {
+#         '0': '총류', '1': '철학', '2': '종교', '3': '사회과학',
+#         '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어',
+#         '8': '문학', '9': '역사'
+#     }
     
-    if kdc_code and kdc_code[0] in descriptions:
-        return f"{kdc_code} ({descriptions[kdc_code[0]]})"
-    else:
-        return kdc_code
+#     if kdc_code and kdc_code[0] in descriptions:
+#         return f"{kdc_code} ({descriptions[kdc_code[0]]})"
+#     else:
+#         return kdc_code
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {
@@ -98,18 +99,16 @@ if st.button('검색'):
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
                 st.write(f"**저자:** {book_info['author']}")
-                st.write(f"**출판사:** {book_info['publisher']}")
+                st.write(f"**출판사:** [{book_info['publisher']}]({book_info['publisher_url']})")
                 
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
                 if book_metadata:
-                    st.write(f"**권차:** {book_metadata['vol']}")
-                    st.write(f"**총서명:** {book_metadata['series_title']}")
-                    st.write(f"**총서편차:** {book_metadata['series_no']}")
-                    st.write(f"**판사항:** {book_metadata['edition_stmt']}")
+                    
                     st.write(f"**예정가격:** {book_metadata['pre_price']}")
-                    st.write(f"**한국십진분류:** {kdc_description(book_metadata['kdc'])}")
+                    # st.write(f"**한국십진분류:** {kdc_description(book_metadata['kdc'])}")
+                    st.write(f"**한국십진분류:** {(book_metadata['kdc'])}")
                     st.write(f"**페이지:** {book_metadata['page']}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
@@ -126,8 +125,7 @@ if st.button('검색'):
                         if st.button("책 요약 펼쳐보기"):
                             st.markdown(f'<iframe src="{book_metadata["book_summary_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
                     
-                    if book_metadata['publisher_url']:
-                        st.write(f"**출판사:** [{book_metadata['publisher']}]({book_metadata['publisher_url']})")
+
                 else:
                     st.error("도서 정보를 가져올 수 없습니다.")
         else:

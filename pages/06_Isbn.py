@@ -19,7 +19,7 @@ def search_books_by_title(title, client_id, client_secret):
         item = result['items'][0]  # 첫 번째 결과만 사용
         return {
             'title': item.get('title', ''),
-            # 'author': item.get('author', ''),
+            'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
             'isbn': item.get('isbn', ''),
             'image': item.get('image', '')
@@ -40,7 +40,7 @@ def search_book_by_isbn(cert_key, isbn):
             'vol': item.get('VOL', ''),
             'series_title': item.get('SERIES_TITLE', ''),
             'class_no': item.get('CLASS_NO', ''),
-            'author': item.get('AUTHOR', ''),  # Multiple authors are comma-separated
+            'author': item.get('AUTHOR', ''),  
             'isbn': item.get('EA_ISBN', ''),
             'publisher': item.get('PUBLISHER', ''),
             'edition_stmt': item.get('EDITION_STMT', ''),
@@ -86,7 +86,7 @@ if st.button('검색'):
                     st.write("이미지가 없습니다.")
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
-                st.write(f"**저자:** {book_info['author']}")
+                # st.write(f"**저자:** {book_info['author']}")
                 st.write(f"**출판사:** {book_info['publisher']}")
                 st.write(f"**ISBN:** {book_info['isbn']}")
                 
@@ -94,6 +94,7 @@ if st.button('검색'):
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
                 if book_metadata:
+                    st.write(f"**저자:** {book_metadata['author']}")
                     st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")

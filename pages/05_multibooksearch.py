@@ -71,10 +71,10 @@ def to_csv(df):
 def format_images(df):
     return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]  # 'image' 대신 '표지' 사용
 
-st.title('Naver Book Search')
-book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")
+st.title('여러권의 한번에 검색하기')
+book_titles_input = st.text_area("줄바꿈 혹은 , 로 구분된 책 목록을 아래 입력창에 넣어주세요. 검색하기 버튼을 눌러 책 목록을 확인한 후 csv파일로 다운 받으실 수 있습니다. 책 제목이 완벽하게 일치하지 않는 경우 비고란에 확인필요가 뜹니다.")
 
-if st.button('Search Books'):
+if st.button('책 검색'):
     # 책 제목 파싱
     book_titles = re.split(r'[,\n]+', book_titles_input)
     book_titles = [title.strip() for title in book_titles if title.strip()]
@@ -91,7 +91,7 @@ if st.button('Search Books'):
 
             # CSV 다운로드 버튼 추가
             st.download_button(
-                label="Download List",
+                label="목록다운받기",
                 data=to_csv(books_df),
                 file_name='book_list.csv',
                 mime='text/csv'

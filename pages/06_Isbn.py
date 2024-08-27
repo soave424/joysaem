@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # 기본 인증키
-DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
+DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00'
 
 def kdc_description(kdc_code):
     descriptions = {

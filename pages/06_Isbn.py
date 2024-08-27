@@ -4,8 +4,6 @@ import requests
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
-
-
 def search_books_by_title(title, client_id, client_secret):
     headers = {
         'X-Naver-Client-Id': client_id,
@@ -100,7 +98,7 @@ if st.button('검색'):
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
-                    st.write(f"**분류:** {kdc_description(book_metadata['class_no'])}")
+                    st.write(f"**분류:** {book_metadata['class_no']}")
                     st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:

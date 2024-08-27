@@ -6,28 +6,28 @@ def search_books_by_isbn(cert_key, isbn):
     url = f"https://www.nl.go.kr/NL/search/openApi/search.do?key={cert_key}&kwd={isbn}"
     response = requests.get(url)
     
-    if response.status_code == 200:
+    try:
         result = response.json()
-        
-        # Check if 'TOTAL_COUNT' is in the result and is a valid number
-        if 'TOTAL_COUNT' in result and isinstance(result['TOTAL_COUNT'], int) and result['TOTAL_COUNT'] > 0:
-            items = result.get('docs', [])
-            books = []
-            for item in items:
-                books.append({
-                    'Title': item.get('TITLE', 'No Title Found'),
-                    'Author': item.get('AUTHOR', 'No Author Found'),
-                    'Publisher': item.get('PUBLISHER', 'No Publisher Found'),
-                    'Publication Date': item.get('PUBLISHER_YEAR', 'No Date Found'),
-                    'ISBN': item.get('ISBN', isbn)  # Default to the searched ISBN if not found
-                })
-            return pd.DataFrame(books)
-        else:
-            st.error("No books found for the given ISBN.")
-            return pd.DataFrame()  # Return an empty DataFrame if no books are found
+    except ValueError:
+        st.error("Failed to decode JSON. The response might not be in JSON format.")
+        return pd.DataFrame()  # Return an empty DataFrame if the response is not JSON
+
+    # Now proceed with the existing checks
+    if 'TOTAL_COUNT' in result and isinstance(result['TOTAL_COUNT'], int) and result['TOTAL_COUNT'] > 0:
+        items = result.get('docs', [])
+        books = []
+        for item in items:
+            books.append({
+                'Title': item.get('TITLE', 'No Title Found'),
+                'Author': item.get('AUTHOR', 'No Author Found'),
+                'Publisher': item.get('PUBLISHER', 'No Publisher Found'),
+                'Publication Date': item.get('PUBLISHER_YEAR', 'No Date Found'),
+                'ISBN': item.get('ISBN', isbn)  # Default to the searched ISBN if not found
+            })
+        return pd.DataFrame(books)
     else:
-        st.error(f"Failed to fetch data from the API. Status code: {response.status_code}")
-        return pd.DataFrame()  # Return an empty DataFrame if the API call fails
+        st.error("No books found for the given ISBN.")
+        return pd.DataFrame()  # Return an empty DataFrame if no books are found
 
 # Streamlit app layout
 st.title('Search Books by ISBN')

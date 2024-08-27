@@ -33,7 +33,6 @@ def search_books(book_titles):
             pubdate = item.get('PUBLISH_PREDATE', "")
             price = item.get('PRE_PRICE', "")
             isbn = item.get('EA_ISBN', "No ISBN Info")  
-            
 
             # 출간일 처리 (연도와 월만 추출)
             formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
@@ -71,12 +70,14 @@ if st.button('Search Books'):
     if book_titles:
         books_df = search_books(book_titles)
         if not books_df.empty:
+            # 먼저 화면에 표시
             st.dataframe(books_df)
 
             # CSV 다운로드 버튼 추가
+            csv_data = to_csv(books_df)  # CSV 데이터를 변수에 저장
             st.download_button(
                 label="Download List",
-                data=to_csv(books_df),
+                data=csv_data,
                 file_name='book_list.csv',
                 mime='text/csv'
             )

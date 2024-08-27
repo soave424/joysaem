@@ -1,15 +1,13 @@
 
-# 네이버 API 설정
-NAVER_CLIENT_ID = 'your_naver_client_id'
-NAVER_CLIENT_SECRET = 'your_naver_client_secret'
 
 import streamlit as st
 import requests
 
+
 # 네이버 도서 API를 통해 책 검색
 def search_books_by_title(title):
-    client_id = "YOUR_NAVER_CLIENT_ID"
-    client_secret = "YOUR_NAVER_CLIENT_SECRET"
+    client_id = "4VEUTHOdiibOqzJdOu7P"
+    client_secret = "p2GQWrdWmD"
     url = "https://openapi.naver.com/v1/search/book.json"
     headers = {
         "X-Naver-Client-Id": client_id,

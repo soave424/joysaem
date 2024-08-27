@@ -19,9 +19,6 @@ if st.button('Search'):
         # 완성된 URL
         url = base_url.format(encoded_keyword)
         
-        # URL 표시
-        st.write(f"Searching with URL: {url}")
-        
         # URL로부터 데이터 요청
         response = requests.get(url)
 

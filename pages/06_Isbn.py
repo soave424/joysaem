@@ -61,7 +61,7 @@ def search_book_by_isbn(cert_key, isbn):
             'publisher': item.get('PUBLISHER', ''),
             'edition_stmt': item.get('EDITION_STMT', ''),
             'pre_price': item.get('PRE_PRICE', ''),
-            'kdc': item.get('CALL_NO', ''),
+            'call_no': item.get('CALL_NO', ''),
             'page': item.get('PAGE', ''),
             'book_size': item.get('BOOK_SIZE', ''),
             'publish_predate': item.get('PUBLISH_PREDATE', ''),
@@ -113,7 +113,7 @@ if st.button('검색'):
                     
                     st.write(f"**예정가격:** {book_metadata['pre_price']}")
                     # st.write(f"**한국십진분류:** {kdc_description(book_metadata['kdc'])}")
-                    st.write(f"**한국십진분류:** {(book_metadata['kdc'])}")
+                    st.write(f"**한국십진분류:** {(book_metadata['call_no'])}")
                     st.write(f"**페이지:** {book_metadata['page']}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")

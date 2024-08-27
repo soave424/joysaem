@@ -2,8 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import re
-from math import ceil
-from io import BytesIO
+from io import StringIO
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -39,7 +38,7 @@ def search_books(book_titles):
             # 정가 계산 (판매가의 100%)
             try:
                 price_numeric = int(price)
-                original_price = ceil(price_numeric / 0.9 / 10) * 10
+                original_price = int(price_numeric / 0.9)
                 price_text = f"{original_price:,}원"
             except ValueError:
                 price_text = "Price Error"
@@ -59,11 +58,10 @@ def search_books(book_titles):
 
     return pd.DataFrame(books_info)
 
-# 엑셀 파일 생성 함수
-def to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False)
+# CSV 파일 생성 함수
+def to_csv(df):
+    output = StringIO()
+    df.to_csv(output, index=False)
     processed_data = output.getvalue()
     return processed_data
 
@@ -80,12 +78,12 @@ if st.button('Search Books'):
         if not books_df.empty:
             st.dataframe(books_df)
 
-            # 엑셀 다운로드 버튼 추가
+            # CSV 다운로드 버튼 추가
             st.download_button(
                 label="Download List",
-                data=to_excel(books_df),
-                file_name='book_list.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                data=to_csv(books_df),
+                file_name='book_list.csv',
+                mime='text/csv'
             )
         else:
             st.error("No books found for the given titles.")

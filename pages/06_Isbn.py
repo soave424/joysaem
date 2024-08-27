@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # 기본 인증키
-DEFAULT_CERT_KEY = ''
+DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
 def kdc_description(kdc_code):
     descriptions = {
@@ -16,11 +16,6 @@ def kdc_description(kdc_code):
         return f"{kdc_code} ({descriptions[kdc_code[0]]})"
     else:
         return kdc_code
-
-# 사용 예시
-kdc_code = '810'
-print(kdc_description(kdc_code))  # 출력: 810 (문학)
-
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {

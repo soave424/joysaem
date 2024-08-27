@@ -5,7 +5,7 @@ import requests
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
 
-def get_kdc_category(kdc_code):
+def get_kdc_category(subject):
     kdc_mapping = {
         '0': '총류',
         '1': '철학',
@@ -19,7 +19,7 @@ def get_kdc_category(kdc_code):
         '9': '역사'
     }
     
-    return kdc_mapping.get(kdc_code, '분류 없음')
+    return kdc_mapping.get(subject, '분류 없음')
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {
@@ -55,8 +55,8 @@ def search_book_by_isbn(cert_key, isbn):
         # 디버깅을 위해 전체 item 객체를 출력해봅니다.
         st.write(item)  # 디버깅용 출력
 
-        kdc_code = item.get('SUBJECT', ''),
-        kdc_category = get_kdc_category(kdc_code) if kdc_code else '분류 없음'
+        subject = item.get('SUBJECT', ''),
+        kdc_category = get_kdc_category(subject) if subject else '분류 없음'
 
         return {
             'title': item.get('TITLE', ''),
@@ -80,7 +80,7 @@ def search_book_by_isbn(cert_key, isbn):
             'publisher_url': item.get('PUBLISHER_URL', ''),
             'call_no': item.get('CALL_NO', '청구기호 없음'),  # 기본값 설정
             'kdc_code': item.get('KDC_CODE', ''),
-            'kdc_name':kdc_category
+            'kdc_category':kdc_category
         }
     else:
         return None
@@ -127,7 +127,7 @@ if st.button('검색'):
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     # st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
-                    st.write(f"**분야:** {book_metadata['subject']}")
+                    st.write(f"**분야:** {book_metadata['kdc_category']}")
                     # st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:

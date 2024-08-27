@@ -121,3 +121,45 @@ if st.button("검색"):
             st.error(f"오류: 데이터 검색에 실패했습니다. 상태 코드: {response.status_code}")
     else:
         st.error("책 제목을 입력해 주세요.")
+
+# National Library API request parameters
+params = {
+    'key': API_KEY,
+    'kwd': book_title,
+    'pageNum': 1,
+    'pageSize': 1,
+    'apiType': 'json'
+}
+
+# Make the API request to National Library
+response = requests.get(BASE_URL, params=params)
+
+# Check if the request was successful
+if response.status_code == 200:
+    try:
+        # Load the response as JSON
+        json_data = response.json()
+
+        # Check if result key exists and is not empty
+        if 'result' in json_data and json_data['result']:
+            book_data = json_data['result'][0]  # First item in the result
+
+            # Extracting the required fields
+            call_no = book_data.get('callNo', 'N/A')
+            kdc_code = book_data.get('kdcCode1s', 'N/A')
+            kdc_name = book_data.get('kdcName1s', 'N/A')
+
+            # Save variables to session state
+            st.session_state.call_no = call_no
+            st.session_state.kdc_code = kdc_code
+            st.session_state.kdc_name = kdc_name
+
+            # Notify user
+            st.success("도서 정보를 찾았습니다. 정보를 다른 페이지에서 확인할 수 있습니다.")
+            
+        else:
+            st.error("도서 정보를 찾을 수 없습니다.")
+    except json.JSONDecodeError:
+        st.error("오류: 응답이 유효한 JSON이 아닙니다.")
+else:
+    st.error(f"오류: 데이터 검색에 실패했습니다. 상태 코드: {response.status_code}")

@@ -97,9 +97,9 @@ if st.button('검색'):
                     st.write(f"**예정가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
-                    st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
+                    st.write(f"**출간일:** {book_metadata['publish_predate']}")
                     st.write(f"**분류:** {book_metadata['class_no']}")
-                    st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
+                    # st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:
                         if st.button("목차 펼쳐보기"):

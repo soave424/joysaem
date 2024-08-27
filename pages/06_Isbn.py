@@ -99,7 +99,10 @@ if st.button('검색'):
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
                 st.write(f"**저자:** {book_info['author']}")
+            if 'publisher_url' in book_info:
                 st.write(f"**출판사:** [{book_info['publisher']}]({book_info['publisher_url']})")
+            else:
+                st.write(f"**출판사:** {book_info['publisher']}")
                 
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
                 book_metadata = search_book_by_isbn(cert_key, isbn)

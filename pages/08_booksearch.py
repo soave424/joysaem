@@ -38,6 +38,21 @@ def search_books_from_naver(title, client_id, client_secret):
     else:
         return None
 
+def search_book_by_isbn(cert_key, isbn):
+    url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
+    
+    response = requests.get(url)
+    result = response.json()
+
+    if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
+        item = result['docs'][0]
+        return {
+            'title': item.get('TITLE', ''),
+            'page': item.get('PAGE', '정보 없음')  # 페이지 수
+        }
+    else:
+        return None
+
 # Search button
 if st.button("검색"):
     if book_title:
@@ -73,25 +88,25 @@ if st.button("검색"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
-                    ebook_yn = book_data.get('EBOOK_YN', ''),
-                    page = book_data.get('PAGE', ''),
-
-
 
                     # Clean the title to remove HTML tags
                     clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
 
-                    # Fetch book image and page count from Naver API using the cleaned title
+                    # Fetch book image from Naver API
                     naver_book_info = search_books_from_naver(clean_title, NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)
-
 
                     if naver_book_info:
                         image_url = naver_book_info['image']
-                        # Try to extract page count from Naver API (if available)
-                        # naver_page_count = naver_book_info['page_count']
                     else:
                         image_url = None
-                        naver_page_count = 'N/A'
+
+                    # Fetch page count from National Library API
+                    book_metadata = search_book_by_isbn(API_KEY, isbn)
+
+                    if book_metadata:
+                        page_count = book_metadata['page']
+                    else:
+                        page_count = '정보 없음'
 
                     # Displaying the book image and details
                     col1, col2 = st.columns([1, 2])
@@ -110,7 +125,7 @@ if st.button("검색"):
                         st.write(f"**ISBN:** {isbn}")
                         st.write(f"**청구기호:** {call_no}")
                         st.write(f"**KDC 코드:** {kdc_code} ({kdc_name})")
-                        st.write(f"**페이지 수:** {naver_page_count}")
+                        st.write(f"**페이지 수:** {page_count}")
 
                 else:
                     st.error("도서 정보를 찾을 수 없습니다.")
@@ -121,45 +136,3 @@ if st.button("검색"):
             st.error(f"오류: 데이터 검색에 실패했습니다. 상태 코드: {response.status_code}")
     else:
         st.error("책 제목을 입력해 주세요.")
-
-# National Library API request parameters
-params = {
-    'key': API_KEY,
-    'kwd': book_title,
-    'pageNum': 1,
-    'pageSize': 1,
-    'apiType': 'json'
-}
-
-# Make the API request to National Library
-response = requests.get(BASE_URL, params=params)
-
-# Check if the request was successful
-if response.status_code == 200:
-    try:
-        # Load the response as JSON
-        json_data = response.json()
-
-        # Check if result key exists and is not empty
-        if 'result' in json_data and json_data['result']:
-            book_data = json_data['result'][0]  # First item in the result
-
-            # Extracting the required fields
-            call_no = book_data.get('callNo', 'N/A')
-            kdc_code = book_data.get('kdcCode1s', 'N/A')
-            kdc_name = book_data.get('kdcName1s', 'N/A')
-
-            # Save variables to session state
-            st.session_state.call_no = call_no
-            st.session_state.kdc_code = kdc_code
-            st.session_state.kdc_name = kdc_name
-
-            # Notify user
-            st.success("도서 정보를 찾았습니다. 정보를 다른 페이지에서 확인할 수 있습니다.")
-            
-        else:
-            st.error("도서 정보를 찾을 수 없습니다.")
-    except json.JSONDecodeError:
-        st.error("오류: 응답이 유효한 JSON이 아닙니다.")
-else:
-    st.error(f"오류: 데이터 검색에 실패했습니다. 상태 코드: {response.status_code}")

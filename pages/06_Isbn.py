@@ -4,7 +4,7 @@ import requests
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
-
+# KDC 분류 기준 매핑 함수
 def get_kdc_category(subject):
     kdc_mapping = {
         '0': '총류',
@@ -18,9 +18,9 @@ def get_kdc_category(subject):
         '8': '문학',
         '9': '역사'
     }
-    
-    return kdc_mapping.get(subject, '분류 없음')
+    return kdc_mapping.get(subject[0], '분류 없음') if subject else '분류 없음'
 
+# 네이버 API를 통해 책 제목으로 도서 검색
 def search_books_by_title(title, client_id, client_secret):
     headers = {
         'X-Naver-Client-Id': client_id,
@@ -44,6 +44,7 @@ def search_books_by_title(title, client_id, client_secret):
     else:
         return None
 
+# ISBN을 이용해 상세 도서 정보 조회
 def search_book_by_isbn(cert_key, isbn):
     url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
     
@@ -52,12 +53,10 @@ def search_book_by_isbn(cert_key, isbn):
 
     if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
         item = result['docs'][0]
-        # 디버깅을 위해 전체 item 객체를 출력해봅니다.
-        st.write(item)  # 디버깅용 출력
-
-        subject = item.get('SUBJECT', ''),
-        kdc_category = get_kdc_category(subject) if subject else '분류 없음'
-
+        
+        subject = item.get('KDC_CODE', '')  # KDC_CODE로 변경
+        kdc_category = get_kdc_category(subject)
+        
         return {
             'title': item.get('TITLE', ''),
             'vol': item.get('VOL', ''),
@@ -78,14 +77,14 @@ def search_book_by_isbn(cert_key, isbn):
             'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
             'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
             'publisher_url': item.get('PUBLISHER_URL', ''),
-            'call_no': item.get('CALL_NO', '청구기호 없음'),  # 기본값 설정
-            'kdc_code': item.get('KDC_CODE', ''),
-            'kdc_category':kdc_category
+            'call_no': item.get('CALL_NO', '청구기호 없음'),
+            'kdc_code': subject,
+            'kdc_category': kdc_category
         }
     else:
         return None
 
-
+# Streamlit 앱 구성
 st.title('도서 검색 및 정보 조회')
 
 # 인증키 입력
@@ -98,7 +97,7 @@ client_secret = 'p2GQWrdWmD'
 # 책 제목 입력
 book_title = st.text_input('검색할 책 제목을 입력하세요:', '')
 
-# 검색 버튼을 입력창 옆에 배치
+# 검색 버튼 클릭 시 동작
 if st.button('검색'):
     if book_title:
         book_info = search_books_by_title(book_title, client_id, client_secret)
@@ -113,10 +112,9 @@ if st.button('검색'):
                     st.write("이미지가 없습니다.")
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
-                # st.write(f"**저자:** {book_info['author']}")
-                # st.write(f"**출판사:** {book_info['publisher']}")
                 st.write(f"**ISBN:** {book_info['isbn']}")
                 
+                # ISBN으로 상세 도서 정보 조회
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
@@ -125,10 +123,9 @@ if st.button('검색'):
                     st.write(f"**출판사:** {book_metadata['publisher']}")
                     st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
-                    # st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
+                    st.write(f"**청구기호:** {book_metadata['call_no']}")
                     st.write(f"**분야:** {book_metadata['kdc_category']}")
-                    # st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:
                         if st.button("목차 펼쳐보기"):
@@ -139,7 +136,6 @@ if st.button('검색'):
                     if book_metadata['book_summary_url']:
                         if st.button("책 요약 펼쳐보기"):
                             st.markdown(f'<iframe src="{book_metadata["book_summary_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-                    
                 else:
                     st.error("도서 정보를 가져올 수 없습니다.")
         else:

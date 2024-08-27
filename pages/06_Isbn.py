@@ -36,11 +36,17 @@ def search_book_by_isbn(cert_key, isbn):
     response = requests.get(url, params=params)
     
     if response.status_code == 200:
-        result = response.json()
-        if result['TOTAL_COUNT'] > 0:
-            return result['docs'][0]  # 첫 번째 검색 결과만 반환
-        else:
-            st.error("도서 정보를 찾을 수 없습니다.")
+        try:
+            result = response.json()
+            st.write(result)  # 디버깅을 위해 전체 응답을 출력
+            if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
+                return result['docs'][0]  # 첫 번째 검색 결과만 반환
+            else:
+                st.error("도서 정보를 찾을 수 없습니다.")
+                return None
+        except Exception as e:
+            st.error(f"JSON 파싱 오류: {e}")
+            st.write(response.text)  # 응답 내용 출력
             return None
     else:
         st.error(f"국립중앙도서관 API 오류 발생: {response.status_code}")

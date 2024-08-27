@@ -56,7 +56,7 @@ def search_book_by_isbn(cert_key, isbn):
             'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
             'publisher_url': item.get('PUBLISHER_URL', ''),
             'call_no': item.get('CALL_NO', ''),
-            'kdc_code':item.goet('KDC_CODE',''),
+            'kdc_code':item.get('KDC_CODE',''),
             'kdc_name':item.get('KDC_NAME','')
         }
     else:

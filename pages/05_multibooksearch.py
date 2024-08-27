@@ -19,6 +19,8 @@ def search_books(keyword):
     if response.status_code == 200:
         return response.json().get('result', [])
     else:
+        st.error(f"도서 검색 중 오류 발생: {response.status_code}")
+        st.write(response.text)  # 응답 내용 출력
         return []
 
 # 도서 상세 정보 함수
@@ -35,6 +37,8 @@ def get_book_details(isbn):
     if response.status_code == 200:
         return response.json().get('docs', [])
     else:
+        st.error(f"도서 정보 조회 중 오류 발생: {response.status_code}")
+        st.write(response.text)  # 응답 내용 출력
         return []
 
 # Streamlit UI 설정
@@ -81,5 +85,6 @@ if keyword:
                     st.write(f"[책 요약 보기]({book.get('BOOK_SUMMARY_URL')})")
             else:
                 st.error("도서 정보를 가져올 수 없습니다.")
+                st.write(f"API 응답: {book_details}")  # API 응답 내용 출력
     else:
         st.error("검색 결과가 없습니다.")

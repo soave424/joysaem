@@ -33,8 +33,7 @@ def search_books_from_naver(title, client_id, client_secret):
             'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
             'isbn': item.get('isbn', ''),
-            'image': item.get('image', ''),
-            'page_count': item.get('discount', 'N/A')  # 페이지 수를 네이버 API에서 직접 제공하지 않으므로, 여기는 'N/A'로 설정
+            'image': item.get('image', '')
         }
     else:
         return None
@@ -74,6 +73,10 @@ if st.button("검색"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
+                                'ebook_yn': item.get('EBOOK_YN', ''),
+                                'page': item.get('PAGE', ''),
+
+
 
                     # Clean the title to remove HTML tags
                     clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
@@ -81,10 +84,11 @@ if st.button("검색"):
                     # Fetch book image and page count from Naver API using the cleaned title
                     naver_book_info = search_books_from_naver(clean_title, NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)
 
+
                     if naver_book_info:
                         image_url = naver_book_info['image']
                         # Try to extract page count from Naver API (if available)
-                        naver_page_count = naver_book_info['page_count']
+                        # naver_page_count = naver_book_info['page_count']
                     else:
                         image_url = None
                         naver_page_count = 'N/A'

@@ -15,6 +15,7 @@ st.title("도서 검색 및 정보 조회")
 # Input for book title
 book_title = st.text_input("검색할 책 제목을 입력하세요:")
 
+
 def search_books_from_naver(title, client_id, client_secret):
     headers = {
         'X-Naver-Client-Id': client_id,
@@ -33,10 +34,19 @@ def search_books_from_naver(title, client_id, client_secret):
             'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
             'isbn': item.get('isbn', ''),
-            'image': item.get('image', '')
+            'image': item.get('image', '')  # 책 이미지 URL
         }
     else:
         return None
+
+
+
+
+
+
+
+
+
 
 def search_book_by_isbn(cert_key, isbn):
     url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"

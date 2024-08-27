@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-# 기본 URL (searchKeyword 부분 제외)
+# 예제 URL (사용자 정의)
 base_url = "https://read365.edunet.net/PureScreen/SchoolSearchResult?searchKeyword={}&searchType=&provCode=J10&neisCode=J100001618&schoolName=%EB%82%A8%EC%96%91%EC%A3%BC%EC%96%91%EC%A7%80%EC%B4%88%EB%93%B1%ED%95%99%EA%B5%90"
 
 st.title("도서 목록 추출")
@@ -26,18 +26,26 @@ if st.button('Search'):
             soup = BeautifulSoup(response.content, 'html.parser')
 
             # 도서 리스트 요소 추출
-            book_items = soup.find_all('li', class_='')
+            book_list = soup.select('/html/body/div[1]/div/div[1]/div/div/article[2]/div/div[2]/div[3]/div[2]/ul/li')
 
-            if book_items:
+            if book_list:
                 st.write("도서 목록:")
-                for item in book_items:
+                for item in book_list:
+                    # 제목
                     title = item.find('strong', class_='prod-name').get_text(strip=True)
-                    author = item.find('span', class_='writer').get_text(strip=True)
+                    
+                    # 저자, 출판사, 출판년도, 소장학교, 청구기호 등 정보
+                    info = item.find('span', class_='writer').get_text(strip=True)
+                    
+                    # 도서 상태 (대출 가능/대출 중)
                     state = item.find('div', class_='book-state').get_text(strip=True)
+                    
+                    # 이미지 URL
                     img_src = item.find('img')['src']
 
+                    # Streamlit을 통한 출력
                     st.write(f"**제목**: {title}")
-                    st.write(f"**저자**: {author}")
+                    st.write(f"**정보**: {info}")
                     st.write(f"**상태**: {state}")
                     st.image(img_src)
                     st.write("---")

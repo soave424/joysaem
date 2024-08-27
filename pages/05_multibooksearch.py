@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import re
 from math import ceil
+from io import BytesIO
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -25,13 +26,12 @@ def search_books(book_titles):
             # 첫 번째 검색 결과만 사용
             item = items[0]
             # 안전하게 데이터 추출
-            title = item.get('title', "No Title Found")
+            result_title = item.get('title', "No Title Found")
             author = item.get('author', "No Author Found")
             publisher = item.get('publisher', "No Publisher Found")
             pubdate = item.get('pubdate', "")
             price = item.get('discount', "0")
             isbn = item.get('isbn', "No ISBN Info")  
-
 
             # 출간일 처리 (연도와 월만 추출)
             formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
@@ -44,20 +44,32 @@ def search_books(book_titles):
             except ValueError:
                 price_text = "Price Error"
 
+            # 비고란에 "확인 필요" 추가
+            note = "확인 필요" if title.strip().lower() != result_title.strip().lower() else ""
+
             books_info.append({
-                'title': title,
+                'title': result_title,
                 'author': author,
                 'publisher': publisher,
                 'pub_date': formatted_date,
                 'price': price_text,
-                'isbn': isbn,   
-
+                'isbn': isbn,
+                'note': note  # 비고란 추가
             })
 
     return pd.DataFrame(books_info)
 
+# 엑셀 파일 생성 함수
+def to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    processed_data = output.getvalue()
+    return processed_data
+
 st.title('Naver Book Search')
 book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")
+
 if st.button('Search Books'):
     # 책 제목 파싱
     book_titles = re.split(r'[,\n]+', book_titles_input)
@@ -67,6 +79,14 @@ if st.button('Search Books'):
         books_df = search_books(book_titles)
         if not books_df.empty:
             st.dataframe(books_df)
+
+            # 엑셀 다운로드 버튼 추가
+            st.download_button(
+                label="Download List",
+                data=to_excel(books_df),
+                file_name='book_list.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
         else:
             st.error("No books found for the given titles.")
     else:

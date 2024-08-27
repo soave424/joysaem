@@ -6,17 +6,17 @@ import pandas as pd
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
 
-def kdc_description(subject):
+def kdc_description(class_no):
     descriptions = {
         '0': '총류', '1': '철학', '2': '종교', '3': '사회과학',
         '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어',
         '8': '문학', '9': '역사'
     }
     
-    if subject and subject[0] in descriptions:
-        return f"{subject} ({descriptions[subject[0]]})"
+    if class_no and class_no[0] in descriptions:
+        return f"{class_no} ({descriptions[class_no[0]]})"
     else:
-        return subject
+        return class_no
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {
@@ -54,7 +54,7 @@ def search_book_by_isbn(cert_key, isbn):
             'title': item.get('TITLE', ''),
             'vol': item.get('VOL', ''),
             'series_title': item.get('SERIES_TITLE', ''),
-            'series_no': item.get('SERIES_NO', ''),
+            'class_no': item.get('CLASS_NO', ''),
             'author': item.get('AUTHOR', ''),
             'isbn': item.get('EA_ISBN', ''),
             'publisher': item.get('PUBLISHER', ''),
@@ -99,10 +99,10 @@ if st.button('검색'):
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
                 st.write(f"**저자:** {book_info['author']}")
-            if 'publisher_url' in book_metadata:
-                st.write(f"**출판사:** [{book_metadata['publisher']}]({book_metadata['publisher_url']})")
+            if 'publisher_url' in book_info:
+                st.write(f"**출판사:** [{book_info['publisher']}]({book_info['publisher_url']})")
             else:
-                st.write(f"**출판사:** {book_metadata['publisher']}")
+                st.write(f"**출판사:** {book_info['publisher']}")
                 
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
                 book_metadata = search_book_by_isbn(cert_key, isbn)
@@ -114,7 +114,7 @@ if st.button('검색'):
                     st.write(f"**페이지:** {book_metadata['page']}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
-                    st.write(f"**분류:** {book_metadata['subject']}")
+                    st.write(f"**분류:** {book_metadata['class_no']}")
                     st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:

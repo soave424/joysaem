@@ -69,7 +69,7 @@ def to_csv(df):
 
 # 이미지 표시 함수
 def format_images(df):
-    return [f'<img src="{url}" width="50">' if url else '' for url in df['image']]
+    return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]
 
 st.title('Naver Book Search')
 book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")

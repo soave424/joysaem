@@ -19,7 +19,7 @@ def search_books_by_title(title, client_id, client_secret):
         item = result['items'][0]  # 첫 번째 결과만 사용
         return {
             'title': item.get('title', ''),
-            'author': item.get('author', ''),
+            # 'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
             'isbn': item.get('isbn', ''),
             'image': item.get('image', '')
@@ -94,7 +94,7 @@ if st.button('검색'):
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
                 if book_metadata:
-                    st.write(f"**예정가격:** {book_metadata['pre_price']}")
+                    st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
@@ -114,6 +114,6 @@ if st.button('검색'):
                 else:
                     st.error("도서 정보를 가져올 수 없습니다.")
         else:
-            st.error("네이버에서 도서 정보를 가져올 수 없습니다.")
+            st.error("도서 정보를 가져올 수 없습니다.")
     else:
         st.error("책 제목을 입력해 주세요.")

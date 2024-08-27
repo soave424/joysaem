@@ -55,7 +55,7 @@ if st.button("검색"):
                     # Clean the title to remove HTML tags
                     clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
 
-                    # Fetch book image from Naver API using the cleaned title
+                    # Fetch book image and page count from Naver API using the cleaned title
                     naver_headers = {
                         'X-Naver-Client-Id': NAVER_CLIENT_ID,
                         'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
@@ -66,8 +66,11 @@ if st.button("검색"):
 
                     if naver_data.get('items'):
                         image_url = naver_data['items'][0].get('image', None)
+                        # Try to extract page count from Naver API
+                        naver_page_count = naver_data['items'][0].get('isbn', 'N/A').split(' ')[-1]
                     else:
                         image_url = None
+                        naver_page_count = 'N/A'
 
                     # Displaying the book image and details
                     col1, col2 = st.columns([1, 2])
@@ -86,7 +89,7 @@ if st.button("검색"):
                         st.write(f"**ISBN:** {isbn}")
                         st.write(f"**청구기호:** {call_no}")
                         st.write(f"**KDC 코드:** {kdc_code} ({kdc_name})")
-                        st.write(f"**페이지 수:** {page_count}")
+                        st.write(f"**페이지 수:** {naver_page_count}")
 
                 else:
                     st.error("도서 정보를 찾을 수 없습니다.")

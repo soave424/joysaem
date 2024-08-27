@@ -54,7 +54,7 @@ def search_book_by_isbn(cert_key, isbn):
     if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
         item = result['docs'][0]
         
-        subject = item.get('KDC_CODE', '')  # KDC_CODE로 변경
+        subject = item.get('SUBJECT', '')  # KDC_CODE로 변경
         kdc_category = get_kdc_category(subject)
         
         return {

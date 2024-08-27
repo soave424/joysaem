@@ -2,23 +2,21 @@ import streamlit as st
 import requests
 import json
 
-
 # Set up the API key and base URL for National Library of Korea
-API_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'  # Replace with your actual API key
+API_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 BASE_URL = 'https://www.nl.go.kr/NL/search/openApi/search.do'
 
 # Naver API credentials
-NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'  # Replace with your Naver Client ID
-NAVER_CLIENT_SECRET = 'p2GQWrdWmD'  # Replace with your Naver Client Secret
+NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
+NAVER_CLIENT_SECRET = 'p2GQWrdWmD'
 
-
-st.title("Book Search and Details Display")
+st.title("도서 검색 및 정보 조회")
 
 # Input for book title
-book_title = st.text_input("Enter the book title to search:")
+book_title = st.text_input("검색할 책 제목을 입력하세요:")
 
 # Search button
-if st.button("Search"):
+if st.button("검색"):
     if book_title:
         # National Library API request parameters
         params = {
@@ -37,17 +35,14 @@ if st.button("Search"):
             try:
                 # Load the response as JSON
                 json_data = response.json()
-                
-                # Print JSON data to debug (remove in production)
-                # print(json.dumps(json_data, indent=4))
-                
+
                 # Check if result key exists and is not empty
                 if 'result' in json_data and json_data['result']:
                     book_data = json_data['result'][0]  # First item in the result
 
                     # Extracting the required fields
                     title = book_data.get('titleInfo', 'N/A')
-                    author = book_data.get('authorInfo', 'N/A')
+                    authors = book_data.get('authorInfo', 'N/A')
                     publisher = book_data.get('pubInfo', 'N/A')
                     pub_year = book_data.get('pubYearInfo', 'N/A')
                     isbn = book_data.get('isbn', 'N/A')
@@ -81,24 +76,24 @@ if st.button("Search"):
                         if image_url:
                             st.image(image_url, use_column_width=True)
                         else:
-                            st.write("No image available")
+                            st.write("이미지가 없습니다.")
 
                     with col2:
-                        st.write(f"**Title:** {clean_title}")
-                        st.write(f"**Author:** {author}")
-                        st.write(f"**Publisher:** {publisher}")
-                        st.write(f"**Publication Year:** {pub_year}")
+                        st.write(f"**제목:** {clean_title}")
+                        st.write(f"**저자:** {authors}")
+                        st.write(f"**출판사:** {publisher}")
+                        st.write(f"**출판년도:** {pub_year}")
                         st.write(f"**ISBN:** {isbn}")
-                        st.write(f"**Call Number:** {call_no}")
-                        st.write(f"**KDC Code:** {kdc_code} ({kdc_name})")
-                        st.write(f"**Page Count:** {page_count}")
+                        st.write(f"**청구기호:** {call_no}")
+                        st.write(f"**KDC 코드:** {kdc_code} ({kdc_name})")
+                        st.write(f"**페이지 수:** {page_count}")
 
                 else:
-                    st.error("No book information found.")
+                    st.error("도서 정보를 찾을 수 없습니다.")
 
             except json.JSONDecodeError:
-                st.error("Error: The response is not a valid JSON.")
+                st.error("오류: 응답이 유효한 JSON이 아닙니다.")
         else:
-            st.error(f"Error: Failed to retrieve data. Status code: {response.status_code}")
+            st.error(f"오류: 데이터 검색에 실패했습니다. 상태 코드: {response.status_code}")
     else:
-        st.error("Please enter a book title to search.")
+        st.error("책 제목을 입력해 주세요.")

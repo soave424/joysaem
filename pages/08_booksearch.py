@@ -1,15 +1,14 @@
 import streamlit as st
 import requests
-import json
 
 # Set up the API key and base URL for National Library of Korea
-API_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'  
+API_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'  # Replace with your actual API key
 BASE_URL = 'https://www.nl.go.kr/NL/search/openApi/search.do'
 
 # Naver API credentials
+NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'  # Replace with your Naver Client ID
+NAVER_CLIENT_SECRET = 'p2GQWrdWmD'  # Replace with your Naver Client Secret
 
-NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P' 
-NAVER_CLIENT_SECRET = 'p2GQWrdWmD'  
 
 st.title("Book Search and Details Display")
 
@@ -49,13 +48,17 @@ if st.button("Search"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
+                    page_count = book_data.get('page', 'N/A')
 
-                    # Fetch book image from Naver API using the title
+                    # Clean the title to remove HTML tags
+                    clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
+
+                    # Fetch book image from Naver API using the cleaned title
                     naver_headers = {
                         'X-Naver-Client-Id': NAVER_CLIENT_ID,
                         'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
                     }
-                    naver_params = {'query': title}
+                    naver_params = {'query': clean_title}
                     naver_response = requests.get('https://openapi.naver.com/v1/search/book.json', headers=naver_headers, params=naver_params)
                     naver_data = naver_response.json()
 
@@ -74,7 +77,7 @@ if st.button("Search"):
                             st.write("No image available")
 
                     with col2:
-                        st.write(f"**Title:** {title}")
+                        st.write(f"**Title:** {clean_title}")
                         st.write(f"**Author:** {author}")
                         st.write(f"**Publisher:** {publisher}")
                         st.write(f"**Publication Year:** {pub_year}")
@@ -82,6 +85,7 @@ if st.button("Search"):
                         st.write(f"**Call Number:** {call_no}")
                         st.write(f"**KDC Code:** {kdc_code} ({kdc_name})")
                         st.write(f"**Class Number:** {class_no}")
+                        st.write(f"**Page Count:** {page_count}")
 
                 else:
                     st.error("No book information found.")

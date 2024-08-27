@@ -61,7 +61,7 @@ def search_book_by_isbn(cert_key, isbn):
             'publisher': item.get('PUBLISHER', ''),
             'edition_stmt': item.get('EDITION_STMT', ''),
             'pre_price': item.get('PRE_PRICE', ''),
-            'kdc': item.get('KDC', ''),
+            'kdc': item.get('CALL_NO', ''),
             'page': item.get('PAGE', ''),
             'book_size': item.get('BOOK_SIZE', ''),
             'publish_predate': item.get('PUBLISH_PREDATE', ''),

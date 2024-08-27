@@ -23,4 +23,6 @@ if st.button('Search'):
             st.write("추출된 내용:")
             st.write(element.get_text(strip=True))
         else:
-            st.write("해당 요소를 찾
+            st.write("해당 요소를 찾을 수 없습니다.")
+    else:
+        st.error(f"데이터를 가져오지 못했습니다. HTTP 상태 코드: {response.status_code}")

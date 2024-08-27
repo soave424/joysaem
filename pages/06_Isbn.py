@@ -46,6 +46,7 @@ def search_book_by_isbn(cert_key, isbn):
     
     response = requests.get(url)
     result = response.json()
+    print(result)
 
     
     if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
@@ -89,7 +90,6 @@ book_title = st.text_input('검색할 책 제목을 입력하세요:', '')
 
 # 검색 버튼을 입력창 옆에 배치
 if st.button('검색'):
-    st.write(book_metadata) # type: ignore
     if book_title:
         book_info = search_books_by_title(book_title, client_id, client_secret)
         

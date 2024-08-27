@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+import json
+
 
 # Set up the API key and base URL for National Library of Korea
 API_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'  # Replace with your actual API key
@@ -23,7 +25,7 @@ if st.button("Search"):
             'key': API_KEY,
             'kwd': book_title,
             'pageNum': 1,
-            'pageSize': 1,  # Limiting to the first result for simplicity
+            'pageSize': 1,
             'apiType': 'json'
         }
 
@@ -35,6 +37,11 @@ if st.button("Search"):
             try:
                 # Load the response as JSON
                 json_data = response.json()
+                
+                # Print JSON data to debug (remove in production)
+                # print(json.dumps(json_data, indent=4))
+                
+                # Check if result key exists and is not empty
                 if 'result' in json_data and json_data['result']:
                     book_data = json_data['result'][0]  # First item in the result
 
@@ -48,7 +55,7 @@ if st.button("Search"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
-                    page_count = book_data.get('page', 'N/A')
+                    page_count = book_data.get('page', 'N/A')  # Ensure this field exists
 
                     # Clean the title to remove HTML tags
                     clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
@@ -84,7 +91,6 @@ if st.button("Search"):
                         st.write(f"**ISBN:** {isbn}")
                         st.write(f"**Call Number:** {call_no}")
                         st.write(f"**KDC Code:** {kdc_code} ({kdc_name})")
-                        st.write(f"**Class Number:** {class_no}")
                         st.write(f"**Page Count:** {page_count}")
 
                 else:

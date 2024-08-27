@@ -35,6 +35,9 @@ def search_book_by_isbn(cert_key, isbn):
 
     if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
         item = result['docs'][0]
+        # 디버깅을 위해 전체 item 객체를 출력해봅니다.
+        st.write(item)  # 디버깅용 출력
+
         return {
             'title': item.get('TITLE', ''),
             'vol': item.get('VOL', ''),
@@ -55,12 +58,13 @@ def search_book_by_isbn(cert_key, isbn):
             'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
             'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
             'publisher_url': item.get('PUBLISHER_URL', ''),
-            'call_no': item.get('CALL_NO', ''),
-            'kdc_code':item.get('KDC_CODE',''),
-            'kdc_name':item.get('KDC_NAME','')
+            'call_no': item.get('CALL_NO', '청구기호 없음'),  # 기본값 설정
+            'kdc_code': item.get('KDC_CODE', ''),
+            'kdc_name': item.get('KDC_NAME', '')
         }
     else:
         return None
+
 
 st.title('도서 검색 및 정보 조회')
 

@@ -1,12 +1,9 @@
-
-
 import streamlit as st
 import requests
 import pandas as pd
 
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
-
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {
@@ -70,52 +67,56 @@ st.title('도서 검색 및 정보 조회')
 cert_key = st.text_input('인증키를 입력하세요 (입력하지 않으면 기본 키가 사용됩니다):', value=DEFAULT_CERT_KEY)
 
 # 네이버 API 클라이언트 ID와 시크릿
-client_id = "4VEUTHOdiibOqzJdOu7P"
-client_secret = "p2GQWrdWmD"
+client_id = '4VEUTHOdiibOqzJdOu7P'
+client_secret = 'p2GQWrdWmD'
 
 # 책 제목 입력
-book_title = st.text_input('검색할 책 제목을 입력하세요:')
+book_title = st.text_input('검색할 책 제목을 입력하세요:', '')
 
-if book_title:
-    book_info = search_books_by_title(book_title, client_id, client_secret)
-    
-    if book_info:
-        st.image(book_info['image'], use_column_width=True)
-        st.write(f"**제목:** {book_info['title']}")
-        st.write(f"**저자:** {book_info['author']}")
-        st.write(f"**출판사:** {book_info['publisher']}")
+# 검색 버튼을 입력창 옆에 배치
+if st.button('검색'):
+    if book_title:
+        book_info = search_books_by_title(book_title, client_id, client_secret)
         
-        isbn = book_info['isbn'].split(' ')[1]  # ISBN-13 사용
-        book_metadata = search_book_by_isbn(cert_key, isbn)
-        
-        if book_metadata:
-            st.write(f"**권차:** {book_metadata['vol']}")
-            st.write(f"**총서명:** {book_metadata['series_title']}")
-            st.write(f"**총서편차:** {book_metadata['series_no']}")
-            st.write(f"**판사항:** {book_metadata['edition_stmt']}")
-            st.write(f"**예정가격:** {book_metadata['pre_price']}")
-            st.write(f"**한국십진분류:** {book_metadata['kdc']}")
-            st.write(f"**페이지:** {book_metadata['page']}")
-            st.write(f"**책크기:** {book_metadata['book_size']}")
-            st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
-            st.write(f"**주제:** {book_metadata['subject']}")
-            st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
-            
-            if book_metadata['book_tb_cnt_url']:
-                st.write("[목차 펼쳐보기]", unsafe_allow_html=True)
-                st.markdown(f'<iframe src="{book_metadata["book_tb_cnt_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-
-            if book_metadata['book_introduction_url']:
-                st.write("[책 소개 펼쳐보기]", unsafe_allow_html=True)
-                st.markdown(f'<iframe src="{book_metadata["book_introduction_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-
-            if book_metadata['book_summary_url']:
-                st.write("[책 요약 펼쳐보기]", unsafe_allow_html=True)
-                st.markdown(f'<iframe src="{book_metadata["book_summary_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-            
-            if book_metadata['publisher_url']:
-                st.write(f"**출판사:** [{book_metadata['publisher']}]({book_metadata['publisher_url']})")
+        if book_info:
+            st.write("### 도서 정보")
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(book_info['image'], use_column_width=True)
+            with col2:
+                st.write(f"**제목:** {book_info['title']}")
+                st.write(f"**저자:** {book_info['author']}")
+                st.write(f"**출판사:** {book_info['publisher']}")
+                
+                isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
+                book_metadata = search_book_by_isbn(cert_key, isbn)
+                
+                if book_metadata:
+                    st.write(f"**권차:** {book_metadata['vol']}")
+                    st.write(f"**총서명:** {book_metadata['series_title']}")
+                    st.write(f"**총서편차:** {book_metadata['series_no']}")
+                    st.write(f"**판사항:** {book_metadata['edition_stmt']}")
+                    st.write(f"**예정가격:** {book_metadata['pre_price']}")
+                    st.write(f"**한국십진분류:** {book_metadata['kdc']}")
+                    st.write(f"**페이지:** {book_metadata['page']}")
+                    st.write(f"**책크기:** {book_metadata['book_size']}")
+                    st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
+                    st.write(f"**주제:** {book_metadata['subject']}")
+                    st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
+                    
+                    if book_metadata['book_tb_cnt_url']:
+                        if st.button("목차 펼쳐보기"):
+                            st.markdown(f'<iframe src="{book_metadata["book_tb_cnt_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
+                    if book_metadata['book_introduction_url']:
+                        if st.button("책 소개 펼쳐보기"):
+                            st.markdown(f'<iframe src="{book_metadata["book_introduction_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
+                    if book_metadata['book_summary_url']:
+                        if st.button("책 요약 펼쳐보기"):
+                            st.markdown(f'<iframe src="{book_metadata["book_summary_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
+                    
+                    if book_metadata['publisher_url']:
+                        st.write(f"**출판사:** [{book_metadata['publisher']}]({book_metadata['publisher_url']})")
+                else:
+                    st.error("도서 정보를 가져올 수 없습니다.")
         else:
-            st.error("도서 정보를 가져올 수 없습니다.")
-    else:
-        st.error("네이버에서 도서 정보를 가져올 수 없습니다.")
+            st.error("네이버에서 도서 정보를 가져올 수 없습니다.")

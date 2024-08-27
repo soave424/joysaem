@@ -61,7 +61,7 @@ def search_books(book_titles):
 
 # CSV 파일 생성 함수 (이미지 열 제거)
 def to_csv(df):
-    df = df.drop(columns=['image'])  # 이미지 열 제거
+    df = df.drop(columns=['표지'])  # 이미지 열 제거
     output = StringIO()
     df.to_csv(output, index=False)
     processed_data = output.getvalue()
@@ -69,7 +69,7 @@ def to_csv(df):
 
 # 이미지 표시 함수
 def format_images(df):
-    return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]
+    return [f'<img src="{url}" width="50">' if url else '' for url in df['image']]
 
 st.title('Naver Book Search')
 book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")

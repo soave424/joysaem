@@ -1,90 +1,73 @@
 import streamlit as st
 import requests
-import json
+import pandas as pd
+import re
+from math import ceil
 
-# 국립중앙도서관 API 키 설정
-CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
+# 네이버 API 접속 정보
+CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
+CLIENT_SECRET = 'p2GQWrdWmD'
 
-# 도서 검색 함수
-def search_books(keyword):
-    url = "https://www.nl.go.kr/NL/search/openApi/search.do"
-    params = {
-        'key': CERT_KEY,
-        'kwd': keyword,
-        'pageNum': 1,
-        'pageSize': 10,
-        'apiType': 'json'
+def search_books(book_titles):
+    headers = {
+        'X-Naver-Client-Id': CLIENT_ID,
+        'X-Naver-Client-Secret': CLIENT_SECRET
     }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json().get('result', [])
+    base_url = 'https://openapi.naver.com/v1/search/book.json?query='
+
+    books_info = []
+
+    for title in book_titles:
+        response = requests.get(base_url + title, headers=headers)
+        result = response.json()
+        items = result.get('items')
+        if items:
+            # 첫 번째 검색 결과만 사용
+            item = items[0]
+            # 안전하게 데이터 추출
+            title = item.get('title', "No Title Found")
+            author = item.get('author', "No Author Found")
+            publisher = item.get('publisher', "No Publisher Found")
+            pubdate = item.get('pubdate', "")
+            price = item.get('discount', "0")
+            isbn = item.get('isbn', "No ISBN Info")  
+
+
+            # 출간일 처리 (연도와 월만 추출)
+            formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
+
+            # 정가 계산 (판매가의 100%)
+            try:
+                price_numeric = int(price)
+                original_price = ceil(price_numeric / 0.9 / 10) * 10
+                price_text = f"{original_price:,}원"
+            except ValueError:
+                price_text = "Price Error"
+
+            books_info.append({
+                'title': title,
+                'author': author,
+                'publisher': publisher,
+                'pub_date': formatted_date,
+                'price': price_text,
+                'isbn': isbn,   
+
+            })
+
+    return pd.DataFrame(books_info)
+
+st.title('Naver Book Search')
+book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")
+if st.button('Search Books'):
+    # 책 제목 파싱
+    book_titles = re.split(r'[,\n]+', book_titles_input)
+    book_titles = [title.strip() for title in book_titles if title.strip()]
+
+    if book_titles:
+        books_df = search_books(book_titles)
+        if not books_df.empty:
+            st.dataframe(books_df)
+        else:
+            st.error("No books found for the given titles.")
     else:
-        st.error(f"도서 검색 중 오류 발생: {response.status_code}")
-        st.write(response.text)  # 응답 내용 출력
-        return []
-
-# 도서 상세 정보 함수
-def get_book_details(isbn):
-    url = "https://www.nl.go.kr/seoji/SearchApi.do"
-    params = {
-        'cert_key': CERT_KEY,
-        'result_style': 'json',
-        'page_no': 1,
-        'page_size': 10,
-        'isbn': isbn
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json().get('docs', [])
-    else:
-        st.error(f"도서 정보 조회 중 오류 발생: {response.status_code}")
-        st.write(response.text)  # 응답 내용 출력
-        return []
-
-# Streamlit UI 설정
-st.title("국립중앙도서관 도서 검색")
-
-# 도서 검색 입력창
-keyword = st.text_input("검색어를 입력하세요:")
-
-if keyword:
-    books = search_books(keyword)
-    
-    if books:
-        st.write("검색 결과:")
-        book_titles = [book['title_info'] for book in books]
-        selected_book = st.selectbox("도서를 선택하세요:", book_titles)
-        
-        if selected_book:
-            selected_isbn = next(book['isbn'] for book in books if book['title_info'] == selected_book)
-            book_details = get_book_details(selected_isbn)
-            
-            if book_details:
-                book = book_details[0]  # 첫 번째 결과 선택
-                
-                st.image(book.get('TITLE_URL'), use_column_width=True)
-                st.header(book.get('TITLE'))
-                st.subheader(f"저자: {book.get('AUTHOR')}")
-                st.write(f"ISBN: {book.get('EA_ISBN')}")
-                st.write(f"발행처: [{book.get('PUBLISHER')}]({book.get('PUBLISHER_URL')})")
-                st.write(f"출판예정일: {book.get('PUBLISH_PREDATE')}")
-                st.write(f"판사항: {book.get('EDITION_STMT')}")
-                st.write(f"예정가격: {book.get('PRE_PRICE')}")
-                st.write(f"페이지: {book.get('PAGE')}")
-                st.write(f"책크기: {book.get('BOOK_SIZE')}")
-                st.write(f"주제: {book.get('SUBJECT')}")
-                st.write(f"전자책 여부: {book.get('EBOOK_YN')}")
-
-                with st.expander("목차 보기"):
-                    st.write(f"[목차 보기]({book.get('BOOK_TB_CNT_URL')})")
-                
-                with st.expander("책 소개 보기"):
-                    st.write(f"[책 소개 보기]({book.get('BOOK_INTRODUCTION_URL')})")
-                
-                with st.expander("책 요약 보기"):
-                    st.write(f"[책 요약 보기]({book.get('BOOK_SUMMARY_URL')})")
-            else:
-                st.error("도서 정보를 가져올 수 없습니다.")
-                st.write(f"API 응답: {book_details}")  # API 응답 내용 출력
-    else:
-        st.error("검색 결과가 없습니다.")
+        st.error("Please enter at least one book name.")

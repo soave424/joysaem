@@ -15,6 +15,30 @@ st.title("도서 검색 및 정보 조회")
 # Input for book title
 book_title = st.text_input("검색할 책 제목을 입력하세요:")
 
+def search_books_from_naver(title, client_id, client_secret):
+    headers = {
+        'X-Naver-Client-Id': client_id,
+        'X-Naver-Client-Secret': client_secret
+    }
+    base_url = 'https://openapi.naver.com/v1/search/book.json'
+    params = {'query': title, 'display': 1}
+    
+    response = requests.get(base_url, headers=headers, params=params)
+    result = response.json()
+    
+    if result.get('items'):
+        item = result['items'][0]  # 첫 번째 결과만 사용
+        return {
+            'title': item.get('title', ''),
+            'author': item.get('author', ''),
+            'publisher': item.get('publisher', ''),
+            'isbn': item.get('isbn', ''),
+            'image': item.get('image', ''),
+            'page_count': item.get('discount', 'N/A')  # 페이지 수를 네이버 API에서 직접 제공하지 않으므로, 여기는 'N/A'로 설정
+        }
+    else:
+        return None
+
 # Search button
 if st.button("검색"):
     if book_title:
@@ -50,24 +74,17 @@ if st.button("검색"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
-                    page_count = book_data.get('page', 'N/A')  # Ensure this field exists
 
                     # Clean the title to remove HTML tags
                     clean_title = title.replace('<span class="searching_txt">', '').replace('</span>', '')
 
                     # Fetch book image and page count from Naver API using the cleaned title
-                    naver_headers = {
-                        'X-Naver-Client-Id': NAVER_CLIENT_ID,
-                        'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
-                    }
-                    naver_params = {'query': clean_title}
-                    naver_response = requests.get('https://openapi.naver.com/v1/search/book.json', headers=naver_headers, params=naver_params)
-                    naver_data = naver_response.json()
+                    naver_book_info = search_books_from_naver(clean_title, NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)
 
-                    if naver_data.get('items'):
-                        image_url = naver_data['items'][0].get('image', None)
-                        # Try to extract page count from Naver API
-                        naver_page_count = naver_data['items'][0].get('isbn', 'N/A').split(' ')[-1]
+                    if naver_book_info:
+                        image_url = naver_book_info['image']
+                        # Try to extract page count from Naver API (if available)
+                        naver_page_count = naver_book_info['page_count']
                     else:
                         image_url = None
                         naver_page_count = 'N/A'

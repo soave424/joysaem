@@ -4,17 +4,7 @@ import requests
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
-def kdc_description(class_no):
-    descriptions = {
-        '0': '총류', '1': '철학', '2': '종교', '3': '사회과학',
-        '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어',
-        '8': '문학', '9': '역사'
-    }
-    
-    if class_no and class_no[0] in descriptions:
-        return f"{class_no} ({descriptions[class_no[0]]})"
-    else:
-        return class_no
+
 
 def search_books_by_title(title, client_id, client_secret):
     headers = {

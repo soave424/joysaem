@@ -58,7 +58,7 @@ def fetch_books_from_pages(base_url, start_page, end_page):
             all_books.extend(fetch_books(page_url))
     return all_books
 
-st.title('Fetch Book Details from Yes24')
+st.title('Fetch Book Details')
 
 base_url = st.text_input('Enter the base URL:')
 add_pages = st.checkbox('Add Pages?')

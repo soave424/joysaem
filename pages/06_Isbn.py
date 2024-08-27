@@ -34,8 +34,7 @@ def search_books_by_title(title, client_id, client_secret):
             'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
             'isbn': item.get('isbn', ''),
-            'image': item.get('image', ''),
-            'page': item.get('isbn', '')  # ISBN으로 페이지 수 추정
+            'image': item.get('image', '')
         }
     else:
         return None
@@ -53,7 +52,7 @@ def search_book_by_isbn(cert_key, isbn):
             'vol': item.get('VOL', ''),
             'series_title': item.get('SERIES_TITLE', ''),
             'class_no': item.get('CLASS_NO', ''),
-            'author': item.get('AUTHOR', ''),
+            'author': item.get('AUTHOR', ''),  # Multiple authors are comma-separated
             'isbn': item.get('EA_ISBN', ''),
             'publisher': item.get('PUBLISHER', ''),
             'edition_stmt': item.get('EDITION_STMT', ''),
@@ -100,17 +99,15 @@ if st.button('검색'):
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
                 st.write(f"**저자:** {book_info['author']}")
-                if 'publisher_url' in book_info:
-                    st.write(f"**출판사:** [{book_info['publisher']}]({book_info['publisher_url']})")
-                else:
-                    st.write(f"**출판사:** {book_info['publisher']}")
+                st.write(f"**출판사:** {book_info['publisher']}")
+                st.write(f"**ISBN:** {book_info['isbn']}")
                 
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
                 if book_metadata:
                     st.write(f"**예정가격:** {book_metadata['pre_price']}")
-                    st.write(f"**페이지:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
+                    st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
                     st.write(f"**분류:** {kdc_description(book_metadata['class_no'])}")

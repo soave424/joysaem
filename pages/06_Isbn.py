@@ -4,6 +4,23 @@ import requests
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
+
+def get_kdc_category(kdc_code):
+    kdc_mapping = {
+        '0': '총류',
+        '1': '철학',
+        '2': '종교',
+        '3': '사회과학',
+        '4': '자연과학',
+        '5': '기술과학',
+        '6': '예술',
+        '7': '언어',
+        '8': '문학',
+        '9': '역사'
+    }
+    
+    return kdc_mapping.get(kdc_code, '분류 없음')
+
 def search_books_by_title(title, client_id, client_secret):
     headers = {
         'X-Naver-Client-Id': client_id,
@@ -38,6 +55,9 @@ def search_book_by_isbn(cert_key, isbn):
         # 디버깅을 위해 전체 item 객체를 출력해봅니다.
         st.write(item)  # 디버깅용 출력
 
+        kdc_code = item.get('SUBJECT', ''),
+        kdc_category = get_kdc_category(kdc_code) if kdc_code else '분류 없음'
+
         return {
             'title': item.get('TITLE', ''),
             'vol': item.get('VOL', ''),
@@ -60,7 +80,7 @@ def search_book_by_isbn(cert_key, isbn):
             'publisher_url': item.get('PUBLISHER_URL', ''),
             'call_no': item.get('CALL_NO', '청구기호 없음'),  # 기본값 설정
             'kdc_code': item.get('KDC_CODE', ''),
-            'kdc_name': item.get('KDC_NAME', '')
+            'kdc_name':kdc_category
         }
     else:
         return None
@@ -105,7 +125,7 @@ if st.button('검색'):
                     st.write(f"**출판사:** {book_metadata['publisher']}")
                     st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
-                    st.write(f"**책크기:** {book_metadata['book_size']}")
+                    # st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
                     st.write(f"**분야:** {book_metadata['subject']}")
                     # st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")

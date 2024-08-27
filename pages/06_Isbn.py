@@ -5,6 +5,23 @@ import pandas as pd
 # 기본 인증키
 DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
+def kdc_description(kdc_code):
+    descriptions = {
+        '0': '총류', '1': '철학', '2': '종교', '3': '사회과학',
+        '4': '자연과학', '5': '기술과학', '6': '예술', '7': '언어',
+        '8': '문학', '9': '역사'
+    }
+    
+    if kdc_code and kdc_code[0] in descriptions:
+        return f"{kdc_code} ({descriptions[kdc_code[0]]})"
+    else:
+        return kdc_code
+
+# 사용 예시
+kdc_code = '810'
+print(kdc_description(kdc_code))  # 출력: 810 (문학)
+
+
 def search_books_by_title(title, client_id, client_secret):
     headers = {
         'X-Naver-Client-Id': client_id,
@@ -97,7 +114,7 @@ if st.button('검색'):
                     st.write(f"**총서편차:** {book_metadata['series_no']}")
                     st.write(f"**판사항:** {book_metadata['edition_stmt']}")
                     st.write(f"**예정가격:** {book_metadata['pre_price']}")
-                    st.write(f"**한국십진분류:** {book_metadata['kdc']}")
+                    st.write(f"**한국십진분류:** {kdc_description(book_metadata['kdc'])}")
                     st.write(f"**페이지:** {book_metadata['page']}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출판예정일:** {book_metadata['publish_predate']}")

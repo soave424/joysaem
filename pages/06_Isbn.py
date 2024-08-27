@@ -54,7 +54,10 @@ def search_book_by_isbn(cert_key, isbn):
             'book_tb_cnt_url': item.get('BOOK_TB_CNT_URL', ''),
             'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
             'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
-            'publisher_url': item.get('PUBLISHER_URL', '')
+            'publisher_url': item.get('PUBLISHER_URL', ''),
+            'call_no': item.get('CALL_NO', ''),
+            'kdc_code':item.goet('KDC_CODE',''),
+            'kdc_name':item.get('KDC_NAME','')
         }
     else:
         return None
@@ -87,7 +90,7 @@ if st.button('검색'):
             with col2:
                 st.write(f"**제목:** {book_info['title']}")
                 # st.write(f"**저자:** {book_info['author']}")
-                st.write(f"**출판사:** {book_info['publisher']}")
+                # st.write(f"**출판사:** {book_info['publisher']}")
                 st.write(f"**ISBN:** {book_info['isbn']}")
                 
                 isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
@@ -95,11 +98,12 @@ if st.button('검색'):
                 
                 if book_metadata:
                     st.write(f"**저자:** {book_metadata['author']}")
+                    st.write(f"**출판사:** {book_metadata['publisher']}")
                     st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**책크기:** {book_metadata['book_size']}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
-                    st.write(f"**분류:** {book_metadata['class_no']}")
+                    st.write(f"**분류:** {book_metadata['kdc_code']} {book_metadata['kdc_code']}")
                     # st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
                     
                     if book_metadata['book_tb_cnt_url']:

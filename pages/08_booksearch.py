@@ -73,8 +73,8 @@ if st.button("검색"):
                     kdc_code = book_data.get('kdcCode1s', 'N/A')
                     kdc_name = book_data.get('kdcName1s', 'N/A')
                     class_no = book_data.get('classNo', 'N/A')
-                                'ebook_yn': item.get('EBOOK_YN', ''),
-                                'page': item.get('PAGE', ''),
+                    ebook_yn = book_data.get('EBOOK_YN', ''),
+                    page = book_data.get('PAGE', ''),
 
 
 

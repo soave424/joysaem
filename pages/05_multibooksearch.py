@@ -31,6 +31,7 @@ def search_books(book_titles):
             pubdate = item.get('pubdate', "")
             price = item.get('discount', "0")
             isbn = item.get('isbn', "No ISBN Info")  
+            image = item.get('image', "")  # 이미지 URL 추가
 
             # 출간일 처리 (연도와 월만 추출)
             formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
@@ -53,13 +54,15 @@ def search_books(book_titles):
                 'pub_date': formatted_date,
                 'price': price_text,
                 'isbn': isbn,
+                'image': image,  # 이미지 열 추가
                 'note': note  # 비고란 추가
             })
 
     return pd.DataFrame(books_info)
 
-# CSV 파일 생성 함수
+# CSV 파일 생성 함수 (이미지 열 제거)
 def to_csv(df):
+    df = df.drop(columns=['image'])  # 이미지 열 제거
     output = StringIO()
     df.to_csv(output, index=False)
     processed_data = output.getvalue()
@@ -76,7 +79,17 @@ if st.button('Search Books'):
     if book_titles:
         books_df = search_books(book_titles)
         if not books_df.empty:
-            st.dataframe(books_df)
+            # 이미지와 함께 데이터프레임 표시
+            for i, row in books_df.iterrows():
+                st.image(row['image'], width=100)  # 이미지 표시
+                st.write(f"**제목:** {row['title']}")
+                st.write(f"**저자:** {row['author']}")
+                st.write(f"**출판사:** {row['publisher']}")
+                st.write(f"**출간일:** {row['pub_date']}")
+                st.write(f"**정가:** {row['price']}")
+                st.write(f"**ISBN:** {row['isbn']}")
+                st.write(f"**비고:** {row['note']}")
+                st.write("---")
 
             # CSV 다운로드 버튼 추가
             st.download_button(

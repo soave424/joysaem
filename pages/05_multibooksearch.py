@@ -48,13 +48,13 @@ def search_books(book_titles):
             note = "확인 필요" if title.strip().lower() != result_title.strip().lower() else ""
 
             books_info.append({
-                'title': result_title,
-                'author': author,
-                'publisher': publisher,
-                'pub_date': formatted_date,
-                'price': price_text,
-                'image': image,  # 이미지 열 추가
-                'note': note  # 비고란 추가
+                '도서명': result_title,
+                '저자': author,
+                '출판사': publisher,
+                '발행': formatted_date,
+                '가격': price_text,
+                '표지': image,  # 이미지 열 추가
+                '비고': note  # 비고란 추가
             })
 
     return pd.DataFrame(books_info)

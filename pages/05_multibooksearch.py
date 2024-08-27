@@ -1,73 +1,103 @@
 import streamlit as st
 import requests
-import pandas as pd
-import re
-from math import ceil
 
-# 네이버 API 접속 정보
+# 네이버 API 설정
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
 CLIENT_SECRET = 'p2GQWrdWmD'
 
-def search_books(book_titles):
+# 국립중앙도서관 API 인증키
+NL_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
+
+# 네이버 API를 이용해 책 제목으로 ISBN 검색
+def search_isbn_by_title(title):
     headers = {
         'X-Naver-Client-Id': CLIENT_ID,
         'X-Naver-Client-Secret': CLIENT_SECRET
     }
     base_url = 'https://openapi.naver.com/v1/search/book.json?query='
-
-    books_info = []
-
-    for title in book_titles:
-        response = requests.get(base_url + title, headers=headers)
+    
+    response = requests.get(base_url + title, headers=headers)
+    if response.status_code == 200:
         result = response.json()
         items = result.get('items')
         if items:
-            # 첫 번째 검색 결과만 사용
-            item = items[0]
-            # 안전하게 데이터 추출
-            title = item.get('title', "No Title Found")
-            author = item.get('author', "No Author Found")
-            publisher = item.get('publisher', "No Publisher Found")
-            pubdate = item.get('pubdate', "")
-            price = item.get('discount', "0")
-            isbn = item.get('isbn', "No ISBN Info")  
+            first_item = items[0]  # 첫 번째 검색 결과
+            isbn = first_item.get('isbn', '').split(' ')[1]  # ISBN 값 (통상적으로 두 개 중 뒤에 있는 것이 13자리)
+            return isbn
+    return None
 
+# 국립중앙도서관 API를 이용해 ISBN으로 서지 정보 검색
+def search_books_by_isbn(isbn):
+    url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={NL_CERT_KEY}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        try:
+            result = response.json()
+            if result['TOTAL_COUNT'] > 0:
+                return result['docs'][0]  # 첫 번째 결과만 반환
+        except (ValueError, KeyError):
+            st.error("Error in processing the response.")
+    return None
 
-            # 출간일 처리 (연도와 월만 추출)
-            formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
+# 도서 정보 표시
+def display_book_info(book):
+    title = book.get('TITLE', 'Unknown Title')
+    st.header(title)
+    
+    image_url = book.get('TITLE_URL')
+    if image_url:
+        st.image(image_url, caption=title, use_column_width=True)
+    
+    st.write(f"**저자:** {book.get('AUTHOR', 'Unknown Author')}")
+    st.write(f"**ISBN:** {book.get('EA_ISBN', 'Unknown ISBN')}")
+    st.write(f"**발행처:** [{book.get('PUBLISHER', 'Unknown Publisher')}]({book.get('PUBLISHER_URL', '')})")
+    st.write(f"**판사항:** {book.get('EDITION_STMT', 'N/A')}")
+    st.write(f"**예정가격:** {book.get('PRE_PRICE', 'N/A')}")
+    st.write(f"**한국십진분류:** {book.get('KDC', 'N/A')}")
+    st.write(f"**페이지:** {book.get('PAGE', 'N/A')} 페이지")
+    st.write(f"**책크기:** {book.get('BOOK_SIZE', 'N/A')}")
+    st.write(f"**출판예정일:** {book.get('PUBLISH_PREDATE', 'N/A')}")
+    st.write(f"**주제:** {book.get('SUBJECT', 'N/A')}")
+    st.write(f"**전자책 여부:** {'Yes' if book.get('EBOOK_YN', 'N') == 'Y' else 'No'}")
 
-            # 정가 계산 (판매가의 100%)
-            try:
-                price_numeric = int(price)
-                original_price = ceil(price_numeric / 0.9 / 10) * 10
-                price_text = f"{original_price:,}원"
-            except ValueError:
-                price_text = "Price Error"
+    if book.get('VOL'):
+        st.write(f"**권차:** {book['VOL']}")
+    if book.get('SERIES_TITLE'):
+        st.write(f"**총서명:** {book['SERIES_TITLE']}")
+    if book.get('SERIES_NO'):
+        st.write(f"**총서편차:** {book['SERIES_NO']}")
 
-            books_info.append({
-                'title': title,
-                'author': author,
-                'publisher': publisher,
-                'pub_date': formatted_date,
-                'price': price_text,
-                'isbn': isbn,   
+    if book.get('BOOK_TB_CNT_URL'):
+        with st.expander("목차 보기"):
+            st.markdown(f'<iframe src="{book["BOOK_TB_CNT_URL"]}" width="700" height="500"></iframe>', unsafe_allow_html=True)
+    
+    if book.get('BOOK_INTRODUCTION_URL'):
+        with st.expander("책 소개 보기"):
+            st.markdown(f'<iframe src="{book["BOOK_INTRODUCTION_URL"]}" width="700" height="500"></iframe>', unsafe_allow_html=True)
+    
+    if book.get('BOOK_SUMMARY_URL'):
+        with st.expander("책 요약 보기"):
+            st.markdown(f'<iframe src="{book["BOOK_SUMMARY_URL"]}" width="700" height="500"></iframe>', unsafe_allow_html=True)
 
-            })
+# Streamlit 인터페이스
+st.title('도서 검색 및 서지정보 조회')
 
-    return pd.DataFrame(books_info)
+book_title = st.text_input('도서 제목을 입력하세요:')
 
-st.title('Naver Book Search')
-book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")
-if st.button('Search Books'):
-    # 책 제목 파싱
-    book_titles = re.split(r'[,\n]+', book_titles_input)
-    book_titles = [title.strip() for title in book_titles if title.strip()]
-
-    if book_titles:
-        books_df = search_books(book_titles)
-        if not books_df.empty:
-            st.dataframe(books_df)
+if st.button('검색'):
+    if book_title:
+        isbn = search_isbn_by_title(book_title)
+        
+        if isbn:
+            st.write(f"**ISBN:** {isbn}")
+            book_info = search_books_by_isbn(isbn)
+            
+            if book_info:
+                display_book_info(book_info)
+            else:
+                st.error("국립중앙도서관에서 도서 정보를 찾을 수 없습니다.")
         else:
-            st.error("No books found for the given titles.")
+            st.error("도서의 ISBN을 찾을 수 없습니다.")
     else:
-        st.error("Please enter at least one book name.")
+        st.error("도서 제목을 입력하세요.")

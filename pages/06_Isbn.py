@@ -2,107 +2,120 @@
 
 import streamlit as st
 import requests
+import pandas as pd
+
+# 기본 인증키
+DEFAULT_CERT_KEY = '57cfd60d09be8111d421f49807146ec3f2806d19aa3741fbab5c95df3e61c00c'
 
 
-# 네이버 도서 API를 통해 책 검색
-def search_books_by_title(title):
-    client_id = "4VEUTHOdiibOqzJdOu7P"
-    client_secret = "p2GQWrdWmD"
-    url = "https://openapi.naver.com/v1/search/book.json"
+def search_books_by_title(title, client_id, client_secret):
     headers = {
-        "X-Naver-Client-Id": client_id,
-        "X-Naver-Client-Secret": client_secret,
+        'X-Naver-Client-Id': client_id,
+        'X-Naver-Client-Secret': client_secret
     }
-    params = {"query": title}
-    response = requests.get(url, headers=headers, params=params)
+    base_url = 'https://openapi.naver.com/v1/search/book.json'
+    params = {'query': title, 'display': 1}
     
-    if response.status_code == 200:
-        return response.json().get('items', [])
+    response = requests.get(base_url, headers=headers, params=params)
+    result = response.json()
+    
+    if result.get('items'):
+        item = result['items'][0]  # 첫 번째 결과만 사용
+        return {
+            'title': item.get('title', ''),
+            'author': item.get('author', ''),
+            'publisher': item.get('publisher', ''),
+            'isbn': item.get('isbn', ''),
+            'image': item.get('image', '')
+        }
     else:
-        st.error(f"네이버 도서 API 요청 실패: {response.status_code}")
-        return []
-
-# 국립중앙도서관 API를 통해 ISBN으로 도서 정보 검색
-def search_book_by_isbn(cert_key, isbn):
-    url = "https://www.nl.go.kr/seoji/SearchApi.do"
-    params = {
-        "cert_key": cert_key,
-        "result_style": "json",
-        "page_no": 1,
-        "page_size": 1,
-        "isbn": isbn
-    }
-    
-    response = requests.get(url, params=params)
-    
-    if response.status_code == 200:
-        try:
-            result = response.json()
-            st.write(result)  # 디버깅을 위해 전체 응답을 출력
-            if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
-                return result['docs'][0]  # 첫 번째 검색 결과만 반환
-            else:
-                st.error("도서 정보를 찾을 수 없습니다.")
-                return None
-        except Exception as e:
-            st.error(f"JSON 파싱 오류: {e}")
-            st.write(response.text)  # 응답 내용 출력
-            return None
-    else:
-        st.error(f"국립중앙도서관 API 오류 발생: {response.status_code}")
         return None
 
-# Streamlit UI 구성
-st.title("도서 검색 및 정보 조회")
+def search_book_by_isbn(cert_key, isbn):
+    url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
+    
+    response = requests.get(url)
+    result = response.json()
+    
+    if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
+        item = result['docs'][0]
+        return {
+            'title': item.get('TITLE', ''),
+            'vol': item.get('VOL', ''),
+            'series_title': item.get('SERIES_TITLE', ''),
+            'series_no': item.get('SERIES_NO', ''),
+            'author': item.get('AUTHOR', ''),
+            'isbn': item.get('EA_ISBN', ''),
+            'publisher': item.get('PUBLISHER', ''),
+            'edition_stmt': item.get('EDITION_STMT', ''),
+            'pre_price': item.get('PRE_PRICE', ''),
+            'kdc': item.get('KDC', ''),
+            'page': item.get('PAGE', ''),
+            'book_size': item.get('BOOK_SIZE', ''),
+            'publish_predate': item.get('PUBLISH_PREDATE', ''),
+            'subject': item.get('SUBJECT', ''),
+            'ebook_yn': item.get('EBOOK_YN', ''),
+            'title_url': item.get('TITLE_URL', ''),
+            'book_tb_cnt_url': item.get('BOOK_TB_CNT_URL', ''),
+            'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
+            'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
+            'publisher_url': item.get('PUBLISHER_URL', '')
+        }
+    else:
+        return None
+
+st.title('도서 검색 및 정보 조회')
 
 # 인증키 입력
-cert_key = st.text_input("국립중앙도서관 인증키를 입력하세요:")
+cert_key = st.text_input('인증키를 입력하세요 (입력하지 않으면 기본 키가 사용됩니다):', value=DEFAULT_CERT_KEY)
+
+# 네이버 API 클라이언트 ID와 시크릿
+client_id = "4VEUTHOdiibOqzJdOu7P"
+client_secret = "p2GQWrdWmD"
 
 # 책 제목 입력
-title_input = st.text_input("책 제목을 입력하세요:")
+book_title = st.text_input('검색할 책 제목을 입력하세요:')
 
-# 도서 검색 및 결과 표시
-if st.button("책 검색"):
-    if cert_key and title_input:
-        books = search_books_by_title(title_input)
-        if books:
-            selected_book = st.selectbox("책을 선택하세요:", books, format_func=lambda x: x['title'])
+if book_title:
+    book_info = search_books_by_title(book_title, client_id, client_secret)
+    
+    if book_info:
+        st.image(book_info['image'], use_column_width=True)
+        st.write(f"**제목:** {book_info['title']}")
+        st.write(f"**저자:** {book_info['author']}")
+        st.write(f"**출판사:** {book_info['publisher']}")
+        
+        isbn = book_info['isbn'].split(' ')[1]  # ISBN-13 사용
+        book_metadata = search_book_by_isbn(cert_key, isbn)
+        
+        if book_metadata:
+            st.write(f"**권차:** {book_metadata['vol']}")
+            st.write(f"**총서명:** {book_metadata['series_title']}")
+            st.write(f"**총서편차:** {book_metadata['series_no']}")
+            st.write(f"**판사항:** {book_metadata['edition_stmt']}")
+            st.write(f"**예정가격:** {book_metadata['pre_price']}")
+            st.write(f"**한국십진분류:** {book_metadata['kdc']}")
+            st.write(f"**페이지:** {book_metadata['page']}")
+            st.write(f"**책크기:** {book_metadata['book_size']}")
+            st.write(f"**출판예정일:** {book_metadata['publish_predate']}")
+            st.write(f"**주제:** {book_metadata['subject']}")
+            st.write(f"**전자책 여부:** {book_metadata['ebook_yn']}")
+            
+            if book_metadata['book_tb_cnt_url']:
+                st.write("[목차 펼쳐보기]", unsafe_allow_html=True)
+                st.markdown(f'<iframe src="{book_metadata["book_tb_cnt_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
 
-            if selected_book:
-                isbn = selected_book.get('isbn').split(" ")[0]  # 첫 번째 ISBN만 사용
-                st.write(f"선택된 책의 ISBN: {isbn}")
+            if book_metadata['book_introduction_url']:
+                st.write("[책 소개 펼쳐보기]", unsafe_allow_html=True)
+                st.markdown(f'<iframe src="{book_metadata["book_introduction_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
 
-                # ISBN으로 도서 정보 검색
-                book_info = search_book_by_isbn(cert_key, isbn)
-                if book_info:
-                    # 도서 정보 표시
-                    st.subheader(book_info.get('TITLE', '제목 없음'))
-                    
-                    # 표지 이미지 표시
-                    cover_image_url = book_info.get('TITLE_URL')
-                    if cover_image_url:
-                        st.image(cover_image_url, use_column_width=True)
-
-                    st.write(f"저자: {book_info.get('AUTHOR', '저자 없음')}")
-                    st.write(f"발행처: [{book_info.get('PUBLISHER', '발행처 없음')}]({book_info.get('PUBLISHER_URL', '')})")
-                    st.write(f"ISBN: {book_info.get('EA_ISBN', 'ISBN 없음')}")
-                    st.write(f"판사항: {book_info.get('EDITION_STMT', '판사항 없음')}")
-                    st.write(f"예정가격: {book_info.get('PRE_PRICE', '예정가격 없음')}")
-                    st.write(f"한국십진분류: {book_info.get('KDC', '한국십진분류 없음')}")
-                    st.write(f"페이지: {book_info.get('PAGE', '페이지 정보 없음')}")
-                    st.write(f"책크기: {book_info.get('BOOK_SIZE', '책크기 정보 없음')}")
-                    st.write(f"출판예정일: {book_info.get('PUBLISH_PREDATE', '출판예정일 없음')}")
-                    st.write(f"주제: {book_info.get('SUBJECT', '주제 없음')}")
-                    
-                    # 목차, 책소개, 책요약은 클릭 시 펼쳐지는 방식으로 처리
-                    if st.button("목차 보기"):
-                        st.markdown(f'<iframe src="{book_info.get("BOOK_TB_CNT_URL", "")}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-                    if st.button("책소개 보기"):
-                        st.markdown(f'<iframe src="{book_info.get("BOOK_INTRODUCTION_URL", "")}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-                    if st.button("책요약 보기"):
-                        st.markdown(f'<iframe src="{book_info.get("BOOK_SUMMARY_URL", "")}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
-
+            if book_metadata['book_summary_url']:
+                st.write("[책 요약 펼쳐보기]", unsafe_allow_html=True)
+                st.markdown(f'<iframe src="{book_metadata["book_summary_url"]}" width="100%" height="400px"></iframe>', unsafe_allow_html=True)
+            
+            if book_metadata['publisher_url']:
+                st.write(f"**출판사:** [{book_metadata['publisher']}]({book_metadata['publisher_url']})")
         else:
-            st.error("검색 결과가 없습니다.")
+            st.error("도서 정보를 가져올 수 없습니다.")
     else:
-        st.error("인증키와 책 제목을 입력해주세요.")
+        st.error("네이버에서 도서 정보를 가져올 수 없습니다.")

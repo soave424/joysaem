@@ -69,7 +69,7 @@ def to_csv(df):
 
 # 이미지 표시 함수
 def format_images(df):
-    return [f'<img src="{url}" width="50">' if url else '' for url in df['image']]
+    return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]  # 'image' 대신 '표지' 사용
 
 st.title('Naver Book Search')
 book_titles_input = st.text_area("Enter the names of the books to search for, separated by commas or new lines:")
@@ -83,7 +83,7 @@ if st.button('Search Books'):
         books_df = search_books(book_titles)
         if not books_df.empty:
             # 이미지 열을 HTML 형식으로 변환하여 표시
-            books_df['image'] = format_images(books_df)
+            books_df['표지'] = format_images(books_df)  # 'image' 대신 '표지' 사용
             st.write(
                 books_df.to_html(escape=False, index=False), 
                 unsafe_allow_html=True

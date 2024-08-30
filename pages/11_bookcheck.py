@@ -11,6 +11,8 @@ CLIENT_SECRET = 'p2GQWrdWmD'
 
 # 문자열 유사도 비교 함수
 def similar(a, b):
+    if a is None or b is None:
+        return 0
     return SequenceMatcher(None, a, b).ratio()
 
 def search_books(book_titles):
@@ -93,7 +95,9 @@ def compare_books(new_books, current_books):
     
     def find_in_library(title):
         for _, row in current_books.iterrows():
-            if similar(title, row['서명(자료명)']) > 0.7:  # 유사도 0.7 이상일 때 동일한 책으로 간주
+            # 비어있는 값이 없도록 체크
+            library_title = row['서명(자료명)']
+            if pd.notna(library_title) and similar(title, library_title) > 0.7:  # 유사도 0.7 이상일 때 동일한 책으로 간주
                 return f"O ({row['청구기호']})"
         return ''
     

@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -5,7 +6,6 @@ import requests
 # 네이버 API 설정
 NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
 NAVER_CLIENT_SECRET = 'p2GQWrdWmD'
-
 
 def search_books(title):
     headers = {
@@ -32,8 +32,13 @@ def create_book_list(titles):
     return pd.DataFrame(books_info)
 
 def compare_books(new_books, current_books):
-    current_isbns = set(current_books['ISBN'])
-    new_books['In Current Library'] = new_books['ISBN'].apply(lambda x: 'O' if x in current_isbns else '')
+    # '서명(자료명)' 열을 사용하여 비교
+    if '서명(자료명)' not in current_books.columns:
+        st.error("Current library inventory does not have a '서명(자료명)' column.")
+        return new_books
+
+    current_titles = set(current_books['서명(자료명)'])
+    new_books['In Current Library'] = new_books['Title'].apply(lambda x: 'O' if x in current_titles else '')
     return new_books
 
 # 스트림릿 인터페이스 설정

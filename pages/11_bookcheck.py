@@ -19,7 +19,7 @@ def find_in_library(title):
     for _, row in current_books.iterrows():
         processed_row_title = preprocess_title(row['서명(자료명)'])
         processed_input_title = preprocess_title(title)
-        if similar(processed_input_title, processed_row_title) > 0.6:  # 임계값을 낮추거나 조정
+        if similar(processed_input_title, processed_row_title) > 0.3:  # 임계값을 낮추거나 조정
             return f"O ({row['청구기호']})"
     return ""
 

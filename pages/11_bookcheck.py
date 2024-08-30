@@ -3,8 +3,9 @@ import pandas as pd
 import requests
 
 # 네이버 API 설정
-NAVER_CLIENT_ID = 'your_naver_client_id'
-NAVER_CLIENT_SECRET = 'your_naver_client_secret'
+NAVER_CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
+NAVER_CLIENT_SECRET = 'p2GQWrdWmD'
+
 
 def search_books(title):
     headers = {

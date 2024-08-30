@@ -6,28 +6,18 @@ from io import StringIO
 from difflib import SequenceMatcher
 
 
-def preprocess_title(title):
-    # 괄호 안의 부제목 등을 제거
-    title = re.sub(r'\(.*?\)', '', title)
-    # 필요하면 다른 전처리 추가
-    return title.strip()
-
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
-def find_in_library(title):
+def find_in_library(title, author):
     for _, row in current_books.iterrows():
-        processed_row_title = preprocess_title(row['서명(자료명)'])
-        processed_input_title = preprocess_title(title)
-        if similar(processed_input_title, processed_row_title) > 0.3:  # 임계값을 낮추거나 조정
+        title_similarity = similar(title, row['서명(자료명)'])
+        author_similarity = similar(author, row['저자'])
+
+        # 제목 유사도 임계값을 낮추고, 저자 유사도와 함께 체크
+        if title_similarity > 0.5 and author_similarity > 0.7:
             return f"O ({row['청구기호']})"
     return ""
-
-
-
-
-
-
 
 
 
@@ -127,7 +117,8 @@ def compare_books(new_books, current_books):
                 return f"O ({row['청구기호']})"
         return ''
     
-    new_books['장서에 있음'] = new_books['도서명'].apply(find_in_library)
+    new_books['장서에 있음'] = new_books.apply(lambda row: find_in_library(row['도서명'], row['저자']), axis=1)
+
 
     return new_books
 

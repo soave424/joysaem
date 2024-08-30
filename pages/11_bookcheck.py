@@ -3,10 +3,15 @@ import requests
 import pandas as pd
 import re
 from io import StringIO
+from difflib import SequenceMatcher  # 문자열 유사도 비교를 위해
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
 CLIENT_SECRET = 'p2GQWrdWmD'
+
+# 문자열 유사도 비교 함수
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def search_books(book_titles):
     headers = {
@@ -23,7 +28,6 @@ def search_books(book_titles):
         items = result.get('items')
 
         if items:
-            # 첫 번째 검색 결과만 사용
             item = items[0]
             result_title = item.get('title', "No Title Found")
             author = item.get('author', "No Author Found")
@@ -85,8 +89,15 @@ def format_images(df):
 
 # 도서 장부와 비교
 def compare_books(new_books, current_books):
-    current_titles = set(current_books['서명(자료명)'])
-    new_books['장서에 있음'] = new_books['도서명'].apply(lambda x: 'O' if x in current_titles else '')
+    current_books['청구기호'] = current_books['청구기호'].fillna('')
+    
+    def find_in_library(title):
+        for _, row in current_books.iterrows():
+            if similar(title, row['서명(자료명)']) > 0.7:  # 유사도 0.7 이상일 때 동일한 책으로 간주
+                return f"O ({row['청구기호']})"
+        return ''
+    
+    new_books['장서에 있음'] = new_books['도서명'].apply(find_in_library)
     return new_books
 
 st.title('도서 장부와 새로운 도서 목록 비교')

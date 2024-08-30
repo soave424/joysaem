@@ -3,7 +3,33 @@ import requests
 import pandas as pd
 import re
 from io import StringIO
-from difflib import SequenceMatcher  # 문자열 유사도 비교를 위해
+from difflib import SequenceMatcher
+
+
+def preprocess_title(title):
+    # 괄호 안의 부제목 등을 제거
+    title = re.sub(r'\(.*?\)', '', title)
+    # 필요하면 다른 전처리 추가
+    return title.strip()
+
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
+def find_in_library(title):
+    for _, row in current_books.iterrows():
+        processed_row_title = preprocess_title(row['서명(자료명)'])
+        processed_input_title = preprocess_title(title)
+        if similar(processed_input_title, processed_row_title) > 0.6:  # 임계값을 낮추거나 조정
+            return f"O ({row['청구기호']})"
+    return ""
+
+
+
+
+
+
+
+
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -102,6 +128,7 @@ def compare_books(new_books, current_books):
         return ''
     
     new_books['장서에 있음'] = new_books['도서명'].apply(find_in_library)
+
     return new_books
 
 st.title('도서 장부와 새로운 도서 목록 비교')

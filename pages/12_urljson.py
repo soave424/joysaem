@@ -1,38 +1,36 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import json
 
-def url_to_json(url):
+def extract_element(url, selector):
     try:
         response = requests.get(url)
         response.raise_for_status()
 
-        # 인코딩을 'utf-8'로 설정
+        # 인코딩 설정
         response.encoding = response.apparent_encoding
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 웹 페이지의 title, meta description, 그리고 모든 h1 태그의 내용을 추출하여 JSON으로 변환
-        page_data = {
-            "title": soup.title.string if soup.title else "No title found",
-            "meta_description": soup.find("meta", {"name": "description"})["content"] if soup.find("meta", {"name": "description"}) else "No description found",
-            "h1_tags": [h1.get_text().strip() for h1 in soup.find_all("h1")]
-        }
-
-        return json.dumps(page_data, indent=4, ensure_ascii=False)
+        # 지정된 CSS 선택자를 사용하여 요소를 추출
+        element = soup.select_one(selector)
+        if element:
+            return element.prettify()  # 요소를 HTML 형식으로 반환
+        else:
+            return "선택자에 해당하는 요소를 찾을 수 없습니다."
     
     except requests.exceptions.RequestException as e:
-        return json.dumps({"error": str(e)}, indent=4, ensure_ascii=False)
+        return f"에러 발생: {str(e)}"
 
-st.title("URL을 입력하여 웹사이트 정보를 JSON 형식으로 확인하기")
+st.title("웹 페이지에서 특정 요소 추출하기")
 
-# URL 입력
+# URL 및 CSS 선택자 입력
 url = st.text_input("웹사이트 URL을 입력하세요:")
+selector = st.text_input("CSS 선택자를 입력하세요:", value="#content > article.sub-page-content.search-page.pb-xxl.mb-lg > div > div.result-area > div.inner.float-wrap.pt-md > div.result-content.fl-right > ul")
 
-if st.button("정보 가져오기"):
-    if url:
-        json_data = url_to_json(url)
-        st.text_area("웹사이트 정보 (JSON):", json_data, height=300)
+if st.button("요소 추출"):
+    if url and selector:
+        element_html = extract_element(url, selector)
+        st.text_area("추출된 요소 (HTML):", element_html, height=300)
     else:
-        st.error("URL을 입력하세요.")
+        st.error("URL 및 CSS 선택자를 모두 입력하세요.")

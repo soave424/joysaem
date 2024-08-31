@@ -8,6 +8,9 @@ def url_to_json(url):
         response = requests.get(url)
         response.raise_for_status()
 
+        # 인코딩을 'utf-8'로 설정
+        response.encoding = response.apparent_encoding
+
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # 웹 페이지의 title, meta description, 그리고 모든 h1 태그의 내용을 추출하여 JSON으로 변환

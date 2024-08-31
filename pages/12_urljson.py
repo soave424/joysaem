@@ -1,3 +1,4 @@
+import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -39,15 +40,20 @@ def fetch_html_from_url(url):
     response.raise_for_status()
     return response.text
 
-# URL 입력
-url = "https://example.com"  # 여기에 대상 URL을 넣습니다.
+st.title('URL에서 ul 태그 안의 li 요소 추출')
 
-# HTML 콘텐츠 가져오기
-html_content = fetch_html_from_url(url)
+# URL 입력창
+url = st.text_input('URL을 입력하세요:')
 
-# li 요소 추출
-li_items = extract_li_items_from_ul(html_content)
-
-# JSON 출력
-json_result = json.dumps(li_items, ensure_ascii=False, indent=2)
-print(json_result)
+if url:
+    try:
+        # HTML 콘텐츠 가져오기
+        html_content = fetch_html_from_url(url)
+        
+        # li 요소 추출
+        li_items = extract_li_items_from_ul(html_content)
+        
+        # JSON 출력
+        st.json(li_items)
+    except Exception as e:
+        st.error(f"오류 발생: {e}")

@@ -1,36 +1,46 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
+import json
 
-def extract_element(url, selector):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+def extract_books_from_ul(ul_html):
+    soup = BeautifulSoup(ul_html, 'html.parser')
+    books = []
 
-        # 인코딩 설정
-        response.encoding = response.apparent_encoding
+    # 모든 li 태그를 찾습니다.
+    for li in soup.find_all('li'):
+        book = {}
+        # 책 표지 이미지 URL
+        img_tag = li.find('img')
+        if img_tag:
+            book['image_url'] = img_tag.get('src', '')
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # 책 제목
+        title_tag = li.find('strong', class_='prod-name')
+        if title_tag:
+            book['title'] = title_tag.get_text(strip=True)
 
-        # 지정된 CSS 선택자를 사용하여 요소를 추출
-        element = soup.select_one(selector)
-        if element:
-            return element.prettify()  # 요소를 HTML 형식으로 반환
-        else:
-            return "선택자에 해당하는 요소를 찾을 수 없습니다."
+        # 저자, 출판사, 출판년도, 청구기호 등 정보
+        writer_info = li.find('span', class_='writer')
+        if writer_info:
+            book['details'] = writer_info.get_text(strip=True)
+
+        # 대출 상태
+        state_tag = li.find('div', class_='book-state')
+        if state_tag:
+            book['availability'] = state_tag.get_text(strip=True)
+
+        books.append(book)
     
-    except requests.exceptions.RequestException as e:
-        return f"에러 발생: {str(e)}"
+    return books
 
-st.title("웹 페이지에서 특정 요소 추출하기")
+# HTML 입력
+st.title("HTML에서 도서 목록 추출")
+html_input = st.text_area("ul 태그가 포함된 HTML 코드를 입력하세요:")
 
-# URL 및 CSS 선택자 입력
-url = st.text_input("웹사이트 URL을 입력하세요:")
-selector = st.text_input("CSS 선택자를 입력하세요:", value="#content > article.sub-page-content.search-page.pb-xxl.mb-lg > div > div.result-area > div.inner.float-wrap.pt-md > div.result-content.fl-right > ul")
-
-if st.button("요소 추출"):
-    if url and selector:
-        element_html = extract_element(url, selector)
-        st.text_area("추출된 요소 (HTML):", element_html, height=300)
+if st.button("추출"):
+    if html_input:
+        books = extract_books_from_ul(html_input)
+        st.json(books)
     else:
-        st.error("URL 및 CSS 선택자를 모두 입력하세요.")
+        st.error("HTML 코드를 입력하세요.")

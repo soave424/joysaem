@@ -3,12 +3,11 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
-def extract_books_from_ul(ul_html):
-    soup = BeautifulSoup(ul_html, 'html.parser')
+def extract_books_from_ul(ul_element):
     books = []
 
     # 모든 li 태그를 찾습니다.
-    for li in soup.find_all('li'):
+    for li in ul_element.find_all('li'):
         book = {}
         # 책 표지 이미지 URL
         img_tag = li.find('img')
@@ -34,13 +33,28 @@ def extract_books_from_ul(ul_html):
     
     return books
 
-# HTML 입력
-st.title("HTML에서 도서 목록 추출")
-html_input = st.text_area("ul 태그가 포함된 HTML 코드를 입력하세요:")
+def fetch_html_from_url(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text
+
+st.title("URL에서 도서 목록 추출")
+url_input = st.text_input("URL을 입력하세요:")
 
 if st.button("추출"):
-    if html_input:
-        books = extract_books_from_ul(html_input)
-        st.json(books)
+    if url_input:
+        try:
+            html_content = fetch_html_from_url(url_input)
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # 특정 ul 태그를 선택
+            ul_tag = soup.select_one('ul.book-list')  # 'ul.book-list' 선택자에 따라 태그 선택
+            if ul_tag:
+                books = extract_books_from_ul(ul_tag)
+                st.json(books)
+            else:
+                st.error("지정된 ul 태그를 찾을 수 없습니다.")
+        except requests.exceptions.RequestException as e:
+            st.error(f"URL을 가져오는 데 문제가 발생했습니다: {e}")
     else:
-        st.error("HTML 코드를 입력하세요.")
+        st.error("URL을 입력하세요.")

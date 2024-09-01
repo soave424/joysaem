@@ -85,9 +85,13 @@ if uploaded_file is not None:
     df['Leadership_Avg'] = calculate_program_averages(df, matching_dict, 'Leadership6')
     df['Competence_Avg'] = calculate_program_averages(df, matching_dict, 'Competence9')
     
+    # 프로그램별 평균 계산
+    for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']:
+        df[program + '_Avg'] = df.filter(like=program).mean(axis=1)
+    
     # 평균값 출력
     st.header('Calculated Averages')
-    st.write(df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']])
+    st.write(df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg'] + [f"{program}_Avg" for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']]])
     
     # 기초 통계량
     st.header('Descriptive Statistics')

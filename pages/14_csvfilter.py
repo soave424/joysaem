@@ -44,14 +44,17 @@ if uploaded_file is not None:
     
     # 특정 인물의 선택 분석
     st.header('특정 인물 분석')
-    selected_person = st.selectbox('분석할 사람을 선택하세요', df.index)
     
-    if selected_person:
+    # 인덱스를 선택할 수 있도록 설정 (기본적으로 문자열이 아닌 정수 인덱스를 사용)
+    df.index = pd.Index(range(df.shape[0]), name="index")
+    selected_person = st.selectbox('분석할 사람을 선택하세요', df.index)
+
+    if selected_person is not None:
         st.write(f"{selected_person}의 점수 분석:")
-        st.write(df.loc[selected_person])
+        st.write(df.iloc[selected_person])
         
         plt.figure(figsize=(10, 4))
-        df.loc[selected_person].drop(['기술_평균', '리더십_평균', '역량_평균']).plot(kind='bar')
+        df.iloc[selected_person].drop(['기술_평균', '리더십_평균', '역량_평균']).plot(kind='bar')
         plt.title(f"{selected_person}의 점수 분포")
         st.pyplot(plt)
 

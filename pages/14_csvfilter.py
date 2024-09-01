@@ -4,17 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.font_manager as fm
-import os
 
-# 나눔 폰트 설정
-if not os.path.exists('/usr/share/fonts/truetype/nanum/NanumGothic.ttf'):
-    !wget https://github.com/naver/nanumfont/blob/master/NanumFont_TTF_ALL.zip?raw=true -O NanumFont.zip
-    !unzip NanumFont.zip -d /usr/share/fonts/truetype/nanum/
-    !rm NanumFont.zip
-    fm._rebuild()
-
-plt.rcParams['font.family'] = 'NanumGothic'
-plt.rcParams['axes.unicode_minus'] = False
+# 한글 폰트 설정
+# plt.rcParams['font.family'] = 'Malgun Gothic'  # Windows 사용자의 경우
+plt.rcParams['font.family'] = 'AppleGothic'  # Mac 사용자의 경우
+plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 # 기본 설정
 st.title('데이터 분석 및 시각화')

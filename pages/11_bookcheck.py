@@ -102,6 +102,14 @@ if uploaded_file:
     def format_images(df):
         return [f'<img src="{url}" width="50">' if url else '' for url in df['표지']]
 
+    # CSV 파일 생성 함수 (이미지 열 제거)
+    def to_csv(df):
+        df = df.drop(columns=['표지'])  # 이미지 열 제거
+        output = StringIO()
+        df.to_csv(output, index=False)
+        processed_data = output.getvalue()
+        return processed_data
+
     st.title('여러 권의 책을 한 번에 검색하기')
     book_titles_input = st.text_area("줄바꿈 혹은 ','로 구분된 책 목록을 아래 입력창에 넣어주세요. 검색하기 버튼을 눌러 책 목록을 확인한 후 csv파일로 다운 받으실 수 있습니다. 책 제목이 완벽하게 일치하지 않는 경우 비고란에 확인필요가 뜹니다.")
 

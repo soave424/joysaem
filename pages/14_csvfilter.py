@@ -54,7 +54,8 @@ if uploaded_file is not None:
     # 매칭된 프로그램별 분석 추가
     def calculate_program_averages(df, matching_dict, category):
         programs = matching_dict.get(category, [])
-        df_programs = df[programs].mean(axis=1) if programs else pd.Series([np.nan] * len(df))
+        valid_programs = [prog for prog in programs if prog in df.columns]  # 실제로 존재하는 프로그램만 선택
+        df_programs = df[valid_programs].mean(axis=1) if valid_programs else pd.Series([np.nan] * len(df))
         return df_programs
 
     df['Tech_Avg'] = calculate_program_averages(df, matching_dict, 'Tech1')

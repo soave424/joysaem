@@ -62,8 +62,10 @@ def translate_columns(df):
 # 프로그램 평균 계산 함수
 def calculate_program_averages(df, matching_dict, key):
     programs = matching_dict.get(key, [])
-    if programs:  # 프로그램 목록이 있으면
-        df_programs = df[programs].mean(axis=1)
+    # 프로그램 열이 실제로 데이터프레임에 존재하는지 확인
+    valid_programs = [p for p in programs if p in df.columns]
+    if valid_programs:  # 유효한 프로그램 목록이 있으면
+        df_programs = df[valid_programs].mean(axis=1)
     else:
         df_programs = pd.Series([np.nan] * len(df))  # NaN으로 채운 시리즈 반환
     return df_programs

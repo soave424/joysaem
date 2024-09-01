@@ -16,7 +16,7 @@ if uploaded_file:
 
     # 도서명에서 부제목 제거 함수
     def clean_title(title):
-        if title is None:
+        if title is None or not isinstance(title, str):
             return ""
         return re.sub(r'\(.*?\)', '', title).strip()
 

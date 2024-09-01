@@ -76,9 +76,9 @@ if uploaded_file is not None:
     # 한글 열 이름을 영어로 변환
     df = translate_columns(df)
     
-    # 데이터 미리보기
-    st.write("Uploaded Data:")
-    st.dataframe(df)
+    # 데이터프레임 열 이름 출력
+    st.write("Columns in the uploaded CSV file:")
+    st.write(df.columns)
     
     # 각 항목별로 프로그램 평균 계산
     df['Tech_Avg'] = calculate_program_averages(df, matching_dict, 'Tech1')

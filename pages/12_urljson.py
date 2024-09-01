@@ -16,6 +16,9 @@ if st.button("스크래핑 시작"):
             response = requests.get(url)
             response.raise_for_status()  # 요청 실패 시 예외 발생
 
+            # 인코딩을 UTF-8로 강제 설정 (한글 깨짐 방지)
+            response.encoding = 'utf-8'
+
             # BeautifulSoup을 사용하여 HTML 파싱
             soup = BeautifulSoup(response.text, 'html.parser')
 

@@ -82,10 +82,12 @@ if uploaded_file is not None:
     df['Competence_Avg'] = df.filter(like='Competence').mean(axis=1)
     
     # 프로그램별 평균 계산
+    program_averages = {}
     for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']:
         program_columns = [key for key, programs in matching_dict.items() if program in programs]
         if program_columns:
             df[program + '_Avg'] = df[program_columns].mean(axis=1)
+            program_averages[program] = df[program + '_Avg']
         else:
             df[program + '_Avg'] = np.nan
     
@@ -106,7 +108,18 @@ if uploaded_file is not None:
         st.pyplot(plt)
     else:
         st.warning("All average columns are empty. Skipping plot.")
-
+    
+    # 프로그램별 시각화
+    st.header('Score Distribution by Program')
+    for program, averages in program_averages.items():
+        if not averages.isnull().all():
+            plt.figure(figsize=(12, 6))
+            sns.boxplot(data=averages)
+            plt.title(f'Distribution of Scores for {program}')
+            st.pyplot(plt)
+        else:
+            st.warning(f"All average columns for {program} are empty. Skipping plot.")
+    
     # 특정 인물의 선택 분석
     st.header('Analysis of Specific Person')
     selected_person = st.selectbox('Select a person to analyze', df.index)
@@ -116,7 +129,7 @@ if uploaded_file is not None:
         st.write(df.loc[selected_person])
         
         plt.figure(figsize=(10, 4))
-        df.loc[selected_person].drop(['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']).plot(kind='bar')
+        df.loc[selected_person].drop(['Tech_Avg', 'Leadership_Avg', 'Competence_Avg'] + [f"{program}_Avg" for program in program_averages.keys()]).plot(kind='bar')
         plt.title(f"Score distribution for {selected_person}")
         st.pyplot(plt)
     

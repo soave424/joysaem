@@ -95,13 +95,13 @@ if uploaded_file is not None:
     
     # 시각화
     st.header('Score Distribution by Category')
-    if 'Tech_Avg' in df.columns and 'Leadership_Avg' in df.columns and 'Competence_Avg' in df.columns:
+    if not df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']].isnull().all().all():
         plt.figure(figsize=(12, 6))
         sns.boxplot(data=df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']])
         plt.title('Distribution of Scores by Category')
         st.pyplot(plt)
     else:
-        st.warning("One or more of the average columns (Tech_Avg, Leadership_Avg, Competence_Avg) are missing. Skipping plot.")
+        st.warning("All average columns are empty. Skipping plot.")
 
     # 특정 인물의 선택 분석
     st.header('Analysis of Specific Person')

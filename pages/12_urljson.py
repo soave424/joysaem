@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Streamlit 앱 제목
-st.title("URL에서 li 요소를 추출하여 JSON으로 변환")
+st.title("URL에서 HTML 요소와 텍스트를 스크래핑하여 JSON으로 변환")
 
 # URL 입력 받기
 url = st.text_input("URL을 입력하세요:")
@@ -19,15 +19,17 @@ if st.button("스크래핑 시작"):
             # BeautifulSoup으로 HTML 파싱
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # ul 또는 ol 요소 안의 li 요소들을 추출
-            list_data = {}
-            for ul in soup.find_all(['ul', 'ol']):
-                list_name = ul.get('class', ['unnamed-list'])[0]
-                items = [li.get_text(strip=True) for li in ul.find_all('li')]
-                list_data[list_name] = items
+            # HTML 전체 내용을 스크래핑하여 JSON으로 변환
+            page_content = {
+                "title": soup.title.string if soup.title else "No title",
+                "meta_description": soup.find('meta', attrs={'name': 'description'}).get('content', '') if soup.find('meta', attrs={'name': 'description'}) else "No description",
+                "h1_tags": [h1.get_text(strip=True) for h1 in soup.find_all('h1')],
+                "paragraphs": [p.get_text(strip=True) for p in soup.find_all('p')],
+                "links": [{"text": a.get_text(strip=True), "href": a.get('href')} for a in soup.find_all('a')]
+            }
 
             # 결과를 JSON 형태로 변환하여 출력
-            st.json(list_data)
+            st.json(page_content)
 
         except Exception as e:
             st.error(f"스크래핑 중 오류가 발생했습니다: {e}")

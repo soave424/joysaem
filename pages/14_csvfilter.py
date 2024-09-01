@@ -3,6 +3,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.font_manager as fm
+
+# 한글 폰트 설정
+# plt.rcParams['font.family'] = 'Malgun Gothic'  # Windows의 경우
+plt.rcParams['font.family'] = 'AppleGothic'  # MacOS의 경우
+plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호가 깨지는 것을 방지
 
 # 기본 설정
 st.title('데이터 분석 및 시각화')
@@ -27,8 +33,6 @@ if uploaded_file is not None:
     
     # 각 영역별 평균 계산
     st.header('영역별 평균 계산')
-    # 예를 들어, '기술'과 '리더십', '역량'으로 분리한다고 가정
-    # 영역 이름에 따라 열을 그룹화하여 평균 계산
     df['기술_평균'] = df.filter(like='기술').mean(axis=1)
     df['리더십_평균'] = df.filter(like='리더십').mean(axis=1)
     df['역량_평균'] = df.filter(like='역량').mean(axis=1)

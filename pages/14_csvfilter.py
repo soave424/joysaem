@@ -109,14 +109,17 @@ if uploaded_file is not None:
     else:
         st.warning("All average columns are empty. Skipping plot.")
     
-   # 프로그램별 점수 분포 시각화
+    # 프로그램별 시각화
     st.header('Score Distribution by Program')
-    plt.figure(figsize=(14, 7))
-    program_columns = [col + '_Avg' for col in matching_dict.keys()]
-    sns.boxplot(data=df[program_columns])
-    plt.title('Score Distribution by Program')
-    plt.xticks(rotation=90)
-    st.pyplot(plt)
+    # for program, averages in program_averages.items():
+    if not averages.isnull().all():
+        plt.figure(figsize=(12, 6))
+        sns.boxplot(data=averages)
+        plt.title(f'Distribution of Scores for {program}')
+        st.pyplot(plt)
+    else:
+        st.warning(f"All average columns for {program} are empty. Skipping plot.")
+
             
     
     # 특정 인물의 선택 분석

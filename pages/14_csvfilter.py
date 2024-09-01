@@ -123,6 +123,8 @@ if uploaded_file is not None:
     
     # 특정 인물의 선택 분석
     st.header('Analysis of Specific Person')
+    # 인덱스를 문자열로 변환 (숫자형 인덱스인 경우도 포함하여 처리)
+    df.index = df.index.astype(str)
     selected_person = st.selectbox('Select a person to analyze', df.index)
     
     if selected_person:

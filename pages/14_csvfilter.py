@@ -4,140 +4,112 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 기본 설정
-st.title('Data Analysis and Visualization')
-
-# CSV 파일 업로드
-uploaded_file = st.file_uploader("Upload CSV file", type="csv")
-
-# 매칭 사전 (영어로 변경)
+# Matching dictionary (from your earlier example)
 matching_dict = {
-    'Tech1': ['Program1', 'Program9'],
+    'Tech1': ['Program1', 'Program5'],
     'Tech2': ['Program1'],
     'Tech3': ['Program1'],
     'Tech4': ['Program1'],
     'Tech5': ['Program1'],
     'Leadership6': ['Program2'],
-    'Leadership7': ['Program2', 'Program9'],
+    'Leadership7': ['Program2', 'Program5'],
     'Leadership8': ['Program2'],
-    'Competence9': ['Program3', 'Program4', 'Program7', 'Program9'],
-    'Competence10': ['Program5', 'Program7', 'Program8'],
-    'Competence11': ['Program8'],
-    'Competence12': ['Program3', 'Program7'],
-    'Competence13': ['Program6'],
-    'Competence14': ['Program2', 'Program4'],
-    'Competence15': ['Program5', 'Program7'],
-    'Competence16': ['Program5', 'Program7', 'Program8'],
-    'Competence17': ['Program7', 'Program8', 'Program9'],
-    'Competence18': ['Program5', 'Program8'],
-    'Competence19': ['Program9'],
-    'Competence20': ['Program5', 'Program7', 'Program8', 'Program9'],
-    'Competence21': ['Program5', 'Program8', 'Program9'],
+    'Competence9': ['Program2', 'Program3', 'Program5'],
+    'Competence10': ['Program3', 'Program4', 'Program5'],
+    'Competence11': ['Program6'],
+    'Competence12': ['Program2', 'Program3'],
+    'Competence13': ['Program4'],
+    'Competence14': ['Program3', 'Program5'],
+    'Competence15': ['Program4', 'Program5'],
+    'Competence16': ['Program4', 'Program6', 'Program7'],
+    'Competence17': ['Program4', 'Program6', 'Program7'],
+    'Competence18': ['Program4', 'Program5'],
+    'Competence19': ['Program7'],
+    'Competence20': ['Program4', 'Program5', 'Program6', 'Program7'],
+    'Competence21': ['Program4', 'Program5', 'Program7'],
     'Competence22': ['Program7'],
-    'Competence23': ['Program8', 'Program9'],
-    'Competence24': ['Program5', 'Program8'],
-    'Competence25': ['Program9'],
-    'Competence26': ['Program7', 'Program8'],
-    'Competence27': ['Program3', 'Program7'],
-    'Competence28': ['Program6', 'Program8'],
-    'Competence29': ['Program6', 'Program8']
+    'Competence23': ['Program6', 'Program7'],
+    'Competence24': ['Program4', 'Program5'],
+    'Competence25': ['Program7'],
+    'Competence26': ['Program6', 'Program7'],
+    'Competence27': ['Program2', 'Program3'],
+    'Competence28': ['Program4', 'Program7'],
+    'Competence29': ['Program4', 'Program7'],
 }
 
-# 한글 열 이름을 영어로 변환하는 함수
-def translate_columns(df):
-    translation_dict = {
-        '기술': 'Tech',
-        '리더십': 'Leadership',
-        '역량': 'Competence'
-    }
-    new_columns = []
-    for col in df.columns:
-        for key in translation_dict:
-            if key in col:
-                col = col.replace(key, translation_dict[key])
-        new_columns.append(col)
-    df.columns = new_columns
-    return df
+# 기본 설정
+st.title('데이터 분석 및 시각화')
 
-# 프로그램 평균 계산 함수
-def calculate_program_averages(df, matching_dict, key):
-    programs = matching_dict.get(key, [])
-    valid_programs = [p for p in programs if p in df.columns]
-    if valid_programs:
-        df_programs = df[valid_programs].mean(axis=1)
-    else:
-        df_programs = pd.Series([np.nan] * len(df))
-    return df_programs
+# CSV 파일 업로드
+uploaded_file = st.file_uploader("CSV 파일을 업로드하세요", type="csv")
 
 if uploaded_file is not None:
     # 데이터프레임으로 변환
     df = pd.read_csv(uploaded_file)
     
-    # 한글 열 이름을 영어로 변환
-    df = translate_columns(df)
+    # 데이터 미리보기
+    st.write("업로드된 데이터:")
+    st.dataframe(df)
     
-    # 각 항목별로 프로그램 평균 계산
+    # 기초 통계량
+    st.header('기초 통계량')
+    st.write(df.describe())
+    
+    # 각 영역별 평균 계산
+    st.header('영역별 평균 계산')
     df['Tech_Avg'] = df.filter(like='Tech').mean(axis=1)
     df['Leadership_Avg'] = df.filter(like='Leadership').mean(axis=1)
     df['Competence_Avg'] = df.filter(like='Competence').mean(axis=1)
     
-    # 프로그램별 평균 계산
-    program_averages = {}
-    for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']:
-        program_columns = [key for key, programs in matching_dict.items() if program in programs]
-        if program_columns:
-            df[program + '_Avg'] = df[program_columns].mean(axis=1)
-            program_averages[program] = df[program + '_Avg']
-        else:
-            df[program + '_Avg'] = np.nan
+    st.write(df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']])
     
-    # 평균값 출력
-    st.header('Calculated Averages')
-    st.write(df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg'] + [f"{program}_Avg" for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']]])
+    # 프로그램별 평균 계산 함수
+    def calculate_program_averages(df, matching_dict, category):
+        programs = matching_dict.get(category, [])
+        df_programs = df[programs].mean(axis=1) if programs else pd.Series([np.nan] * len(df))
+        return df_programs
     
-    # 기초 통계량
-    st.header('Descriptive Statistics')
-    st.write(df.describe())
+    # 모든 프로그램의 평균을 계산하여 추가
+    for category in matching_dict.keys():
+        df[category + '_Avg'] = calculate_program_averages(df, matching_dict, category)
+    
+    st.write("프로그램별 평균:")
+    st.dataframe(df)
     
     # 시각화
-    st.header('Score Distribution by Category')
-    if not df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']].isnull().all().all():
-        plt.figure(figsize=(12, 6))
-        sns.boxplot(data=df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']])
-        plt.title('Distribution of Scores by Category')
-        st.pyplot(plt)
-    else:
-        st.warning("All average columns are empty. Skipping plot.")
+    st.header('영역별 점수 시각화')
+    plt.figure(figsize=(12, 6))
+    sns.boxplot(data=df[['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']])
+    plt.title('Score Distribution by Category')
+    st.pyplot(plt)
     
-    # 프로그램별 시각화
+    # 프로그램별 점수 분포 시각화
     st.header('Score Distribution by Program')
-    for program, averages in program_averages.items():
-        if not averages.isnull().all():
-            plt.figure(figsize=(12, 6))
-            sns.boxplot(data=averages)
-            plt.title(f'Distribution of Scores for {program}')
-            st.pyplot(plt)
-        else:
-            st.warning(f"All average columns for {program} are empty. Skipping plot.")
-    
+    plt.figure(figsize=(14, 7))
+    program_columns = [col + '_Avg' for col in matching_dict.keys()]
+    sns.boxplot(data=df[program_columns])
+    plt.title('Score Distribution by Program')
+    plt.xticks(rotation=90)
+    st.pyplot(plt)
+
     # 특정 인물의 선택 분석
-    st.header('Analysis of Specific Person')
-    selected_person = st.selectbox('Select a person to analyze', df.index)
+    st.header('특정 인물 분석')
+    selected_person = st.selectbox('분석할 사람을 선택하세요', df.index)
     
     if selected_person:
-        st.write(f"Score analysis for {selected_person}:")
+        st.write(f"{selected_person}의 점수 분석:")
         st.write(df.loc[selected_person])
         
         plt.figure(figsize=(10, 4))
-        df.loc[selected_person].drop(['Tech_Avg', 'Leadership_Avg', 'Competence_Avg'] + [f"{program}_Avg" for program in program_averages.keys()]).plot(kind='bar')
-        plt.title(f"Score distribution for {selected_person}")
+        df.loc[selected_person].drop(['Tech_Avg', 'Leadership_Avg', 'Competence_Avg']).plot(kind='bar')
+        plt.title(f"{selected_person}의 점수 분포")
         st.pyplot(plt)
-    
+
     # 결과 저장
-    st.header('Save Analysis Results')
-    if st.button('Save as CSV'):
+    st.header('분석 결과 저장')
+    if st.button('CSV로 결과 저장'):
         result_csv = df.to_csv(index=False)
-        st.download_button("Download", data=result_csv, file_name="analysis_results.csv", mime="text/csv")
+        st.download_button("다운로드", data=result_csv, file_name="analysis_results.csv", mime="text/csv")
 
 else:
-    st.write("Please upload a CSV file.")
+    st.write("CSV 파일을 업로드해주세요.")

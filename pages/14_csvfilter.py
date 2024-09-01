@@ -76,18 +76,18 @@ if uploaded_file is not None:
     # 한글 열 이름을 영어로 변환
     df = translate_columns(df)
     
-    # 데이터프레임 열 이름 출력
-    st.write("Columns in the uploaded CSV file:")
-    st.write(df.columns)
-    
     # 각 항목별로 프로그램 평균 계산
-    df['Tech_Avg'] = calculate_program_averages(df, matching_dict, 'Tech1')
-    df['Leadership_Avg'] = calculate_program_averages(df, matching_dict, 'Leadership6')
-    df['Competence_Avg'] = calculate_program_averages(df, matching_dict, 'Competence9')
+    df['Tech_Avg'] = df.filter(like='Tech').mean(axis=1)
+    df['Leadership_Avg'] = df.filter(like='Leadership').mean(axis=1)
+    df['Competence_Avg'] = df.filter(like='Competence').mean(axis=1)
     
     # 프로그램별 평균 계산
     for program in ['Program1', 'Program2', 'Program3', 'Program4', 'Program5', 'Program6', 'Program7', 'Program8', 'Program9']:
-        df[program + '_Avg'] = df.filter(like=program).mean(axis=1)
+        program_columns = [key for key, programs in matching_dict.items() if program in programs]
+        if program_columns:
+            df[program + '_Avg'] = df[program_columns].mean(axis=1)
+        else:
+            df[program + '_Avg'] = np.nan
     
     # 평균값 출력
     st.header('Calculated Averages')

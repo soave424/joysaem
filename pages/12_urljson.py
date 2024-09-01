@@ -1,12 +1,9 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
 from bs4 import BeautifulSoup
 
 # Streamlit 앱 제목
-st.title("JavaScript 렌더링 웹페이지 스크래핑 도구")
+st.title("URL에서 li 요소를 추출하여 JSON으로 변환")
 
 # URL 입력 받기
 url = st.text_input("URL을 입력하세요:")
@@ -15,41 +12,22 @@ url = st.text_input("URL을 입력하세요:")
 if st.button("스크래핑 시작"):
     if url:
         try:
-            # Selenium WebDriver 설정
-            chrome_options = Options()
-            chrome_options.add_argument("--headless")  # 브라우저 창을 띄우지 않고 실행
-            chrome_options.add_argument("--disable-gpu")  # GPU 비활성화 (리소스 절약)
-            chrome_options.add_argument("--no-sandbox")  # 샌드박스 모드 비활성화 (리눅스 호환성)
-            chrome_options.add_argument("--disable-dev-shm-usage")  # /dev/shm 사용 비활성화 (리눅스 호환성)
+            # 웹 페이지의 HTML을 가져오기
+            response = requests.get(url)
+            response.encoding = response.apparent_encoding  # 인코딩 처리
 
-            # WebDriver 설치 및 실행
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-            
-            # 입력된 URL로 이동
-            driver.get(url)
+            # BeautifulSoup으로 HTML 파싱
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-            # 페이지가 완전히 로드될 때까지 대기
-            driver.implicitly_wait(10)
+            # ul 또는 ol 요소 안의 li 요소들을 추출
+            list_data = {}
+            for ul in soup.find_all(['ul', 'ol']):
+                list_name = ul.get('class', ['unnamed-list'])[0]
+                items = [li.get_text(strip=True) for li in ul.find_all('li')]
+                list_data[list_name] = items
 
-            # 페이지의 HTML을 가져옴
-            page_source = driver.page_source
-
-            # BeautifulSoup을 사용하여 HTML 파싱
-            soup = BeautifulSoup(page_source, 'html.parser')
-
-            # 페이지의 텍스트 콘텐츠 추출
-            page_text = soup.get_text()
-
-            # 페이지의 HTML 콘텐츠 출력
-            st.subheader("스크래핑된 HTML 콘텐츠:")
-            st.code(soup.prettify(), language='html')
-
-            # 페이지의 텍스트 콘텐츠 출력
-            st.subheader("스크래핑된 텍스트 콘텐츠:")
-            st.text(page_text)
-
-            # WebDriver 종료
-            driver.quit()
+            # 결과를 JSON 형태로 변환하여 출력
+            st.json(list_data)
 
         except Exception as e:
             st.error(f"스크래핑 중 오류가 발생했습니다: {e}")

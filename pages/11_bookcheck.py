@@ -38,63 +38,62 @@ if uploaded_file:
             if items:
                 # 첫 번째 검색 결과만 사용
                 item = items[0]
-                # 안전하게 데이터 추출
                 result_title = item.get('title', "No Title Found")
-                author = item.get('author', "No Author Found")
-                publisher = item.get('publisher', "No Publisher Found")
-                pubdate = item.get('pubdate', "")
-                price = item.get('discount', "0")
-                isbn = item.get('isbn', "No ISBN Info")
-                image = item.get('image', "")  # 이미지 URL 추가
+            else:
+                # 검색 결과가 없으면 입력된 제목을 사용
+                result_title = title
+            
+            author = item.get('author', "No Author Found") if items else "검색 결과 없음"
+            publisher = item.get('publisher', "No Publisher Found") if items else "검색 결과 없음"
+            pubdate = item.get('pubdate', "") if items else ""
+            price = item.get('discount', "0") if items else "0"
+            isbn = item.get('isbn', "No ISBN Info") if items else "No ISBN Info"
+            image = item.get('image', "") if items else ""  # 이미지 URL 추가
 
-                # 출간일 처리 (연도와 월만 추출)
-                formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
+            # 출간일 처리 (연도와 월만 추출)
+            formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
 
-                # 정가 계산 (판매가의 100%)
-                try:
-                    price_numeric = int(price)
-                    original_price = int(price_numeric / 0.9)
-                    price_text = f"{original_price:,}원"
-                except ValueError:
-                    price_text = "Price Error"
+            # 정가 계산 (판매가의 100%)
+            try:
+                price_numeric = int(price)
+                original_price = int(price_numeric / 0.9)
+                price_text = f"{original_price:,}원"
+            except ValueError:
+                price_text = "Price Error"
 
-                # 장서와 비교하여 일치 여부 확인
-                match = ""
-                call_number = ""
-                matched_title = ""
+            # 장서와 비교하여 일치 여부 확인
+            match = ""
+            call_number = ""
+            matched_title = ""
 
+            for _, row in current_books.iterrows():
+                if clean_title(result_title) == clean_title(row['서명(자료명)']):
+                    match = "일치"
+                    call_number = row['청구기호']
+                    matched_title = row['서명(자료명)']
+                    break
+
+            if not match:
+                # 네이버 검색 결과가 없거나 일치하는 도서가 없을 경우, 입력된 제목으로 장서 검색
                 for _, row in current_books.iterrows():
-                    if clean_title(result_title) == clean_title(row['서명(자료명)']):
+                    if clean_title(title) == clean_title(row['서명(자료명)']):
                         match = "일치"
                         call_number = row['청구기호']
                         matched_title = row['서명(자료명)']
                         break
 
-                books_info.append({
-                    '도서명': result_title,
-                    '저자': author,
-                    '출판사': publisher,
-                    '발행': formatted_date,
-                    '가격': price_text,
-                    'ISBN': isbn,
-                    '표지': image,
-                    '일치여부': match,
-                    '청구기호': call_number,
-                    '도서관 서명(자료명)': matched_title
-                })
-            else:
-                books_info.append({
-                    '도서명': title,
-                    '저자': "검색 결과 없음",
-                    '출판사': "검색 결과 없음",
-                    '발행': "검색 결과 없음",
-                    '가격': "검색 결과 없음",
-                    'ISBN': "검색 결과 없음",
-                    '표지': "",
-                    '일치여부': "",
-                    '청구기호': "",
-                    '도서관 서명(자료명)': ""
-                })
+            books_info.append({
+                '도서명': result_title,
+                '저자': author,
+                '출판사': publisher,
+                '발행': formatted_date,
+                '가격': price_text,
+                'ISBN': isbn,
+                '표지': image,
+                '일치여부': match,
+                '청구기호': call_number,
+                '도서관 서명(자료명)': matched_title
+            })
 
         return pd.DataFrame(books_info)
 

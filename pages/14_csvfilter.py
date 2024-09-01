@@ -111,16 +111,15 @@ if uploaded_file is not None:
     
     # 프로그램별 시각화
     st.header('Score Distribution by Program')
-    # for program, averages in program_averages.items():
-    if not averages.isnull().all():
+    program_data = df[[f"{program}_Avg" for program in program_averages.keys()]].dropna(axis=1, how='all')
+    if not program_data.empty:
         plt.figure(figsize=(12, 6))
-        sns.boxplot(data=averages)
-        plt.title(f'Distribution of Scores for {program}')
+        sns.boxplot(data=program_data)
+        plt.title('Distribution of Scores by Program')
+        plt.xticks(rotation=90)
         st.pyplot(plt)
     else:
-        st.warning(f"All average columns for {program} are empty. Skipping plot.")
-
-            
+        st.warning("All program average columns are empty. Skipping plot.")
     
     # 특정 인물의 선택 분석
     st.header('Analysis of Specific Person')

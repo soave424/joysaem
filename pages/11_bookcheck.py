@@ -88,7 +88,7 @@ if uploaded_file:
                 '출판사': publisher,
                 '발행': formatted_date,
                 '가격': price_text,
-                'ISBN': isbn,
+                # 'ISBN': isbn,
                 '표지': image,
                 '일치여부': match,
                 '청구기호': call_number,

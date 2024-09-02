@@ -3,30 +3,22 @@ import requests
 import pandas as pd
 import re
 from io import StringIO
-import os
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
 CLIENT_SECRET = 'p2GQWrdWmD'
 
-# 기본 파일 경로 설정
-default_file_path = '/Users/joeunlee/Desktop/coding/joysaem/joysaem-1/csv/남양주양지초등학교 도서관 전체장서(2024.8.30) - sheet 1.csv'
+# 도서관 장서 파일 업로드
+uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로드하세요.", type="csv")
 
-# 도서관 장서 파일 로드
-if os.path.exists(default_file_path):
-    current_books = pd.read_csv(default_file_path)
-    st.write(f"Using default file: {default_file_path}")
-else:
-    current_books = None
-    st.warning("기본 도서관 장서 파일을 찾을 수 없습니다.")
+if uploaded_file:
+    current_books = pd.read_csv(uploaded_file)
 
-if current_books is not None:
-    # 도서명에서 부제목과 특정 문자를 제거하는 함수
+    # 도서명에서 부제목 제거 함수
     def clean_title(title):
         if title is None or not isinstance(title, str):
             return ""
-        # 부제목 제거 및 "?", "!" 등의 문자 제거
-        return re.sub(r'[?!]', '', re.sub(r'\(.*?\)', '', title)).strip()
+        return re.sub(r'\(.*?\)', '', title).strip()
 
     def search_books(book_titles):
         headers = {
@@ -38,7 +30,7 @@ if current_books is not None:
         books_info = []
 
         for title in book_titles:
-            cleaned_title = clean_title(title)  # 부제목 및 특정 문자 제거
+            cleaned_title = clean_title(title)  # 부제목 제거
             response = requests.get(base_url + cleaned_title, headers=headers)
             result = response.json()
             items = result.get('items')
@@ -96,6 +88,7 @@ if current_books is not None:
                 '출판사': publisher,
                 '발행': formatted_date,
                 '가격': price_text,
+                # 'ISBN': isbn,
                 '표지': image,
                 '일치여부': match,
                 '청구기호': call_number,
@@ -146,4 +139,4 @@ if current_books is not None:
         else:
             st.error("Please enter at least one book name.")
 else:
-    st.warning("기본 도서관 장서 파일을 찾을 수 없습니다.")
+    st.warning("현재 도서관 장서 파일을 업로드하세요.")

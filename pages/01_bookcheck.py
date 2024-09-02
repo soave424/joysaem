@@ -12,20 +12,15 @@ CLIENT_SECRET = 'p2GQWrdWmD'
 # 기본 파일 경로 설정
 default_file_path = '/Users/joeunlee/Desktop/coding/joysaem/joysaem-1/csv/남양주양지초등학교 도서관 전체장서(2024.8.30) - sheet 1.csv'
 
-# 도서관 장서 파일 업로드
-uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로드하세요.", type="csv")
-
-if uploaded_file is not None:
-    current_books = pd.read_csv(uploaded_file)
-elif os.path.exists(default_file_path):
+# 도서관 장서 파일 로드
+if os.path.exists(default_file_path):
     current_books = pd.read_csv(default_file_path)
     st.write(f"Using default file: {default_file_path}")
 else:
     current_books = None
-    st.warning("현재 도서관 장서 파일을 업로드하세요.")
+    st.warning("기본 도서관 장서 파일을 찾을 수 없습니다.")
 
 if current_books is not None:
-
     # 도서명에서 부제목과 특정 문자를 제거하는 함수
     def clean_title(title):
         if title is None or not isinstance(title, str):
@@ -151,4 +146,4 @@ if current_books is not None:
         else:
             st.error("Please enter at least one book name.")
 else:
-    st.warning("현재 도서관 장서 파일을 업로드하세요.")
+    st.warning("기본 도서관 장서 파일을 찾을 수 없습니다.")

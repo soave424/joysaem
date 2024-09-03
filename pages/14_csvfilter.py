@@ -136,6 +136,22 @@ if uploaded_file is not None:
         plt.title(f"Score distribution for {selected_person}")
         st.pyplot(plt)
     
+    # 선택된 인원의 평균값 분석 및 시각화
+    st.header('Analysis of Selected People')
+    selected_people = st.multiselect('Select people to calculate the average', df.index)
+    
+    if selected_people:
+        selected_df = df.loc[selected_people]
+        avg_df = selected_df.mean()
+
+        st.write("Average scores for selected people:")
+        st.write(avg_df)
+        
+        plt.figure(figsize=(10, 6))
+        avg_df.drop(['Tech_Avg', 'Leadership_Avg', 'Competence_Avg'] + [f"{program}_Avg" for program in program_averages.keys()]).plot(kind='bar')
+        plt.title('Average Score Distribution for Selected People')
+        st.pyplot(plt)
+    
     # 결과 저장
     st.header('Save Analysis Results')
     if st.button('Save as CSV'):

@@ -38,7 +38,7 @@ def search_books_by_title(title, client_id, client_secret):
             'title': item.get('title', ''),
             'author': item.get('author', ''),
             'publisher': item.get('publisher', ''),
-            'isbn': item.get('isbn', ''),
+            'isbn': item.get('isbn', '').split(' ')[-1],  # ISBN-13 우선 사용
             'image': item.get('image', '')
         }
     else:
@@ -115,7 +115,7 @@ if st.button('검색'):
                 st.write(f"**ISBN:** {book_info['isbn']}")
                 
                 # ISBN으로 상세 도서 정보 조회
-                isbn = book_info['isbn'].split(' ')[-1]  # ISBN-13이 있으면 사용
+                isbn = book_info['isbn']
                 book_metadata = search_book_by_isbn(cert_key, isbn)
                 
                 if book_metadata:
@@ -124,7 +124,6 @@ if st.button('검색'):
                     st.write(f"**가격:** {book_metadata['pre_price']}")
                     st.write(f"**페이지 수:** {book_metadata['page'] if book_metadata['page'] else '정보 없음'}")
                     st.write(f"**출간일:** {book_metadata['publish_predate']}")
-                    # st.write(f"**청구기호:** {book_metadata['call_no']}")
                     st.write(f"**분야:** {book_metadata['kdc_category']}")
                     
                     if book_metadata['book_tb_cnt_url']:

@@ -16,7 +16,7 @@ CLIENT_SECRET = 'p2GQWrdWmD'
 uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로드하세요.", type="csv")
 
 # 이미지 파일 경로 설정
-image_path = '/Users/joeunlee/Desktop/coding/joysaem/joysaem-1/image/설명.png'
+image_path = 'image/설명.png'
 
 # 이미지 파일이 존재하는지 확인
 if os.path.exists(image_path):

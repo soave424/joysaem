@@ -28,6 +28,7 @@ if st.button('검색'):
             st.error(results['error'])  # 오류 메시지 출력
         elif 'items' in results:
             for item in results['items']:
+                st.image(item['image'], width=100)
                 st.write(f"**제목:** {item['title']}")
                 st.write(f"**저자:** {item['author']}")
                 st.write(f"**출판사:** {item['publisher']}")
@@ -36,7 +37,6 @@ if st.button('검색'):
                 st.write(f"**판매가:** {item['discount']}원")
                 st.write(f"**설명:** {item['description']}") 
                 st.write(f"**링크:** [링크]({item['link']})")
-                st.image(item['image'], width=100)
                 st.write("---")  # 구분선
         else:
             st.error('검색 결과가 없습니다.')

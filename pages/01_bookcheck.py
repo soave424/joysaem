@@ -11,6 +11,14 @@ CLIENT_SECRET = 'p2GQWrdWmD'
 # 도서관 장서 파일 업로드
 uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로드하세요.", type="csv")
 
+# 이미지 파일 경로 설정
+image_path = '/Users/joeunlee/Desktop/coding/joysaem/joysaem-1/image/설명.png'
+
+# CSV 파일이 업로드되기 전에는 이미지를 표시
+if not uploaded_file:
+    st.image(image_path, caption='설명 이미지')
+
+
 if uploaded_file:
     current_books = pd.read_csv(uploaded_file)
 

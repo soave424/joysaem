@@ -32,7 +32,8 @@ if st.button('검색'):
                 st.write(f"**저자:** {item['author']}")
                 st.write(f"**출판사:** {item['publisher']}")
                 st.write(f"**출판일:** {item['pubdate']}")
-                st.write(f"**판매가:** {item['discount']}원") 
+                st.write(f"**판매가:** {item['discount']}원")
+                st.write(f"**쪽수:** {item['page']}쪽") 
                 st.write(f"**링크:** [링크]({item['link']})")
                 st.image(item['image'], width=100)
                 st.write("---")  # 구분선

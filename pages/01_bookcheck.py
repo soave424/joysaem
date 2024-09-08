@@ -7,7 +7,6 @@ import os
 
 
 
-
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
 CLIENT_SECRET = 'p2GQWrdWmD'
@@ -20,13 +19,13 @@ image_path = 'image/설명.png'
 
 # 이미지 파일이 존재하는지 확인
 if os.path.exists(image_path):
-    st.image(image_path, caption='설명 이미지')
+    # CSV 파일이 업로드되기 전에는 이미지를 표시
+    if not uploaded_file:
+        st.image(image_path, caption='설명 이미지')
 else:
     st.error(f"이미지 파일을 찾을 수 없습니다: {image_path}")
 
-# CSV 파일이 업로드되기 전에는 이미지를 표시
-if not uploaded_file:
-    st.image(image_path, caption='설명 이미지')
+
 
 
 if uploaded_file:

@@ -3,6 +3,10 @@ import requests
 import pandas as pd
 import re
 from io import StringIO
+import os
+
+
+
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -13,6 +17,12 @@ uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로�
 
 # 이미지 파일 경로 설정
 image_path = '/Users/joeunlee/Desktop/coding/joysaem/joysaem-1/image/설명.png'
+
+# 이미지 파일이 존재하는지 확인
+if os.path.exists(image_path):
+    st.image(image_path, caption='설명 이미지')
+else:
+    st.error(f"이미지 파일을 찾을 수 없습니다: {image_path}")
 
 # CSV 파일이 업로드되기 전에는 이미지를 표시
 if not uploaded_file:

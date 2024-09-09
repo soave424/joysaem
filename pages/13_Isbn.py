@@ -49,8 +49,17 @@ def search_book_by_isbn(cert_key, isbn):
     url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
     
     response = requests.get(url)
+    
+    # 응답 상태 코드 확인
+    if response.status_code != 200:
+        st.error(f"API 요청에 실패했습니다. 상태 코드: {response.status_code}")
+        return None
+    
     result = response.json()
 
+    # 디버깅용 응답 데이터 출력
+    st.write(f"API 응답: {result}")
+    
     if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
         item = result['docs'][0]
         

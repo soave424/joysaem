@@ -29,68 +29,78 @@ def search_books_by_title(title, client_id, client_secret):
     base_url = 'https://openapi.naver.com/v1/search/book.json'
     params = {'query': title, 'display': 1}
     
-    response = requests.get(base_url, headers=headers, params=params)
-    result = response.json()
-    
-    if result.get('items'):
-        item = result['items'][0]  # 첫 번째 결과만 사용
-        return {
-            'title': item.get('title', ''),
-            'author': item.get('author', ''),
-            'publisher': item.get('publisher', ''),
-            'isbn': item.get('isbn', '').split(' ')[-1],  # ISBN-13 우선 사용
-            'image': item.get('image', '')
-        }
-    else:
+    try:
+        response = requests.get(base_url, headers=headers, params=params, timeout=10)
+        result = response.json()
+
+        if result.get('items'):
+            item = result['items'][0]  # 첫 번째 결과만 사용
+            return {
+                'title': item.get('title', ''),
+                'author': item.get('author', ''),
+                'publisher': item.get('publisher', ''),
+                'isbn': item.get('isbn', '').split(' ')[-1],  # ISBN-13 우선 사용
+                'image': item.get('image', '')
+            }
+        else:
+            return None
+    except requests.exceptions.Timeout:
+        st.error("네이버 API 요청이 시간 초과되었습니다.")
+        return None
+    except Exception as e:
+        st.error(f"네이버 API 요청 중 오류가 발생했습니다: {str(e)}")
         return None
 
 # ISBN을 이용해 상세 도서 정보 조회
 def search_book_by_isbn(cert_key, isbn):
     url = f"https://www.nl.go.kr/seoji/SearchApi.do?cert_key={cert_key}&result_style=json&page_no=1&page_size=1&isbn={isbn}"
-    
-    response = requests.get(url)
-    
-    # 응답 상태 코드 확인
-    if response.status_code != 200:
-        st.error(f"API 요청에 실패했습니다. 상태 코드: {response.status_code}")
-        return None
-    
-    result = response.json()
 
-    # 디버깅용 응답 데이터 출력
-    st.write(f"API 응답: {result}")
-    
-    if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
-        item = result['docs'][0]
-        
-        subject = item.get('SUBJECT', '')  # KDC_CODE로 변경
-        kdc_category = get_kdc_category(subject)
-        
-        return {
-            'title': item.get('TITLE', ''),
-            'vol': item.get('VOL', ''),
-            'series_title': item.get('SERIES_TITLE', ''),
-            'class_no': item.get('CLASS_NO', ''),
-            'author': item.get('AUTHOR', ''),  
-            'isbn': item.get('EA_ISBN', ''),
-            'publisher': item.get('PUBLISHER', ''),
-            'edition_stmt': item.get('EDITION_STMT', ''),
-            'pre_price': item.get('PRE_PRICE', ''),
-            'page': item.get('PAGE', ''),
-            'book_size': item.get('BOOK_SIZE', ''),
-            'publish_predate': item.get('PUBLISH_PREDATE', ''),
-            'subject': item.get('SUBJECT', ''),
-            'ebook_yn': item.get('EBOOK_YN', ''),
-            'title_url': item.get('TITLE_URL', ''),
-            'book_tb_cnt_url': item.get('BOOK_TB_CNT_URL', ''),
-            'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
-            'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
-            'publisher_url': item.get('PUBLISHER_URL', ''),
-            'call_no': item.get('CALL_NO', '청구기호 없음'),
-            'kdc_code': subject,
-            'kdc_category': kdc_category
-        }
-    else:
+    try:
+        response = requests.get(url, timeout=10)  # 타임아웃 설정
+        if response.status_code != 200:
+            st.error(f"국립중앙도서관 API 요청에 실패했습니다. 상태 코드: {response.status_code}")
+            return None
+
+        result = response.json()
+
+        if 'TOTAL_COUNT' in result and int(result['TOTAL_COUNT']) > 0:
+            item = result['docs'][0]
+            
+            subject = item.get('SUBJECT', '')  # KDC_CODE로 변경
+            kdc_category = get_kdc_category(subject)
+            
+            return {
+                'title': item.get('TITLE', ''),
+                'vol': item.get('VOL', ''),
+                'series_title': item.get('SERIES_TITLE', ''),
+                'class_no': item.get('CLASS_NO', ''),
+                'author': item.get('AUTHOR', ''),  
+                'isbn': item.get('EA_ISBN', ''),
+                'publisher': item.get('PUBLISHER', ''),
+                'edition_stmt': item.get('EDITION_STMT', ''),
+                'pre_price': item.get('PRE_PRICE', ''),
+                'page': item.get('PAGE', ''),
+                'book_size': item.get('BOOK_SIZE', ''),
+                'publish_predate': item.get('PUBLISH_PREDATE', ''),
+                'subject': item.get('SUBJECT', ''),
+                'ebook_yn': item.get('EBOOK_YN', ''),
+                'title_url': item.get('TITLE_URL', ''),
+                'book_tb_cnt_url': item.get('BOOK_TB_CNT_URL', ''),
+                'book_introduction_url': item.get('BOOK_INTRODUCTION_URL', ''),
+                'book_summary_url': item.get('BOOK_SUMMARY_URL', ''),
+                'publisher_url': item.get('PUBLISHER_URL', ''),
+                'call_no': item.get('CALL_NO', '청구기호 없음'),
+                'kdc_code': subject,
+                'kdc_category': kdc_category
+            }
+        else:
+            st.warning("국립중앙도서관에서 도서 정보를 찾을 수 없습니다.")
+            return None
+    except requests.exceptions.Timeout:
+        st.error("국립중앙도서관 API 요청이 시간 초과되었습니다.")
+        return None
+    except Exception as e:
+        st.error(f"국립중앙도서관 API 요청 중 오류가 발생했습니다: {str(e)}")
         return None
 
 # Streamlit 앱 구성

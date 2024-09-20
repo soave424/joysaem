@@ -76,7 +76,7 @@ async def search_books(book_titles, current_books):
                         '출판사': "로컬 데이터 일치",
                         '발행': "",
                         '가격': "",
-                        '일치여부': match,
+                        '일치': match,
                         '청구기호': call_number,
                         '도서관 서명(자료명)': matched_title,
                         '표지': ''
@@ -88,7 +88,7 @@ async def search_books(book_titles, current_books):
                         '출판사': '검색 결과 없음',
                         '발행': '',
                         '가격': '',
-                        '일치여부': '',
+                        '일치': '',
                         '청구기호': '',
                         '도서관 서명(자료명)': '',
                         '표지': ''
@@ -103,12 +103,16 @@ async def search_books(book_titles, current_books):
                 image = item.get('image', "")  # 이미지 URL
 
                 formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
+               
+                # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산)
                 try:
                     price_numeric = int(price)
-                    original_price = int(price_numeric / 0.9)
+                    # 원래 정가는 할인된 가격을 1/0.9로 계산하고, 소수점 두 번째 자리에서 반올림
+                    original_price = round(price_numeric / 0.9)
                     price_text = f"{original_price:,}원"
                 except ValueError:
                     price_text = "Price Error"
+
 
                 match = ""
                 call_number = ""
@@ -136,7 +140,7 @@ async def search_books(book_titles, current_books):
                     '발행': formatted_date,
                     '가격': price_text,
                     '표지': image,
-                    '일치여부': match,
+                    '일치': match,
                     '청구기호': call_number,
                     '도서관 서명(자료명)': matched_title
                 })

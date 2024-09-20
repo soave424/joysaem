@@ -87,7 +87,7 @@ async def search_books(book_titles, current_books):
                 else:
                     books_info.append({
                         '도서명': title,
-                        '표지': ''
+                        '표지': '',
                         '저자': '검색 결과 없음',
                         '출판사': '검색 결과 없음',
                         '발행': '',

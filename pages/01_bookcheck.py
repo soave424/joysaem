@@ -7,6 +7,8 @@ import asyncio
 import aiohttp
 from io import StringIO
 import os
+from decimal import Decimal, ROUND_HALF_UP
+
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -106,9 +108,8 @@ async def search_books(book_titles, current_books):
                
                 # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산)
                 try:
-                    price_numeric = int(price)
-                    # 원래 정가는 할인된 가격을 1/0.9로 계산하고, 소수점 두 번째 자리에서 반올림
-                    original_price = round(price_numeric / 0.9)
+                    price_numeric = Decimal(price)  # Decimal로 변환
+                    original_price = (price_numeric / Decimal('0.9')).quantize(Decimal('1'), rounding=ROUND_HALF_UP)  # 소수점 반올림
                     price_text = f"{original_price:,}원"
                 except ValueError:
                     price_text = "Price Error"

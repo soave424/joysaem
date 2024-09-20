@@ -169,8 +169,7 @@ if uploaded_file:
 
     if st.button('책 검색'):
         # 책 제목 파싱
-        book_titles = re.split(r'[,\n]+', book_titles_input)
-        book_titles = [title.strip() for title in book_titles if title.strip()]
+        book_titles = [re.sub(r'\s+', ' ', title).strip() for title in book_titles if title.strip()]
 
         if book_titles:
             with st.spinner(f'검색 중... 총 {len(book_titles)}권을 검색합니다.'):

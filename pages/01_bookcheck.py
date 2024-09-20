@@ -8,6 +8,9 @@ import aiohttp
 from io import StringIO
 import os
 
+# 네이버 API 접속 정보
+CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
+CLIENT_SECRET = 'p2GQWrdWmD'
 
 # 도서관 장서 파일 업로드
 uploaded_file = st.file_uploader("현재 도서관 장서 CSV 파일을 업로드하세요.", type="csv")

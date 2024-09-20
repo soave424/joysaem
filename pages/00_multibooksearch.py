@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import re
 from io import StringIO
+from decimal import Decimal, ROUND_HALF_UP
+import math
 
 # 네이버 API 접속 정보
 CLIENT_ID = '4VEUTHOdiibOqzJdOu7P'
@@ -37,10 +39,16 @@ def search_books(book_titles):
             # 출간일 처리 (연도와 월만 추출)
             formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
 
-            # 정가 계산 (판매가의 100%)
+
+            # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산, 100원 단위로 올림)
             try:
-                price_numeric = int(price)
-                original_price = int(price_numeric / 0.9)
+                price_numeric = Decimal(price)  # Decimal로 변환
+                # 원래 정가는 할인된 가격을 1/0.9로 계산
+                original_price = price_numeric / Decimal('0.9')
+                
+                # 100원 단위로 올림
+                original_price = math.ceil(original_price / 100) * 100
+                
                 price_text = f"{original_price:,}원"
             except ValueError:
                 price_text = "Price Error"

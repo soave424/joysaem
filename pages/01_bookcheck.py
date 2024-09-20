@@ -75,7 +75,7 @@ async def search_books(book_titles, current_books):
                 if match:
                     books_info.append({
                         '도서명': title,
-                        '표지': ''
+                        '표지': '',
                         '저자': "로컬 데이터 일치",
                         '출판사': "로컬 데이터 일치",
                         '발행': "",

@@ -6,4 +6,4 @@ PyPDF2>=2.1.0
 matplotlib
 pandas
 seaborn
-
+aiohttp

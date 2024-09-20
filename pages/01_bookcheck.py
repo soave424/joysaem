@@ -37,7 +37,7 @@ def clean_title(title):
 # 비동기 HTTP 요청 함수
 async def fetch_book(session, url, headers):
     try:
-        async with session.get(url, headers=headers, timeout=1) as response:
+        async with session.get(url, headers=headers, timeout=10) as response:
             return await response.json()
     except asyncio.TimeoutError:
         return None  # 타임아웃 발생 시 None 반환
@@ -181,7 +181,7 @@ if uploaded_file:
         book_titles = [re.sub(r'\s+', ' ', title).strip() for title in re.split(r'[,\n]+', book_titles_input) if title.strip()]
 
         if book_titles:
-            with st.spinner(f'검색 중... 총 {len(book_titles)}권을 검색합니다.'):
+            with st.spinner(f'검색 중... 총 {len(book_titles)}권을 검색합니다.예상소요시간 : {len(book_titles)*10} 초'):
                 books_df = asyncio.run(search_books(book_titles, current_books))
                 if not books_df.empty:
                     books_df['표지'] = format_images(books_df)

@@ -106,10 +106,15 @@ async def search_books(book_titles, current_books):
 
                 formatted_date = pubdate[:4] + '년 ' + pubdate[4:6] + '월' if len(pubdate) >= 6 else pubdate
                
-                # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산)
+                # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산, 100원 단위로 반올림)
                 try:
                     price_numeric = Decimal(price)  # Decimal로 변환
-                    original_price = (price_numeric / Decimal('0.9')).quantize(Decimal('100'), rounding=ROUND_HALF_UP)  # 소수점 반올림
+                    # 원래 정가는 할인된 가격을 1/0.9로 계산하고, 소수점까지 계산한 후 100원 단위로 반올림
+                    original_price = (price_numeric / Decimal('0.9'))
+                    
+                    # 100원 단위로 반올림
+                    original_price = (original_price // 100) * 100 + (100 if original_price % 100 != 0 else 0)
+                    
                     price_text = f"{original_price:,}원"
                 except ValueError:
                     price_text = "Price Error"

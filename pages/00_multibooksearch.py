@@ -46,9 +46,9 @@ def search_books(book_titles):
                 # 원래 정가는 할인된 가격을 1/0.9로 계산
                 original_price = price_numeric / Decimal('0.9')
                 
-                # 100원 단위로 올림
-                original_price = math.ceil(original_price / 100) * 100
-                
+                # 100원 단위로 올림 (Decimal 사용)
+                original_price = (original_price.quantize(Decimal('1'), rounding=ROUND_HALF_UP) + Decimal('99')).quantize(Decimal('100'), rounding=ROUND_HALF_UP)
+
                 price_text = f"{original_price:,}원"
             except ValueError:
                 price_text = "Price Error"

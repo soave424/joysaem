@@ -75,6 +75,7 @@ async def search_books(book_titles, current_books):
                 if match:
                     books_info.append({
                         '도서명': title,
+                        '표지': ''
                         '저자': "로컬 데이터 일치",
                         '출판사': "로컬 데이터 일치",
                         '발행': "",
@@ -82,11 +83,11 @@ async def search_books(book_titles, current_books):
                         '일치': match,
                         '청구기호': call_number,
                         '도서관 서명(자료명)': matched_title,
-                        '표지': ''
                     })
                 else:
                     books_info.append({
                         '도서명': title,
+                        '표지': ''
                         '저자': '검색 결과 없음',
                         '출판사': '검색 결과 없음',
                         '발행': '',
@@ -94,7 +95,6 @@ async def search_books(book_titles, current_books):
                         '일치': '',
                         '청구기호': '',
                         '도서관 서명(자료명)': '',
-                        '표지': ''
                     })
             else:
                 item = response['items'][0]
@@ -145,11 +145,11 @@ async def search_books(book_titles, current_books):
 
                 books_info.append({
                     '도서명': result_title,
+                    '표지': image,
                     '저자': author,
                     '출판사': publisher,
                     '발행': formatted_date,
                     '가격': price_text,
-                    '표지': image,
                     '일치': match,
                     '청구기호': call_number,
                     '도서관 서명(자료명)': matched_title

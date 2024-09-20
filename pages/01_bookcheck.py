@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 import pandas as pd
 import re
@@ -38,7 +40,7 @@ async def fetch_book(session, url, headers):
         return None  # 타임아웃 발생 시 None 반환
 
 # 비동기 책 검색 함수
-async def search_books(book_titles):
+async def search_books(book_titles, current_books):
     headers = {
         'X-Naver-Client-Id': CLIENT_ID,
         'X-Naver-Client-Secret': CLIENT_SECRET
@@ -56,23 +58,43 @@ async def search_books(book_titles):
         responses = await asyncio.gather(*tasks, return_exceptions=True)
 
         for response, title in zip(responses, book_titles):
-            if response is None:  # 타임아웃 처리
-                books_info.append({
-                    '도서명': title,
-                    '저자': '시간 초과',
-                    '출판사': '시간 초과',
-                    '발행': '시간 초과',
-                    '가격': '시간 초과',
-                    '일치여부': '시간 초과',
-                    '청구기호': '',
-                    '도서관 서명(자료명)': '',
-                    '표지': ''
-                })
-                continue
-
-            items = response.get('items')
-            if items:
-                item = items[0]
+            if response is None or not response.get('items'):  # 타임아웃 또는 검색 결과 없음 처리
+                # 네이버 검색 결과가 없거나 검색 불가인 경우 CSV 파일에서 도서명 확인
+                match = ""
+                call_number = ""
+                matched_title = ""
+                for _, row in current_books.iterrows():
+                    if clean_title(title) == clean_title(row['서명(자료명)']):
+                        match = "일치"
+                        call_number = row['청구기호']
+                        matched_title = row['서명(자료명)']
+                        break
+                if match:
+                    books_info.append({
+                        '도서명': title,
+                        '저자': "로컬 데이터 일치",
+                        '출판사': "로컬 데이터 일치",
+                        '발행': "",
+                        '가격': "",
+                        '일치여부': match,
+                        '청구기호': call_number,
+                        '도서관 서명(자료명)': matched_title,
+                        '표지': ''
+                    })
+                else:
+                    books_info.append({
+                        '도서명': title,
+                        '저자': '검색 결과 없음',
+                        '출판사': '검색 결과 없음',
+                        '발행': '',
+                        '가격': '',
+                        '일치여부': '',
+                        '청구기호': '',
+                        '도서관 서명(자료명)': '',
+                        '표지': ''
+                    })
+            else:
+                item = response['items'][0]
                 result_title = item.get('title', title)
                 author = item.get('author', "저자 정보 없음")
                 publisher = item.get('publisher', "출판사 정보 없음")
@@ -118,18 +140,6 @@ async def search_books(book_titles):
                     '청구기호': call_number,
                     '도서관 서명(자료명)': matched_title
                 })
-            else:
-                books_info.append({
-                    '도서명': title,
-                    '저자': '검색 결과 없음',
-                    '출판사': '검색 결과 없음',
-                    '발행': '',
-                    '가격': '',
-                    '일치여부': '',
-                    '청구기호': '',
-                    '도서관 서명(자료명)': '',
-                    '표지': ''
-                })
 
     return pd.DataFrame(books_info)
 
@@ -159,7 +169,7 @@ if uploaded_file:
 
         if book_titles:
             with st.spinner('검색 중...'):
-                books_df = asyncio.run(search_books(book_titles))
+                books_df = asyncio.run(search_books(book_titles, current_books))
                 if not books_df.empty:
                     books_df['표지'] = format_images(books_df)
                     st.write(

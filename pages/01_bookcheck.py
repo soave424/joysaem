@@ -168,7 +168,7 @@ if uploaded_file:
         book_titles = [title.strip() for title in book_titles if title.strip()]
 
         if book_titles:
-            with st.spinner('검색 중...'):
+            with st.spinner(f'검색 중... 총 {len(book_titles)}권을 검색합니다.'):
                 books_df = asyncio.run(search_books(book_titles, current_books))
                 if not books_df.empty:
                     books_df['표지'] = format_images(books_df)

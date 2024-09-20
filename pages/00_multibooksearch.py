@@ -62,6 +62,7 @@ def search_books(book_titles):
                 '출판사': publisher,
                 '발행': formatted_date,
                 '가격': price_text,
+                '판매가': price,
                 '표지': image,
                 '비고': note
             })
@@ -73,6 +74,7 @@ def search_books(book_titles):
                 '출판사': "검색 결과 없음",
                 '발행': "검색 결과 없음",
                 '가격': "검색 결과 없음",
+                '판매가': "검색 결과 없음",
                 '표지': "",
                 '비고': "검색 결과 없음"
             })

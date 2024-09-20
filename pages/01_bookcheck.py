@@ -111,14 +111,15 @@ async def search_books(book_titles, current_books):
 
                 # 정가 계산 (할인된 판매가에서 10% 할인 금액을 역산, 100원 단위로 올림)
                 try:
-                    price_numeric = Decimal(price)  # Decimal로 변환
-                    # 원래 정가는 할인된 가격을 1/0.9로 계산
-                    original_price = price_numeric / Decimal('0.9')
-
-                    # 100원 단위로 올림
-                    original_price = math.ceil(original_price / 100) * 100
+                    # price_numeric = Decimal(price)  # Decimal로 변환
+                    # # 원래 정가는 할인된 가격을 1/0.9로 계산
+                    # original_price = price_numeric / Decimal('0.9')
                     
-                    price_text = f"{original_price:,}원"
+                    # # 100원 단위로 올림
+                    # original_price = math.ceil(original_price / 100) * 100
+                    
+                    # price_text = f"{original_price:,}원"
+                    price_text = price
                 except ValueError:
                     price_text = "Price Error"
 

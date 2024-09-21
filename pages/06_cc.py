@@ -1,7 +1,12 @@
+
 import streamlit as st
 
+# 메인 화면 분할
+col1, col2 = st.columns(2)
+
 # 데이터 입력 화면
-with st.sidebar:
+with col1:
+    st.subheader("데이터 입력")
     # 참석, 불참, 기타 인원 입력
     num_attend = st.number_input("참석 인원", min_value=0, step=1)
     num_absent = st.number_input("불참 인원", min_value=0, step=1)
@@ -22,12 +27,12 @@ with st.sidebar:
         student_bus_cost = (total_bus_cost - (num_teacher * bus_cost_per)) / num_attend
         student_total_cost = student_bus_cost + activity_cost + insurance_cost
         teacher_bus_cost = num_teacher * bus_cost_per
-        
-        # 결과 화면
-        with st.container():
-            st.subheader("계산 결과")
-            st.write(f"총 참가 인원: {total_participants}명")
-            st.write(f"학생 1인당 버스비: {student_bus_cost:.0f}원")
-            st.write(f"학생 1인당 총 비용: {student_total_cost:.0f}원")
-            st.write(f"교사 버스비 총액: {teacher_bus_cost:.0f}원")
-            st.write(f"총 소요 경비: {total_bus_cost + activity_cost + insurance_cost * num_attend:.0f}원")
+
+# 계산 결과 화면
+with col2:
+    st.subheader("계산 결과")
+    st.write(f"총 참가 인원: {total_participants}명")
+    st.write(f"학생 1인당 버스비: {student_bus_cost:.0f}원")
+    st.write(f"학생 1인당 총 비용: {student_total_cost:.0f}원")
+    st.write(f"교사 버스비 총액: {teacher_bus_cost:.0f}원")
+    st.write(f"총 소요 경비: {total_bus_cost + activity_cost + insurance_cost * num_attend:.0f}원")

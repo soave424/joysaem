@@ -15,9 +15,8 @@ with col1:
     class_attend = {}
     class_absent = {}
     for i in range(1, int(num_classes)+1):
-        class_num = st.text_input(f"{i}반 번호", key=f"class_{i}")
-        class_attend[class_num] = st.number_input(f"{i}반 참석 인원", min_value=0, step=1, key=f"attend_{i}")
-        class_absent[class_num] = st.number_input(f"{i}반 불참 인원", min_value=0, step=1, key=f"absent_{i}")
+        class_attend[i] = st.number_input(f"{i}반 참석 인원", min_value=0, step=1, key=f"attend_{i}")
+        class_absent[i] = st.number_input(f"{i}반 불참 인원", min_value=0, step=1, key=f"absent_{i}")
         
     # 버스 및 기타 비용 입력
     bus_cost_per = st.number_input("버스 1대 비용(원)", min_value=0.0, step=1.0)
@@ -43,7 +42,9 @@ with col2:
     
     # 반별 참석/불참 인원 표 출력
     st.write("반별 참석/불참 인원")
-    table_data = [[f"{k}", class_attend[k], class_absent[k], class_attend[k] + class_absent[k]] for k in class_attend.keys()]
+    table_data = [["반", "참석", "불참", "합계"] ]
+    for i in range(1, int(num_classes)+1):
+        table_data.append([f"{i}반", class_attend[i], class_absent[i], class_attend[i] + class_absent[i]])
     st.table(table_data)
     
     st.write(f"총 참가 인원: {total_participants}명")

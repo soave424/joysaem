@@ -59,7 +59,7 @@ if num_participants > 0:
                             # Create a table-like structure with calculations and explanations
                             result_data = {
                                 "항목": [
-                                    "참가 학생 수", "불참 학생 수", "전체 학생 수", "인솔 교사 수",
+                                    "참가자", "불참자", "제적", "인솔",
                                     "버스비 총액", "1인당 버스비", "버스 절삭액",
                                     "학생 체험비 총액", "학생 중식비 총액", "학생 보험비 총액",
                                     "학생 체험비 (일반)", "학생 체험비 (지원)",

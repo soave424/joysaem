@@ -19,14 +19,10 @@ if num_participants > 0 or num_absentees > 0 or num_teachers > 0:
 
 # If both bus price and number of buses are filled, show activity-related questions
 if bus_price > 0 and num_buses > 0:
-    st.header("3. 체험비 및 중식비 입력")
+    st.header("3. 체험비 입력")
     student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=1000)
     supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)
     student_lunch_cost = st.number_input("8. 학생 중식비", min_value=0, step=1000)
-
-# If activity-related fields are filled, show insurance-related questions
-if student_activity_cost > 0 and student_lunch_cost > 0:
-    st.header("4. 보험비 입력")
     student_insurance_cost = st.number_input("9. 학생 보험비", min_value=0, step=500)
     teacher_insurance_cost = st.number_input("10. 교사 보험비", min_value=0, step=500)
 

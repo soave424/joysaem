@@ -73,14 +73,14 @@ if num_participants > 0:
                                     f"{total_teacher_transport_cost:,}원", f"{total_teacher_insurance_cost:,}원"
                                 ],
                                 "계산 과정": [
-                                    "입력값 그대로", "입력값 그대로", "참가 학생수 + 불참 학생수",
-                                    "입력값 그대로", f"버스 1대 금액({bus_price:,}원) * 버스 대수({num_buses})", 
+                                    f"참가 학생 수({num_participants})명", f"불참 학생 수({num_absentees})명" , f"참가 학생 수({num_participants})명 + 불참 학생 수({num_absentees})명",
+                                    f"인솔 교사 수 {num_teachers}명", f"버스 1대 금액({bus_price:,}원) * 버스 대수({num_buses})", 
                                     f"버스비 총액({total_bus_cost:,}원) / (참가 학생 수({num_participants}) + 인솔 교사 수({num_teachers}))",
-                                    f"버스비 총액({total_bus_cost:,}원) - (1인당 버스비({bus_cost_per_person:,}원) * 전체 인원({total_participants}))",
-                                    f"학생 체험비({student_activity_cost:,}원) * 지원 제외 참가 학생 수({actual_students})",
+                                    f"버스비 총액({total_bus_cost:,}원) - (1인당 버스비({bus_cost_per_person:,}원) * 전체 탑승 인원({total_participants}))",
+                                    f"학생 체험비({student_activity_cost:,}원) * 지원 제외 참가 학생 수({actual_students}) : ({supported_students})명",
                                     f"학생 중식비({student_lunch_cost:,}원) * 참가 학생 수({num_participants})",
                                     f"학생 보험비({student_insurance_cost:,}원) * 참가 학생 수({num_participants})",
-                                    f"1인당 버스비 + 체험비 + 중식비 + 보험비", "체험비 제외된 학생에게는 체험비 제외", 
+                                    f"1인당 버스비(1인당 버스비({bus_cost_per_person:,}원) + 체험비({student_activity_cost:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)", "1인당 버스비(1인당 버스비({bus_cost_per_person:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)", 
                                     f"1인당 버스비({bus_cost_per_person:,}원) * 인솔 교사 수({num_teachers}) + 절삭액({bus_trimming_cost:,}원)",
                                     f"교사 보험비({teacher_insurance_cost:,}원) * 인솔 교사 수({num_teachers})"
                                 ]

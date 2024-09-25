@@ -1,5 +1,6 @@
 import streamlit as st
 import math
+import pandas as pd 
 
 # Title of the calculator
 st.title("Experiential Learning Cost Calculator")

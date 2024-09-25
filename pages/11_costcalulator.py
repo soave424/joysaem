@@ -5,26 +5,28 @@ import pandas as pd
 # Title of the calculator
 st.title("현장체험학습비 계산기")
 
+
+
 # Input for participants, absentees, and teachers (shown together)
 st.header("1. 인원 입력")
-num_participants = st.number_input("1. 참가 학생 수", min_value=1, step=1)
+num_participants = st.number_input("1. 참가 학생 수", min_value=0, step=1)
 num_absentees = st.number_input("2. 불참 학생 수", min_value=0, step=1)
 num_teachers = st.number_input("3. 인솔 교사 수", min_value=1, step=1)
 
 # If any of the first three fields is greater than 0, show bus-related questions
-if num_participants > 1 :
+if num_participants > 0 :
     st.header("2. 버스 관련 입력")
     bus_price = st.number_input("4. 버스 1대 금액", min_value=0, step=1000)
     num_buses = st.number_input("5. 버스 총 대수", min_value=1, step=1)
 
 # If both bus price and number of buses are filled, show activity-related questions
-if bus_price > 0 :
-    st.header("3. 체험비 입력")
-    student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=1000)
-    supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)
-    student_lunch_cost = st.number_input("8. 학생 중식비", min_value=0, step=1000)
-    student_insurance_cost = st.number_input("9. 학생 보험비", min_value=0, step=500)
-    teacher_insurance_cost = st.number_input("10. 교사 보험비", min_value=0, step=500)
+    if bus_price > 0 :
+        st.header("3. 체험비 입력")
+        student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=100)
+        supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)
+        student_lunch_cost = st.number_input("8. 학생 중식비", min_value=0, step=100)
+        student_insurance_cost = st.number_input("9. 학생 보험비", min_value=0, step=10)
+        teacher_insurance_cost = st.number_input("10. 교사 보험비", min_value=0, step=10)
 
 # Once all fields are entered, calculate the results
 if st.button("Calculate"):

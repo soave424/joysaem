@@ -1,38 +1,38 @@
 import streamlit as st
 import math
-import pandas as pd
+import pandas as pd 
 
 # Title of the calculator
 st.title("현장체험학습비 계산기")
 
-# Inputs for participant-related data
-col1, col2 = st.columns(2)
+# Input for participants, absentees, and teachers (shown together)
+st.header("1. 인원 입력")
+num_participants = st.number_input("1. 참가 학생 수", min_value=0, step=1)
+num_absentees = st.number_input("2. 불참 학생 수", min_value=0, step=1)
+num_teachers = st.number_input("3. 인솔 교사 수", min_value=0, step=1)
 
-with col1:
-    num_participants = st.number_input("1. 참가 학생 수", min_value=0, step=1)
-    num_absentees = st.number_input("2. 불참 학생 수", min_value=0, step=1)
-    num_teachers = st.number_input("3. 인솔 교사 수", min_value=0, step=1)
+# If any of the first three fields is greater than 0, show bus-related questions
+if num_participants > 0 or num_absentees > 0 or num_teachers > 0:
+    st.header("2. 버스 관련 입력")
+    bus_price = st.number_input("4. 버스 1대 금액", min_value=0, step=1000)
+    num_buses = st.number_input("5. 버스 총 대수", min_value=0, step=1)
 
-if num_participants > 0 or num_teachers > 0:
-    # Inputs for bus-related data
-    col3, col4 = st.columns(2)
-    with col3:
-        bus_price = st.number_input("4. 버스 1대 금액", min_value=0, step=1000)
-    with col4:
-        num_buses = st.number_input("5. 버스 총 대수", min_value=0, step=1)
-
+# If both bus price and number of buses are filled, show activity-related questions
 if bus_price > 0 and num_buses > 0:
-    # Inputs for student costs
-    col5, col6 = st.columns(2)
-    with col5:
-        student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=1000)
-        supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)
-    with col6:
-        student_lunch_cost = st.number_input("8. 학생 중식비", min_value=0, step=1000)
-        student_insurance_cost = st.number_input("9. 학생 보험비", min_value=0, step=500)
-        teacher_insurance_cost = st.number_input("10. 교사 보험비", min_value=0, step=500)
+    st.header("3. 체험비 및 중식비 입력")
+    student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=1000)
+    supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)
+    student_lunch_cost = st.number_input("8. 학생 중식비", min_value=0, step=1000)
 
-if st.button("Calculate") and bus_price > 0 and num_buses > 0:
+# If activity-related fields are filled, show insurance-related questions
+if student_activity_cost > 0 and student_lunch_cost > 0:
+    st.header("4. 보험비 입력")
+    student_insurance_cost = st.number_input("9. 학생 보험비", min_value=0, step=500)
+    teacher_insurance_cost = st.number_input("10. 교사 보험비", min_value=0, step=500)
+
+# Once all fields are entered, calculate the results
+if st.button("Calculate"):
+
     # Calculations for personnel
     total_students = num_participants + num_absentees
 
@@ -61,7 +61,6 @@ if st.button("Calculate") and bus_price > 0 and num_buses > 0:
     total_teacher_expenses = total_teacher_transport_cost + total_teacher_insurance_cost
     total_expenses = total_bus_cost + total_student_activity_cost + total_student_lunch_cost + total_student_insurance_cost + total_teacher_insurance_cost
 
-    # Results
     st.subheader("Calculation Results")
 
     # Create a table-like structure with calculations and explanations
@@ -81,15 +80,15 @@ if st.button("Calculate") and bus_price > 0 and num_buses > 0:
             f"{total_teacher_transport_cost:,}원", f"{total_teacher_insurance_cost:,}원"
         ],
         "계산 과정": [
-            f"참가 학생 수({num_participants})명 + 불참 학생 수({num_absentees})명", f"참가 학생 수({num_participants})명", f"불참 학생 수({num_absentees})명",
-            f"인솔 교사 수 {num_teachers}명", f"버스 1대 금액({bus_price:,}원) * 버스 대수({num_buses})",
+            f"참가 학생 수({num_participants})명 + 불참 학생 수({num_absentees})명", f"참가 학생 수({num_participants})명", f"불참 학생 수({num_absentees})명" , 
+            f"인솔 교사 수 {num_teachers}명", f"버스 1대 금액({bus_price:,}원) * 버스 대수({num_buses})", 
             f"버스비 총액({total_bus_cost:,}원) / (참가 학생 수({num_participants}) + 인솔 교사 수({num_teachers}))",
             f"버스비 총액({total_bus_cost:,}원) - (1인당 버스비({bus_cost_per_person:,}원) * 전체 탑승 인원({total_participants}))",
             f"학생 체험비({student_activity_cost:,}원) * 지원 제외 참가 학생 수({actual_students}) : ({supported_students})명",
             f"학생 중식비({student_lunch_cost:,}원) * 참가 학생 수({num_participants})",
             f"학생 보험비({student_insurance_cost:,}원) * 참가 학생 수({num_participants})",
-            f"1인당 버스비({bus_cost_per_person:,}원) + 체험비({student_activity_cost:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)",
-            "N/A" if student_total_supported is None else f"1인당 버스비({bus_cost_per_person:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)",
+            f"1인당 버스비({bus_cost_per_person:,}원) + 체험비({student_activity_cost:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)", 
+            f"1인당 버스비({bus_cost_per_person:,}원) + 중식비({student_lunch_cost:,}원) + 보험비({student_insurance_cost:,}원)", 
             f"1인당 버스비({bus_cost_per_person:,}원) * 인솔 교사 수({num_teachers}) + 절삭액({bus_trimming_cost:,}원)",
             f"교사 보험비({teacher_insurance_cost:,}원) * 인솔 교사 수({num_teachers})"
         ]
@@ -97,7 +96,7 @@ if st.button("Calculate") and bus_price > 0 and num_buses > 0:
 
     # Display the table with explanations
     result_df = pd.DataFrame(result_data)
-    st.write(result_df.to_html(index=False), unsafe_allow_html=True)
+    st.table(result_df)
 
     # Validation check for the total expenses
     st.subheader("Validation")

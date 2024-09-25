@@ -3,7 +3,7 @@ import math
 import pandas as pd 
 
 # Title of the calculator
-st.title("Experiential Learning Cost Calculator")
+st.title("현장체험학습비 계산기")
 
 # Step-by-step input
 num_participants = st.number_input("1. 참가 학생 수", min_value=0, step=1)

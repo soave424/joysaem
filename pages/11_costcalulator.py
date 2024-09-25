@@ -32,7 +32,7 @@ if num_participants > 0:
                             # Bus-related calculations
                             total_bus_cost = bus_price * num_buses
                             total_participants = num_participants + num_teachers
-                            bus_cost_per_person = math.floor(total_bus_cost / total_participants)
+                            bus_cost_per_person = math.floor((total_bus_cost / total_participants)/10)*10
                             bus_trimming_cost = total_bus_cost - (bus_cost_per_person * total_participants)
 
                             # Activity cost calculations

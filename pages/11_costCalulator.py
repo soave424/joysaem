@@ -59,21 +59,21 @@ if num_participants > 0:
                             # Create a table-like structure with calculations and explanations
                             result_data = {
                                 "항목": [
-                                    "참가자", "불참자", "제적", "인솔",
+                                    "제적", "참가자", "불참자", "인솔",
                                     "버스비 총액", "1인당 버스비", "버스 절삭액",
                                     "학생 체험비 총액", "학생 중식비 총액", "학생 보험비 총액",
                                     "학생 체험비 (일반)", "학생 체험비 (지원)",
                                     "교사 교통비", "교사 보험비"
                                 ],
                                 "결과값": [
-                                    f"{num_participants}명", f"{num_absentees}명", f"{total_students}명", f"{num_teachers}명",
+                                    f"{total_students}명", f"{num_participants}명", f"{num_absentees}명", f"{num_teachers}명",
                                     f"{total_bus_cost:,}원", f"{bus_cost_per_person:,}원", f"{bus_trimming_cost:,}원",
                                     f"{total_student_activity_cost:,}원", f"{total_student_lunch_cost:,}원", f"{total_student_insurance_cost:,}원",
                                     f"{student_total_general:,}원", f"{student_total_supported:,}원" if student_total_supported else "N/A",
                                     f"{total_teacher_transport_cost:,}원", f"{total_teacher_insurance_cost:,}원"
                                 ],
                                 "계산 과정": [
-                                    f"참가 학생 수({num_participants})명", f"불참 학생 수({num_absentees})명" , f"참가 학생 수({num_participants})명 + 불참 학생 수({num_absentees})명",
+                                    f"참가 학생 수({num_participants})명 + 불참 학생 수({num_absentees})명", f"참가 학생 수({num_participants})명", f"불참 학생 수({num_absentees})명" , 
                                     f"인솔 교사 수 {num_teachers}명", f"버스 1대 금액({bus_price:,}원) * 버스 대수({num_buses})", 
                                     f"버스비 총액({total_bus_cost:,}원) / (참가 학생 수({num_participants}) + 인솔 교사 수({num_teachers}))",
                                     f"버스비 총액({total_bus_cost:,}원) - (1인당 버스비({bus_cost_per_person:,}원) * 전체 탑승 인원({total_participants}))",

@@ -9,16 +9,16 @@ st.title("현장체험학습비 계산기")
 st.header("1. 인원 입력")
 num_participants = st.number_input("1. 참가 학생 수", min_value=0, step=1)
 num_absentees = st.number_input("2. 불참 학생 수", min_value=0, step=1)
-num_teachers = st.number_input("3. 인솔 교사 수", min_value=0, step=1)
+num_teachers = st.number_input("3. 인솔 교사 수", min_value=1, step=1)
 
 # If any of the first three fields is greater than 0, show bus-related questions
-if num_participants > 0 or num_absentees > 0 or num_teachers > 0:
+if num_participants > 0 :
     st.header("2. 버스 관련 입력")
     bus_price = st.number_input("4. 버스 1대 금액", min_value=0, step=1000)
-    num_buses = st.number_input("5. 버스 총 대수", min_value=0, step=1)
+    num_buses = st.number_input("5. 버스 총 대수", min_value=1, step=1)
 
 # If both bus price and number of buses are filled, show activity-related questions
-if bus_price > 0 and num_buses > 0:
+if bus_price > 0 :
     st.header("3. 체험비 입력")
     student_activity_cost = st.number_input("6. 학생 체험비", min_value=0, step=1000)
     supported_students = st.number_input("7. 체험비 지원 학생 수", min_value=0, step=1)

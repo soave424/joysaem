@@ -1,9 +1,10 @@
 google-play-scraper
 beautifulsoup4==4.9.3
 requests==2.25.1
-streamlit==1.10.0
 PyPDF2>=2.1.0
 matplotlib
 pandas
 seaborn
 aiohttp
+streamlit==1.9.0
+altair==4.2.2

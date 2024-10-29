@@ -2,11 +2,13 @@
 import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
-
 import os
 
+# .env 파일 로드
+load_dotenv()
+
 # 환경 변수로부터 CSV 파일 경로 가져오기
-CSV_PATH = os.getenv('CSV_FILE_PATH', 'hidden_data.csv')
+CSV_PATH = os.getenv('CSV_FILE_PATH', 'csv/hidden_data.csv')  # 기본 경로 설정
 
 # CSV 파일 로드 함수 (캐싱 적용)
 @st.cache_data

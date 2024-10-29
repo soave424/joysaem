@@ -3,17 +3,19 @@ import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 import os
+from datetime import datetime
+import json
 
 # .env 파일 로드
 load_dotenv()
 
 # 환경 변수로부터 CSV 파일 경로 가져오기
 CSV_PATH = os.getenv('CSV_FILE_PATH', 'csv/hidden_data.csv')  # 기본 경로 설정
+JSON_PATH = os.getenv('JSON_FILE_PATH', 'data/registration_status.json')  # JSON 파일 경로 설정
 
 # CSV 파일 로드 함수 (캐싱 적용)
 @st.cache_data
 def load_data():
-    # CSV 파일 읽기
     df = pd.read_csv(CSV_PATH)
     return df
 
@@ -21,7 +23,7 @@ def load_data():
 data = load_data()
 
 # Streamlit UI 구성
-st.title("강좌 신청 조회")
+st.title("강좌 신청 조회 및 등록 관리")
 
 # 사용자 입력
 name = st.text_input("이름을 입력하세요:")
@@ -36,9 +38,40 @@ if st.button("조회"):
     user_data = data[(data['이름'] == name) & (data['전화번호_뒷자리'] == phone_suffix)]
     
     if not user_data.empty:
+        # 신청한 강좌 정보 출력
         courses = user_data[['선택 강좌 1', '선택 강좌 2', '선택 강좌 3']].values.flatten()
         st.write(f"{name}님이 신청한 강좌:")
         for course in courses[:3]:  # 최대 3개 강좌 출력
             st.write(f"- {course}")
+        
+        # 등록 완료 및 취소 버튼 추가
+        if st.button("등록 완료"):
+            # JSON 파일 업데이트 - 등록 상태와 시간 업데이트
+            registration_status = {
+                "이름": name,
+                "전화번호 뒷자리": phone_suffix,
+                "등록": "등록",
+                "시간": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+            with open(JSON_PATH, 'w') as json_file:
+                json.dump(registration_status, json_file, ensure_ascii=False, indent=4)
+            
+            # 등록 완료 메시지와 신청한 강좌 안내
+            st.success("연수에 참여해주셔서 감사합니다!")
+            st.write("신청하신 강좌:")
+            for course in courses[:3]:  # 최대 3개 강좌 출력
+                st.write(f"- {course}")
+
+        elif st.button("등록 취소"):
+            # JSON 파일 업데이트 - 등록 취소 상태 (빈 셀 처리)
+            registration_status = {
+                "이름": name,
+                "전화번호 뒷자리": phone_suffix,
+                "등록": "",
+                "시간": ""
+            }
+            with open(JSON_PATH, 'w') as json_file:
+                json.dump(registration_status, json_file, ensure_ascii=False, indent=4)
+            st.write("등록이 취소되었습니다.")
     else:
         st.write("해당 정보가 없습니다. 이름과 전화번호 뒷자리를 확인해주세요.")

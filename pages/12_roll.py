@@ -25,17 +25,20 @@ st.title("강좌 신청 조회")
 
 # 사용자 입력
 name = st.text_input("이름을 입력하세요:")
-phone_number = st.text_input("전화번호를 입력하세요:")
+phone_suffix = st.text_input("전화번호 뒷자리를 입력하세요:")
 
 # 조회 버튼이 눌리면 필터링 수행
 if st.button("조회"):
-    # 이름과 전화번호로 필터링하여 사용자 데이터 가져오기
-    user_data = data[(data['이름'] == name) & (data['전화번호'] == phone_number)]
+    # 전화번호 뒷자리 필터링을 위해 '전번' 열에서 뒷자리 부분만 추출
+    data['전화번호_뒷자리'] = data['전번'].astype(str).str[-4:]
+
+    # 이름과 전화번호 뒷자리로 필터링하여 사용자 데이터 가져오기
+    user_data = data[(data['이름'] == name) & (data['전화번호_뒷자리'] == phone_suffix)]
     
     if not user_data.empty:
-        courses = user_data['강좌명'].tolist()
+        courses = user_data[['선택 강좌 1', '선택 강좌 2', '선택 강좌 3']].values.flatten()
         st.write(f"{name}님이 신청한 강좌:")
         for course in courses[:3]:  # 최대 3개 강좌 출력
             st.write(f"- {course}")
     else:
-        st.write("해당 정보가 없습니다. 이름과 전화번호를 확인해주세요.")
+        st.write("해당 정보가 없습니다. 이름과 전화번호 뒷자리를 확인해주세요.")

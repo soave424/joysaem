@@ -19,6 +19,36 @@ def load_data():
     df = pd.read_csv(CSV_PATH)
     return df
 
+# JSON 파일 업데이트 함수
+def update_registration_status(name, phone_suffix, status, time=""):
+    try:
+        # 기존 JSON 파일 읽기
+        if os.path.exists(JSON_PATH):
+            with open(JSON_PATH, 'r') as json_file:
+                registration_data = json.load(json_file)
+        else:
+            registration_data = []
+
+        # 새 등록 상태 추가
+        new_entry = {
+            "이름": name,
+            "전화번호 뒷자리": phone_suffix,
+            "등록": status,
+            "시간": time
+        }
+
+        # 기존 데이터를 유지하고 새 데이터를 추가
+        registration_data.append(new_entry)
+
+        # JSON 파일에 저장
+        with open(JSON_PATH, 'w') as json_file:
+            json.dump(registration_data, json_file, ensure_ascii=False, indent=4)
+        
+        return True
+    except Exception as e:
+        st.error(f"JSON 파일 업데이트 중 오류가 발생했습니다: {e}")
+        return False
+
 # 데이터 로드
 data = load_data()
 
@@ -38,46 +68,33 @@ if st.button("조회"):
     user_data = data[(data['이름'] == name) & (data['전화번호_뒷자리'] == phone_suffix)]
     
     if not user_data.empty:
-        # 신청한 강좌 정보 출력
+        # 신청한 강좌 정보를 테이블 형식으로 출력
         courses = user_data[['선택 강좌 1', '선택 강좌 2', '선택 강좌 3']].values.flatten()
+        course_data = []
+
+        for course in courses[:3]:  # 최대 3개 강좌만 처리
+            if pd.notna(course):  # 비어있지 않은 경우에만 처리
+                # "강좌명 / 강사명" 형태에서 강좌명과 강사명을 분리
+                parts = course.split('/')
+                course_name = parts[0].strip()
+                instructor = parts[1].strip() if len(parts) > 1 else ""
+                course_data.append({"강좌명": course_name, "강사명": instructor, "강의실": ""})
+
+        # 테이블 출력
         st.write(f"{name}님이 신청한 강좌:")
-        for course in courses[:3]:  # 최대 3개 강좌 출력
-            st.write(f"- {course}")
-        
+        course_df = pd.DataFrame(course_data)
+        st.table(course_df)
+
         # 등록 완료 및 취소 버튼 추가
         if st.button("등록 완료"):
-            try:
-                # JSON 파일 업데이트 - 등록 상태와 시간 업데이트
-                registration_status = {
-                    "이름": name,
-                    "전화번호 뒷자리": phone_suffix,
-                    "등록": "등록",
-                    "시간": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-                with open(JSON_PATH, 'w') as json_file:
-                    json.dump(registration_status, json_file, ensure_ascii=False, indent=4)
-                
-                # 등록 완료 메시지와 신청한 강좌 안내
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if update_registration_status(name, phone_suffix, "등록", current_time):
                 st.success("연수에 참여해주셔서 감사합니다!")
                 st.write("신청하신 강좌:")
-                for course in courses[:3]:  # 최대 3개 강좌 출력
-                    st.write(f"- {course}")
-            except Exception as e:
-                st.error(f"등록 중 오류가 발생했습니다: {e}")
+                st.table(course_df)
 
         elif st.button("등록 취소"):
-            try:
-                # JSON 파일 업데이트 - 등록 취소 상태 (빈 셀 처리)
-                registration_status = {
-                    "이름": name,
-                    "전화번호 뒷자리": phone_suffix,
-                    "등록": "",
-                    "시간": ""
-                }
-                with open(JSON_PATH, 'w') as json_file:
-                    json.dump(registration_status, json_file, ensure_ascii=False, indent=4)
+            if update_registration_status(name, phone_suffix, "", ""):
                 st.write("등록이 취소되었습니다.")
-            except Exception as e:
-                st.error(f"등록 취소 중 오류가 발생했습니다: {e}")
     else:
         st.write("해당 정보가 없습니다. 이름과 전화번호 뒷자리를 확인해주세요.")

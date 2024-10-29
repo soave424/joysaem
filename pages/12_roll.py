@@ -107,8 +107,8 @@ if st.button("조회"):
 
         # 테이블 출력
         st.write(f"{name}님이 신청한 강좌:")
-        course_df = pd.DataFrame(course_data)
-        st.table(course_df.style.hide_index())  # 인덱스 숨김 처리
+        course_df = pd.DataFrame(course_data).reset_index(drop=True)  # 인덱스 제거
+        st.table(course_df)
 
         # 등록 완료 및 취소 버튼 추가
         if st.button("등록 완료"):
@@ -116,7 +116,7 @@ if st.button("조회"):
             if update_registration_status(name, phone_suffix, "등록", current_time):
                 st.success("연수에 참여해주셔서 감사합니다!")
                 st.write("신청하신 강좌:")
-                st.table(course_df.style.hide_index())
+                st.table(course_df)
 
         elif st.button("등록 취소"):
             if update_registration_status(name, phone_suffix, "", ""):

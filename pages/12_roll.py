@@ -3,15 +3,12 @@ import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 import os
-from datetime import datetime
-import json
 
 # .env 파일 로드
 load_dotenv()
 
-# 환경 변수로부터 CSV 및 JSON 파일 경로 가져오기
+# 환경 변수로부터 CSV 파일 경로 가져오기
 CSV_PATH = os.getenv('CSV_FILE_PATH', 'csv/hidden_data.csv')
-JSON_PATH = os.getenv('JSON_FILE_PATH', 'data/registration_status.json')
 
 # 강좌 정보 사전
 course_info = {
@@ -39,36 +36,6 @@ def load_data():
     df = pd.read_csv(CSV_PATH)
     return df
 
-# JSON 파일 업데이트 함수
-def update_registration_status(name, phone_suffix, status, time=""):
-    try:
-        # 기존 JSON 파일 읽기
-        if os.path.exists(JSON_PATH):
-            with open(JSON_PATH, 'r') as json_file:
-                registration_data = json.load(json_file)
-        else:
-            registration_data = []
-
-        # 새 등록 상태 추가
-        new_entry = {
-            "이름": name,
-            "전화번호 뒷자리": phone_suffix,
-            "등록": status,
-            "시간": time
-        }
-
-        # 기존 데이터를 유지하고 새 데이터를 추가
-        registration_data.append(new_entry)
-
-        # JSON 파일에 저장
-        with open(JSON_PATH, 'w') as json_file:
-            json.dump(registration_data, json_file, ensure_ascii=False, indent=4)
-        
-        return True
-    except Exception as e:
-        st.error(f"JSON 파일 업데이트 중 오류가 발생했습니다: {e}")
-        return False
-
 # 데이터 로드
 data = load_data()
 
@@ -78,6 +45,53 @@ st.title("강좌 신청 조회 및 등록 관리")
 # 사용자 입력
 name = st.text_input("이름을 입력하세요:")
 phone_suffix = st.text_input("전화번호 뒷자리를 입력하세요:")
+
+# CSS 스타일 추가
+st.markdown("""
+    <style>
+        /* 배경 및 텍스트 색상 */
+        body {
+            background-color: #f0f2f6;
+            color: #333333;
+        }
+
+        /* 제목 스타일 */
+        .stApp h1 {
+            color: #4c6ef5;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* 텍스트 입력 및 버튼 스타일 */
+        .stTextInput, .stButton button {
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 1rem;
+        }
+
+        /* 표 스타일 */
+        .stTable {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .stTable tr:nth-child(even) {background-color: #f9f9f9;}
+        .stTable th {
+            background-color: #4c6ef5;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        .stTable td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # 조회 버튼이 눌리면 필터링 수행
 if st.button("조회"):
@@ -109,17 +123,5 @@ if st.button("조회"):
         st.write(f"{name}님이 신청한 강좌:")
         course_df = pd.DataFrame(course_data).reset_index(drop=True)  # 인덱스 제거
         st.table(course_df)
-
-        # 등록 완료 및 취소 버튼 추가
-        if st.button("등록 완료"):
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            if update_registration_status(name, phone_suffix, "등록", current_time):
-                st.success("연수에 참여해주셔서 감사합니다!")
-                st.write("신청하신 강좌:")
-                st.table(course_df)
-
-        elif st.button("등록 취소"):
-            if update_registration_status(name, phone_suffix, "", ""):
-                st.write("등록이 취소되었습니다.")
     else:
         st.write("해당 정보가 없습니다. 이름과 전화번호 뒷자리를 확인해주세요.")

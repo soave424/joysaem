@@ -73,22 +73,22 @@ st.markdown("""
         /* 표 스타일 */
         .stTable {
             background-color: #ffffff;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #d0e2f2;
             border-radius: 10px;
             overflow: hidden;
         }
 
-        .stTable tr:nth-child(even) {background-color: #f9f9f9;}
+        .stTable tr:nth-child(even) {background-color: #e8f4fa;} /* 연한 하늘색 */
         .stTable th {
-            background-color: #4c6ef5;
-            color: white;
+            background-color: #b3d9ff;  /* 하늘색 */
+            color: black;
             padding: 10px;
             text-align: left;
         }
         .stTable td {
             padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #d0e2f2;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -119,9 +119,12 @@ if st.button("조회"):
                 instructor = instructor if len(parts) > 1 else instructor
                 course_data.append({"강좌명": course_name, "강사명": instructor, "강의실": classroom})
 
+        # DataFrame에 인덱스를 1부터 시작하도록 설정
+        course_df = pd.DataFrame(course_data).reset_index(drop=True)
+        course_df.index = course_df.index + 1  # 인덱스를 1부터 시작하도록 조정
+
         # 테이블 출력
         st.write(f"{name}님이 신청한 강좌:")
-        course_df = pd.DataFrame(course_data).reset_index(drop=True)  # 인덱스 제거
-        st.table(course_df)
+        st.table(course_df.style.set_properties(**{'border-color': '#d0e2f2'}))  # 테두리 색상 추가
     else:
         st.write("해당 정보가 없습니다. 이름과 전화번호 뒷자리를 확인해주세요.")

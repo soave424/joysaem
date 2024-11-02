@@ -1,6 +1,0 @@
-streamlit
-pandas
-altair
-gspread
-google-auth
-python-dotenv

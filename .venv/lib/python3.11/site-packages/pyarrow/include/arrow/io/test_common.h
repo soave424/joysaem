@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "arrow/io/interfaces.h"
 #include "arrow/testing/visibility.h"
 #include "arrow/type_fwd.h"
 
@@ -53,14 +52,6 @@ class ARROW_TESTING_EXPORT MemoryMapFixture {
 
  private:
   std::vector<std::string> tmp_files_;
-};
-
-class ARROW_TESTING_EXPORT TrackedRandomAccessFile : public io::RandomAccessFile {
- public:
-  virtual int64_t num_reads() const = 0;
-  virtual int64_t bytes_read() const = 0;
-  virtual const std::vector<io::ReadRange>& get_read_ranges() const = 0;
-  static std::unique_ptr<TrackedRandomAccessFile> Make(io::RandomAccessFile* target);
 };
 
 }  // namespace io

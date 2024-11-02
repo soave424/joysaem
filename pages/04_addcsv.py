@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 def combine_files(uploaded_files):
-    combined_df = pd.DataFrame()
+    combined_df = None
     for uploaded_file in uploaded_files:
         # Load the file depending on the extension
         if uploaded_file.name.endswith('.csv'):
@@ -12,8 +12,15 @@ def combine_files(uploaded_files):
         else:
             st.error("Unsupported file format. Please upload CSV or Excel files.")
             return None
-        # Concatenate to the combined DataFrame
-        combined_df = pd.concat([combined_df, df], ignore_index=True)
+        
+        # Merge or concatenate based on whether combined_df is initialized
+        if combined_df is None:
+            combined_df = df  # Initialize with the first file's data
+        else:
+            # Merge on common columns; you can specify a list of common columns to match on
+            combined_columns = combined_df.columns.intersection(df.columns).tolist()
+            combined_df = pd.merge(combined_df, df, on=combined_columns, how='outer')
+    
     return combined_df
 
 st.title('File Merger')

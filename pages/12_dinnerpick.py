@@ -1,6 +1,24 @@
 import streamlit as st
 import random
 
+def get_new_recommendation(category):
+    available_choices = [key for key, value in data.items() if value["카테고리"] == category and key not in st.session_state.buffer]
+    if not available_choices:
+        available_choices = [key for key, value in data.items() if value["카테고리"] == category]
+    return random.choice(available_choices)
+
+def update_recommendation():
+    if st.session_state.category == "랜덤":
+        available_choices = [key for key in data.keys() if key not in st.session_state.buffer]
+        if not available_choices:
+            available_choices = list(data.keys())
+        st.session_state.recommendation = random.choice(available_choices)
+    else:
+        st.session_state.recommendation = get_new_recommendation(st.session_state.category)
+    
+    st.session_state.description = data[st.session_state.recommendation]["설명"]
+
+
 data = {
     "김치찌개": {"카테고리": "한식", "설명": "뜨끈한 국물에 밥 말아 먹으면 최고! 🥄"},
     "비빔밥": {"카테고리": "한식", "설명": "신선한 야채와 고소한 고추장 소스의 조화! 🍚"},
@@ -107,78 +125,54 @@ data = {
     "감자전": {"카테고리": "한식", "설명": "바삭하게 부친 감자전, 담백한 맛이 일품! 🥞"}
 }
 
-# 세션 상태 초기화
 if "recommendation" not in st.session_state:
     st.session_state.recommendation = None
 if "buffer" not in st.session_state:
     st.session_state.buffer = []
 if "final_choice" not in st.session_state:
     st.session_state.final_choice = None
+if "category" not in st.session_state:
+    st.session_state.category = "랜덤"
 
-# 스트림릿 UI
-st.title("🍽 저메추 스트림릿")
-
-# 카테고리 선택
+st.title("🍽 저점메추 스트림릿")
 categories = list(set(item["카테고리"] for item in data.values()))
-category = st.selectbox("원하는 카테고리를 선택하세요!", categories + ["랜덤"])
+st.session_state.category = st.selectbox("원하는 카테고리를 선택하세요!", categories + ["랜덤"])
 
-# 추천 버튼
-if st.button("🍽 저메추! 추천 받기"):
-    if category == "랜덤":
-        recommendation = random.choice(list(data.keys()))
-    else:
-        recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
-    
-    st.session_state.recommendation = recommendation
-    st.session_state.description = data[recommendation]["설명"]
+if st.button("🍽 저점메추! 추천 받기"):
+    update_recommendation()
 
-# 추천 결과 표시
 if st.session_state.recommendation:
     st.subheader(f"오늘의 추천: {st.session_state.recommendation}")
     st.write(st.session_state.description)
-
     col1, col2, col3 = st.columns(3)
-
     with col1:
         if st.button("✅ 선택"):
             st.session_state.final_choice = st.session_state.recommendation
-
     with col2:
         if st.button("⏳ 보류"):
             if st.session_state.recommendation not in st.session_state.buffer:
                 st.session_state.buffer.append(st.session_state.recommendation)
-            if category == "랜덤":
-                st.session_state.recommendation = random.choice(list(data.keys()))
-            else:
-                st.session_state.recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
-
-            st.rerun()    
-
+            update_recommendation()
+            st.rerun()
     with col3:
         if st.button("❌ 별로"):
-            if category == "랜덤":
-                st.session_state.recommendation = random.choice(list(data.keys()))
-            else:
-                st.session_state.recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
-
+            update_recommendation()
             st.rerun()
 
-# 최종 선택 결과 표시
 if st.session_state.final_choice:
     st.success(f"최종 선택: {st.session_state.final_choice} 🍽")
     st.write(f"📍 근처 식당 추천: [지도 보기](https://www.google.com/maps/search/{st.session_state.final_choice})")
 
-# 보류 목록 처리 및 표시
 st.subheader("⏳ 현재 보류 목록")
 selected_buffer_items = st.multiselect("보류된 메뉴에서 선택", st.session_state.buffer, default=st.session_state.buffer)
 if st.button("이 메뉴로 결정! ✅") and selected_buffer_items:
     st.session_state.final_choice = selected_buffer_items[0]
-    st.session_state.buffer = []  # 보류 초기화
+    st.session_state.buffer = []
     st.rerun()
 
-# 리셋 버튼
 if st.button("🔄 리셋"):
     st.session_state.recommendation = None
     st.session_state.buffer = []
     st.session_state.final_choice = None
+    st.session_state.category = "랜덤"
     st.rerun()

@@ -107,52 +107,78 @@ data = {
     "감자전": {"카테고리": "한식", "설명": "바삭하게 부친 감자전, 담백한 맛이 일품! 🥞"}
 }
 
+# 세션 상태 초기화
+if "recommendation" not in st.session_state:
+    st.session_state.recommendation = None
+if "buffer" not in st.session_state:
+    st.session_state.buffer = []
+if "final_choice" not in st.session_state:
+    st.session_state.final_choice = None
+
+# 스트림릿 UI
 st.title("🍽 저메추 스트림릿")
+
+# 카테고리 선택
 categories = list(set(item["카테고리"] for item in data.values()))
 category = st.selectbox("원하는 카테고리를 선택하세요!", categories + ["랜덤"])
-recommendation = random.choice(list(data.keys())) if category == "랜덤" else random.choice([key for key, value in data.items() if value["카테고리"] == category])
-buffer = st.session_state.get("buffer", [])
-final_choice = st.session_state.get("final_choice", None)
 
-
-
+# 추천 버튼
 if st.button("🍽 저메추! 추천 받기"):
-    recommendation = random.choice(data[random.choice(list(data.keys()))]) if category == "랜덤" else random.choice(data[category])
+    if category == "랜덤":
+        recommendation = random.choice(list(data.keys()))
+    else:
+        recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
+    
     st.session_state.recommendation = recommendation
     st.session_state.description = data[recommendation]["설명"]
 
-if recommendation:
-    st.subheader(f"오늘의 추천: {recommendation}")
+# 추천 결과 표시
+if st.session_state.recommendation:
+    st.subheader(f"오늘의 추천: {st.session_state.recommendation}")
     st.write(st.session_state.description)
-    
-    
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         if st.button("✅ 선택"):
-            st.session_state.final_choice = recommendation
-    
+            st.session_state.final_choice = st.session_state.recommendation
+
     with col2:
         if st.button("⏳ 보류"):
-            if recommendation not in buffer:
-                buffer.append(recommendation)
-                st.session_state.buffer = buffer
-    
+            if st.session_state.recommendation not in st.session_state.buffer:
+                st.session_state.buffer.append(st.session_state.recommendation)
+            if category == "랜덤":
+                st.session_state.recommendation = random.choice(list(data.keys()))
+            else:
+                st.session_state.recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
+
+            st.rerun()    
+
     with col3:
         if st.button("❌ 별로"):
-            recommendation = random.choice(data[category])
-            st.session_state.recommendation = recommendation
+            if category == "랜덤":
+                st.session_state.recommendation = random.choice(list(data.keys()))
+            else:
+                st.session_state.recommendation = random.choice([key for key, value in data.items() if value["카테고리"] == category])
+
             st.rerun()
 
-if final_choice:
-    st.success(f"최종 선택: {final_choice} 🍽")
-    
-    st.write("📍 근처 식당 추천: [지도 보기](https://www.google.com/maps/search/{final_choice})")
+# 최종 선택 결과 표시
+if st.session_state.final_choice:
+    st.success(f"최종 선택: {st.session_state.final_choice} 🍽")
+    st.write(f"📍 근처 식당 추천: [지도 보기](https://www.google.com/maps/search/{st.session_state.final_choice})")
 
-if len(buffer) >= 10:
-    st.warning("🔟 보류 메뉴가 가득 찼습니다! 아래에서 선택하세요.")
-    chosen_menu = st.selectbox("보류 메뉴에서 최종 선택", buffer)
-    if st.button("이 메뉴로 결정! ✅"):
-        st.session_state.final_choice = chosen_menu
-        st.session_state.buffer = []  # 보류 초기화
-        st.experimental_rerun()
+# 보류 목록 처리 및 표시
+st.subheader("⏳ 현재 보류 목록")
+selected_buffer_items = st.multiselect("보류된 메뉴에서 선택", st.session_state.buffer, default=st.session_state.buffer)
+if st.button("이 메뉴로 결정! ✅") and selected_buffer_items:
+    st.session_state.final_choice = selected_buffer_items[0]
+    st.session_state.buffer = []  # 보류 초기화
+    st.rerun()
+
+# 리셋 버튼
+if st.button("🔄 리셋"):
+    st.session_state.recommendation = None
+    st.session_state.buffer = []
+    st.session_state.final_choice = None
+    st.rerun()

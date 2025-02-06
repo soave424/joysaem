@@ -134,11 +134,11 @@ if "final_choice" not in st.session_state:
 if "category" not in st.session_state:
     st.session_state.category = "랜덤"
 
-st.title("🍽 저점메추 스트림릿")
+st.title("🍽 죠메추 스트림릿")
 categories = list(set(item["카테고리"] for item in data.values()))
 st.session_state.category = st.selectbox("원하는 카테고리를 선택하세요!", categories + ["랜덤"])
 
-if st.button("🍽 저점메추! 추천 받기"):
+if st.button("🍽 죠메추! 추천 받기"):
     update_recommendation()
 
 if st.session_state.recommendation:

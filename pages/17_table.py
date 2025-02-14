@@ -37,13 +37,15 @@ with col1:
     
     if st.button("신청하기"):
         if applicant and contact and classroom and content:
-            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            import pytz
+            korea_tz = pytz.timezone('Asia/Seoul')
+            date = datetime.now(korea_tz).strftime("%Y-%m-%d %A %H:%M:%S")
             new_entry = pd.DataFrame([[date, applicant, contact, floor, classroom, content, "신청 완료", ""]], 
                                      columns=["date", "applicant", "contact", "floor", "classroom", "content", "status", "memo"])
             data = pd.concat([data, new_entry], ignore_index=True)
             save_data(data)
             st.success("✅ 신청이 완료되었습니다!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.warning("⚠ 모든 필드를 입력해주세요.")
 

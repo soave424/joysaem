@@ -23,18 +23,6 @@ data = load_data()
 
 st.title("🏫 유지보수 서비스 신청 게시판")
 
-# 입력 필드 초기화 (st.session_state 사용)
-if "applicant" not in st.session_state:
-    st.session_state["applicant"] = ""
-if "contact" not in st.session_state:
-    st.session_state["contact"] = ""
-if "floor" not in st.session_state:
-    st.session_state["floor"] = 1
-if "classroom" not in st.session_state:
-    st.session_state["classroom"] = ""
-if "content" not in st.session_state:
-    st.session_state["content"] = ""
-
 # 레이아웃 설정
 col1, col2 = st.columns([1, 2])
 
@@ -42,36 +30,24 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.header("📝 신청하기")
     
-    applicant = st.text_input("신청자 이름", st.session_state["applicant"], key="applicant_input")
-    contact = st.text_input("연락처", st.session_state["contact"], key="contact_input")
-    floor = st.selectbox("교실 위치(층)", [1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5].index(st.session_state["floor"]), key="floor_select")
-    classroom = st.text_input("교실명", st.session_state["classroom"], key="classroom_input")
-    content = st.text_area("유지보수 신청 내용", st.session_state["content"], key="content_input")
-    
-    if st.button("신청"):
-        if applicant and contact and classroom and content:
-            korea_tz = pytz.timezone('Asia/Seoul')
-            date = datetime.now(korea_tz).strftime("%Y-%m-%d %a %H:%M:%S").replace('Mon', '월').replace('Tue', '화').replace('Wed', '수').replace('Thu', '목').replace('Fri', '금').replace('Sat', '토').replace('Sun', '일')
-            new_entry = pd.DataFrame([[date, applicant, contact, floor, classroom, content, "신청 완료", ""]], 
-                                     columns=["date", "applicant", "contact", "floor", "classroom", "content", "status", "memo"])
-            data = pd.concat([data, new_entry], ignore_index=True)
-            save_data(data)
-
-            # 입력 필드 초기화 후 rerun
-            st.session_state["applicant"] = ""
-            st.session_state["contact"] = ""
-            st.session_state["floor"] = 1
-            st.session_state["classroom"] = ""
-            st.session_state["content"] = ""
-
-            # st.session_state.clear()로 전체 필드 초기화
-            st.session_state.clear()
-
-            st.success("✅ 신청이 완료되었습니다!")
-            st.rerun()
-        else:
-            st.warning("⚠ 모든 필드를 입력해주세요.")
-
+    with st.form("request_form"):
+        applicant = st.text_input("신청자 이름", "")
+        contact = st.text_input("연락처", "")
+        floor = st.selectbox("교실 위치(층)", [1, 2, 3, 4, 5])
+        classroom = st.text_input("교실명", "")
+        content = st.text_area("유지보수 신청 내용", "")
+        submit_request = st.form_submit_button("신청")
+        
+        if submit_request:
+            if applicant and contact and classroom and content:
+                korea_tz = pytz.timezone('Asia/Seoul')
+                date = datetime.now(korea_tz).strftime("%Y-%m-%d %a %H:%M:%S").replace('Mon', '월').replace('Tue', '화').replace('Wed', '수').replace('Thu', '목').replace('Fri', '금').replace('Sat', '토').replace('Sun', '일')
+                new_entry = pd.DataFrame([[date, applicant, contact, floor, classroom, content, "신청 완료", ""]], 
+                                         columns=["date", "applicant", "contact", "floor", "classroom", "content", "status", "memo"])
+                data = pd.concat([data, new_entry], ignore_index=True)
+                save_data(data)
+                st.success("✅ 신청이 완료되었습니다!")
+                st.rerun()
 
 # 오른쪽: 신청 게시판
 with col2:
@@ -79,7 +55,8 @@ with col2:
     pending_data = data[data["status"] == "신청 완료"]
     completed_data = data[data["status"] == "해결 완료"]
     
-    st.subheader("🟠 해결 중")
+    # 해결 중 및 해결 완료 숫자 표시
+    st.subheader(f"🟠 해결 중 ({len(pending_data)}건)")
     if pending_data.empty:
         st.info("🚧 현재 신청 목록이 없습니다.")
     else:
@@ -100,22 +77,19 @@ with col2:
                     submit = st.form_submit_button("확인")
                     
                     if submit:
-                        # `iloc`을 사용하여 안전하게 데이터 수정
                         data.loc[data.index[idx], "status"] = status
                         data.loc[data.index[idx], "memo"] = memo
                         
                         if status == "해결 완료":
-                            # 해결 완료된 요청을 기존 위치에서 삭제 후 리스트 아래로 추가
                             completed_entry = data.iloc[idx].copy()
                             data = data.drop(index=data.index[idx]).reset_index(drop=True)
                             data = pd.concat([data, completed_entry.to_frame().T], ignore_index=True)
-
-                        # 변경 사항 저장
+                        
                         save_data(data)
                         st.success("✅ 상태가 업데이트되었습니다!")
                         st.rerun()
 
-    st.subheader("✅ 완료 목록")
+    st.subheader(f"✅ 완료 목록 ({len(completed_data)}건)")
     if completed_data.empty:
         st.info("🔹 해결된 요청이 없습니다.")
     else:

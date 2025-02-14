@@ -23,6 +23,18 @@ data = load_data()
 
 st.title("🏫 유지보수 서비스 신청 게시판")
 
+# 입력 필드 초기화 (st.session_state 사용)
+if "applicant" not in st.session_state:
+    st.session_state["applicant"] = ""
+if "contact" not in st.session_state:
+    st.session_state["contact"] = ""
+if "floor" not in st.session_state:
+    st.session_state["floor"] = 1
+if "classroom" not in st.session_state:
+    st.session_state["classroom"] = ""
+if "content" not in st.session_state:
+    st.session_state["content"] = ""
+
 # 레이아웃 설정
 col1, col2 = st.columns([1, 2])
 
@@ -30,11 +42,11 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.header("📝 신청하기")
     
-    applicant = st.text_input("신청자 이름", "")
-    contact = st.text_input("연락처", "")
-    floor = st.selectbox("교실 위치(층)", [1, 2, 3, 4, 5])
-    classroom = st.text_input("교실명", "")
-    content = st.text_area("유지보수 신청 내용", "")
+    applicant = st.text_input("신청자 이름", st.session_state["applicant"], key="applicant_input")
+    contact = st.text_input("연락처", st.session_state["contact"], key="contact_input")
+    floor = st.selectbox("교실 위치(층)", [1, 2, 3, 4, 5], index=[1, 2, 3, 4, 5].index(st.session_state["floor"]), key="floor_select")
+    classroom = st.text_input("교실명", st.session_state["classroom"], key="classroom_input")
+    content = st.text_area("유지보수 신청 내용", st.session_state["content"], key="content_input")
     
     if st.button("신청"):
         if applicant and contact and classroom and content:
@@ -44,10 +56,22 @@ with col1:
                                      columns=["date", "applicant", "contact", "floor", "classroom", "content", "status", "memo"])
             data = pd.concat([data, new_entry], ignore_index=True)
             save_data(data)
+
+            # 입력 필드 초기화 후 rerun
+            st.session_state["applicant"] = ""
+            st.session_state["contact"] = ""
+            st.session_state["floor"] = 1
+            st.session_state["classroom"] = ""
+            st.session_state["content"] = ""
+
+            # st.session_state.clear()로 전체 필드 초기화
+            st.session_state.clear()
+
             st.success("✅ 신청이 완료되었습니다!")
             st.rerun()
         else:
             st.warning("⚠ 모든 필드를 입력해주세요.")
+
 
 # 오른쪽: 신청 게시판
 with col2:

@@ -24,7 +24,7 @@ st.set_page_config(layout="wide")  # 화면 레이아웃을 넓게 설정
 st.title("🏫 유지보수 서비스 신청 게시판")
 
 # 레이아웃 설정
-col1, col2 = st.columns([1, 2])
+col1, col2 = st.columns([1, 1])
 
 # 왼쪽: 신청 폼
 with col1:

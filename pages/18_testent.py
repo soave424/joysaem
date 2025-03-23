@@ -64,12 +64,44 @@ questions = [
 options = ["전혀 그렇지 않다", "그렇지 않다", "보통", "그렇다", "매우 그렇다"]
 option_values = {option: idx for idx, option in enumerate(options, 1)}
 
-# Define competency categories - 역량 영역도 수정
-competencies = {
+# Define competency categories - 대영역과 소영역 모두 정의
+main_competencies = {
     "가치창출역량": [1, 2, 3, 4, 5, 6],
     "도전역량": [7, 8, 9, 10, 11, 12],
     "자기주도역량": [13, 14, 15, 16, 17, 18],
     "집단창의역량": [19, 20, 21, 22, 23, 24]
+}
+
+# 소영역 정의
+sub_competencies = {
+    "혁신성": [1, 2],
+    "사회적 가치지향": [3, 4],
+    "변화민첩성": [5, 6],
+    "성취지향성": [7, 8],
+    "위험감수역량": [9, 10],
+    "회복탄력성": [11, 12],
+    "자율성": [13, 14],
+    "자기관리역량": [15, 16],
+    "끈기": [17, 18],
+    "공동의사결정": [19, 20],
+    "자원연계": [21, 22],
+    "협력성": [23, 24]
+}
+
+# 소영역과 대영역의 매핑
+sub_to_main_mapping = {
+    "혁신성": "가치창출역량",
+    "사회적 가치지향": "가치창출역량",
+    "변화민첩성": "가치창출역량",
+    "성취지향성": "도전역량",
+    "위험감수역량": "도전역량",
+    "회복탄력성": "도전역량",
+    "자율성": "자기주도역량",
+    "자기관리역량": "자기주도역량",
+    "끈기": "자기주도역량",
+    "공동의사결정": "집단창의역량",
+    "자원연계": "집단창의역량",
+    "협력성": "집단창의역량"
 }
 
 # Main app logic
@@ -121,7 +153,7 @@ if st.session_state.page == 'assessment':
         </div>
         """, unsafe_allow_html=True)
         
-        # Calendar-like number grid - 문항 수가 24개로 늘어나 그리드 조정
+        # Calendar-like number grid - 문항 수가 24개
         num_rows = 6
         num_cols = 4
         
@@ -181,79 +213,211 @@ if st.session_state.page == 'assessment':
 elif st.session_state.page == 'results':
     st.title("창의가정신 역량검사 결과")
     
-    # Calculate competency scores
-    scores = {}
-    for competency, question_ids in competencies.items():
+    # Calculate main competency scores
+    main_scores = {}
+    for competency, question_ids in main_competencies.items():
         competency_score = 0
+        valid_questions = 0
         for q_id in question_ids:
             if q_id in st.session_state.answers:
                 answer = st.session_state.answers[q_id]
                 competency_score += option_values[answer]
+                valid_questions += 1
         
-        # Calculate average score (1-5 scale)
-        avg_score = competency_score / len(question_ids)
-        scores[competency] = avg_score
+        # Calculate average score (1-5 scale) if there are valid answers
+        if valid_questions > 0:
+            avg_score = competency_score / valid_questions
+            main_scores[competency] = avg_score
     
-    # Create results visualization
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.subheader(f"{st.session_state.student_info['name']}님의 역량 프로필")
+    # Calculate sub competency scores
+    sub_scores = {}
+    for competency, question_ids in sub_competencies.items():
+        competency_score = 0
+        valid_questions = 0
+        for q_id in question_ids:
+            if q_id in st.session_state.answers:
+                answer = st.session_state.answers[q_id]
+                competency_score += option_values[answer]
+                valid_questions += 1
         
-        # Create data for chart
-        chart_data = pd.DataFrame({
-            '역량': list(scores.keys()),
-            '점수': list(scores.values())
+        # Calculate average score (1-5 scale) if there are valid answers
+        if valid_questions > 0:
+            avg_score = competency_score / valid_questions
+            sub_scores[competency] = avg_score
+    
+    # Create tabs for different result views
+    tab1, tab2, tab3 = st.tabs(["대영역 결과", "소영역 결과", "응답 상세"])
+    
+    with tab1:
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.subheader(f"{st.session_state.student_info['name']}님의 대영역 역량 프로필")
+            
+            # Create data for chart
+            chart_data = pd.DataFrame({
+                '역량': list(main_scores.keys()),
+                '점수': list(main_scores.values())
+            })
+            
+            # Create bar chart for main competencies
+            chart = alt.Chart(chart_data).mark_bar().encode(
+                x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
+                y=alt.Y('역량:N', sort='-x'),
+                color=alt.Color('역량:N', legend=None),
+                tooltip=['역량', '점수']
+            ).properties(
+                height=300
+            )
+            
+            st.altair_chart(chart, use_container_width=True)
+        
+        with col2:
+            st.subheader("대영역별 상세 결과")
+            
+            # Display detailed results for main competencies
+            for competency, score in main_scores.items():
+                # Determine level based on score
+                if score >= 4.5:
+                    level = "매우 우수"
+                    emoji = "🌟"
+                elif score >= 3.5:
+                    level = "우수"
+                    emoji = "😊"
+                elif score >= 2.5:
+                    level = "보통"
+                    emoji = "🙂"
+                else:
+                    level = "노력 필요"
+                    emoji = "💪"
+                    
+                st.markdown(f"""
+                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <h3>{emoji} {competency}: {level}</h3>
+                    <p>점수: {score:.1f}/5.0</p>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    with tab2:
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.subheader(f"{st.session_state.student_info['name']}님의 소영역 역량 프로필")
+            
+            # Create data for chart
+            sub_chart_data = pd.DataFrame({
+                '역량': list(sub_scores.keys()),
+                '점수': list(sub_scores.values()),
+                '대영역': [sub_to_main_mapping[sub] for sub in sub_scores.keys()]
+            })
+            
+            # Create bar chart for sub competencies
+            sub_chart = alt.Chart(sub_chart_data).mark_bar().encode(
+                x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
+                y=alt.Y('역량:N', sort='-x'),
+                color=alt.Color('대영역:N'),
+                tooltip=['역량', '점수', '대영역']
+            ).properties(
+                height=400
+            )
+            
+            st.altair_chart(sub_chart, use_container_width=True)
+        
+        with col2:
+            st.subheader("소영역별 상세 결과")
+            
+            # Display detailed results for sub competencies
+            for competency, score in sub_scores.items():
+                # Determine level based on score
+                if score >= 4.5:
+                    level = "매우 우수"
+                    emoji = "🌟"
+                elif score >= 3.5:
+                    level = "우수"
+                    emoji = "😊"
+                elif score >= 2.5:
+                    level = "보통"
+                    emoji = "🙂"
+                else:
+                    level = "노력 필요"
+                    emoji = "💪"
+                
+                # Get the main competency for this sub competency
+                main_comp = sub_to_main_mapping[competency]
+                    
+                st.markdown(f"""
+                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp})</span></h3>
+                    <p>점수: {score:.1f}/5.0</p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # 혁신성과 변화민첩성에 관한 특별 그래프
+        st.subheader("혁신성과 변화민첩성 비교")
+        
+        # 혁신성과 변화민첩성 데이터 추출
+        innovation_agility_data = {
+            k: v for k, v in sub_scores.items() if k in ["혁신성", "변화민첩성"]
+        }
+        
+        # 막대 그래프 데이터 생성
+        comparison_data = pd.DataFrame({
+            '역량': list(innovation_agility_data.keys()),
+            '점수': list(innovation_agility_data.values())
         })
         
-        # Create bar chart
-        chart = alt.Chart(chart_data).mark_bar().encode(
-            x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
-            y=alt.Y('역량:N', sort='-x'),
-            color=alt.Color('역량:N', legend=None),
+        # 막대 그래프 생성
+        comparison_chart = alt.Chart(comparison_data).mark_bar().encode(
+            x=alt.X('역량:N'),
+            y=alt.Y('점수:Q', scale=alt.Scale(domain=[0, 5])),
+            color=alt.Color('역량:N'),
             tooltip=['역량', '점수']
         ).properties(
             height=300
         )
         
-        st.altair_chart(chart, use_container_width=True)
-    
-    with col2:
-        st.subheader("역량별 상세 결과")
+        st.altair_chart(comparison_chart, use_container_width=True)
         
-        # Display detailed results
-        for competency, score in scores.items():
-            # Determine level based on score
-            if score >= 4.5:
-                level = "매우 우수"
-                emoji = "🌟"
-            elif score >= 3.5:
-                level = "우수"
-                emoji = "😊"
-            elif score >= 2.5:
-                level = "보통"
-                emoji = "🙂"
-            else:
-                level = "노력 필요"
-                emoji = "💪"
-                
-            st.markdown(f"""
-            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                <h3>{emoji} {competency}: {level}</h3>
-                <p>점수: {score:.1f}/5.0</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown("""
+        <div style="margin-top: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+            <h3>혁신성과 변화민첩성의 의미</h3>
+            <p><strong>혁신성</strong>: 새로운 아이디어를 생각하고 창출하는 능력으로, 창의적인 사고와 혁신적인 접근 방식을 개발하는 역량입니다.</p>
+            <p><strong>변화민첩성</strong>: 변화를 빠르게 인지하고 적응하며, 문제를 발견하고 신속하게 해결책을 적용하는 능력입니다.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
-    # Show all responses
-    st.subheader("문항별 응답 결과")
-    
-    response_data = []
-    for i, question in enumerate(questions, 1):
-        response = st.session_state.answers.get(i, "미응답")
-        response_data.append({"문항": i, "질문": question, "응답": response})
-    
-    response_df = pd.DataFrame(response_data)
-    st.dataframe(response_df, use_container_width=True, hide_index=True)
+    with tab3:
+        st.subheader("문항별 응답 결과")
+        
+        # 소영역 정보 추가
+        response_data = []
+        for i, question in enumerate(questions, 1):
+            # 어떤 소영역에 속하는지 찾기
+            sub_category = None
+            for sub, qs in sub_competencies.items():
+                if i in qs:
+                    sub_category = sub
+                    break
+            
+            # 어떤 대영역에 속하는지 찾기
+            main_category = None
+            for main, qs in main_competencies.items():
+                if i in qs:
+                    main_category = main
+                    break
+            
+            response = st.session_state.answers.get(i, "미응답")
+            response_data.append({
+                "문항번호": i, 
+                "질문": question, 
+                "응답": response,
+                "점수": option_values.get(response, 0) if response != "미응답" else 0,
+                "소영역": sub_category,
+                "대영역": main_category
+            })
+        
+        response_df = pd.DataFrame(response_data)
+        st.dataframe(response_df, use_container_width=True, hide_index=True)
     
     # Return to assessment button
     st.button(

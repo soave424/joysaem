@@ -323,7 +323,7 @@ elif st.session_state.page == 'results':
             
             st.altair_chart(sub_chart, use_container_width=True)
         
-        with col2:
+     
             st.subheader("소영역별 상세 결과")
             
             # Display detailed results for sub competencies
@@ -354,7 +354,7 @@ elif st.session_state.page == 'results':
         
      
     
-    with tab3:
+    with tab2:
         st.subheader("문항별 응답 결과")
         
         # 소영역 정보 추가

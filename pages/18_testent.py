@@ -19,17 +19,19 @@ if 'student_info' not in st.session_state:
 # Function to handle answer selection
 def select_answer(question_num, answer):
     st.session_state.answers[question_num] = answer
-    st.experimental_rerun()
+    # Remove the experimental_rerun call
+    # No need to rerun manually as the button will trigger a rerun
 
 # Function to go to results page
 def go_to_results():
     st.session_state.page = 'results'
-    st.experimental_rerun()
+    # Remove the experimental_rerun call
 
 # Function to go back to assessment page
 def go_to_assessment():
     st.session_state.page = 'assessment'
-    st.experimental_rerun()
+    st.session_state.answers = {}
+    # Remove the experimental_rerun call
 
 # Define questions
 questions = [
@@ -233,5 +235,4 @@ elif st.session_state.page == 'results':
     
     # Return to assessment button
     if st.button("검사 다시하기", key="back_to_assessment"):
-        st.session_state.answers = {}
         go_to_assessment()

@@ -5,6 +5,17 @@ import altair as alt
 from PIL import Image
 import io
 
+# 사이드바가 접힌 상태로 시작
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
+# CSS를 사용하여 사이드바 완전히 숨기기
+hide_sidebar_style = """
+    <style>
+        div[data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+
 # Set page configuration
 st.set_page_config(page_title="역량검사", layout="wide")
 

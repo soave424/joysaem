@@ -27,7 +27,6 @@ hide_sidebar_style = """
     </style>
 """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
-
 st.title('네이버 도서 검색')
 
 query = st.text_input('검색할 책의 제목을 입력하세요.')

@@ -15,23 +15,22 @@ if 'answers' not in st.session_state:
     st.session_state.answers = {}
 if 'student_info' not in st.session_state:
     st.session_state.student_info = {'name': '', 'grade': '', 'class': ''}
+if 'button_clicked' not in st.session_state:
+    st.session_state.button_clicked = False
 
-# Function to handle answer selection
-def select_answer(question_num, answer):
+# Callback functions for button clicks
+def answer_click(question_num, answer):
     st.session_state.answers[question_num] = answer
-    # Remove the experimental_rerun call
-    # No need to rerun manually as the button will trigger a rerun
+    st.session_state.button_clicked = True
 
-# Function to go to results page
-def go_to_results():
+def results_click():
     st.session_state.page = 'results'
-    # Remove the experimental_rerun call
+    st.session_state.button_clicked = True
 
-# Function to go back to assessment page
-def go_to_assessment():
+def reset_assessment():
     st.session_state.page = 'assessment'
     st.session_state.answers = {}
-    # Remove the experimental_rerun call
+    st.session_state.button_clicked = True
 
 # Define questions
 questions = [
@@ -142,17 +141,28 @@ if st.session_state.page == 'assessment':
                 is_selected = st.session_state.answers.get(i) == option
                 button_style = "primary" if is_selected else "secondary"
                 
-                if cols[j].button(option, key=f"q{i}_{option}", use_container_width=True, 
-                                 type=button_style):
-                    select_answer(i, option)
+                # Use on_click callback for immediate response
+                cols[j].button(
+                    option, 
+                    key=f"q{i}_{option}", 
+                    use_container_width=True, 
+                    type=button_style,
+                    on_click=answer_click,
+                    args=(i, option)
+                )
             
             st.markdown("<hr>", unsafe_allow_html=True)
         
         # Show results button if all questions are answered
         if len(st.session_state.answers) == len(questions):
             st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
-            if st.button("결과 보기", key="show_results", use_container_width=True, type="primary"):
-                go_to_results()
+            st.button(
+                "결과 보기", 
+                key="show_results", 
+                use_container_width=True, 
+                type="primary",
+                on_click=results_click
+            )
             st.markdown("</div>", unsafe_allow_html=True)
 
 # Results page
@@ -234,5 +244,8 @@ elif st.session_state.page == 'results':
     st.dataframe(response_df, use_container_width=True, hide_index=True)
     
     # Return to assessment button
-    if st.button("검사 다시하기", key="back_to_assessment"):
-        go_to_assessment()
+    st.button(
+        "검사 다시하기", 
+        key="back_to_assessment",
+        on_click=reset_assessment
+    )

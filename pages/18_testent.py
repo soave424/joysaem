@@ -16,8 +16,8 @@ hide_sidebar_style = """
 """
 st.markdown(hide_sidebar_style, unsafe_allow_html=True)
 
-# Set page configuration
-st.set_page_config(page_title="역량검사", layout="wide")
+# # Set page configuration
+# st.set_page_config(page_title="역량검사", layout="wide")
 
 # Initialize session state variables
 if 'page' not in st.session_state:

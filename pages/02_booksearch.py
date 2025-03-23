@@ -17,6 +17,17 @@ def search_books(query):
     except requests.exceptions.HTTPError as err:
         return {"error": str(err)}  # HTTP 오류 발생 시 오류 메시지 반환
 
+# 사이드바가 접힌 상태로 시작
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
+# CSS를 사용하여 사이드바 완전히 숨기기
+hide_sidebar_style = """
+    <style>
+        div[data-testid="stSidebar"] {display: none;}
+    </style>
+"""
+st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+
 st.title('네이버 도서 검색')
 
 query = st.text_input('검색할 책의 제목을 입력하세요.')

@@ -315,7 +315,7 @@ elif st.session_state.page == 'results':
                     
                 st.markdown(f"""
                 <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                    <h3>{emoji} {competency}: {level} 점수: {score:.1f}/5.0</h3>
+                    <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
                   
                 </div>
                 """, unsafe_allow_html=True)
@@ -344,8 +344,7 @@ elif st.session_state.page == 'results':
                     
                 st.markdown(f"""
                 <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp})</span></h3>
-                    <p>점수: {score:.1f}/5.0</p>
+                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
                 </div>
                 """, unsafe_allow_html=True)
         

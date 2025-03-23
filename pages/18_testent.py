@@ -304,67 +304,64 @@ elif st.session_state.page == 'results':
             
             st.altair_chart(sub_chart, use_container_width=True)
         
-       
-        with col2:
-            st.subheader("영역별 결과")
-                # 점수에 따라 내림차순 정렬
-            sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
 
-            # Display detailed results for main competencies
-            for competency, score in main_scores.items():
-                # Determine level based on score
-                if score >= 4.5:
-                    level = "매우 우수"
-                    emoji = "🌟"
-                elif score >= 3.5:
-                    level = "우수"
-                    emoji = "😊"
-                elif score >= 2.5:
-                    level = "보통"
-                    emoji = "🙂"
-                else:
-                    level = "노력 필요"
-                    emoji = "💪"
-                    
-                st.markdown(f"""
-                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                    <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
-                  
-                </div>
-                """, unsafe_allow_html=True)
-    
+    # tab1의 col2 내부에서 소영역별 상세 결과 부분을 수정
+    with col2:
+        st.subheader("영역별 결과")
+        # 점수에 따라 내림차순 정렬 - 이미 있는 코드
+        sorted_main_scores = dict(sorted(main_scores.items(), key=lambda item: item[1], reverse=True))
 
-            st.subheader("소영역별 상세 결과")
-                # 점수에 따라 내림차순 정렬
-            sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
-
-            # Display detailed results for sub competencies
-            for competency, score in sub_scores.items():
-                # Determine level based on score
-                if score >= 4.5:
-                    level = "매우 우수"
-                    emoji = "🌟"
-                elif score >= 3.5:
-                    level = "우수"
-                    emoji = "😊"
-                elif score >= 2.5:
-                    level = "보통"
-                    emoji = "🙂"
-                else:
-                    level = "노력 필요"
-                    emoji = "💪"
+        # 대영역 결과 표시 (이미 있는 코드를 sorted_main_scores로 수정)
+        for competency, score in sorted_main_scores.items():
+            # Determine level based on score
+            if score >= 4.5:
+                level = "매우 우수"
+                emoji = "🌟"
+            elif score >= 3.5:
+                level = "우수"
+                emoji = "😊"
+            elif score >= 2.5:
+                level = "보통"
+                emoji = "🙂"
+            else:
+                level = "노력 필요"
+                emoji = "💪"
                 
-                # Get the main competency for this sub competency
-                main_comp = sub_to_main_mapping[competency]
-                    
-                st.markdown(f"""
-                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-                </div>
-                """, unsafe_allow_html=True)
-        
-     
-    
+            st.markdown(f"""
+            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.subheader("소영역별 상세 결과")
+        # 점수에 따라 내림차순 정렬 - 이미 있는 코드
+        sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
+
+        # 소영역 결과 표시 (수정된 코드는 sorted_sub_scores를 사용)
+        for competency, score in sorted_sub_scores.items():
+            # Determine level based on score
+            if score >= 4.5:
+                level = "매우 우수"
+                emoji = "🌟"
+            elif score >= 3.5:
+                level = "우수"
+                emoji = "😊"
+            elif score >= 2.5:
+                level = "보통"
+                emoji = "🙂"
+            else:
+                level = "노력 필요"
+                emoji = "💪"
+            
+            # Get the main competency for this sub competency
+            main_comp = sub_to_main_mapping[competency]
+                
+            st.markdown(f"""
+            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+            </div>
+            """, unsafe_allow_html=True)
+
     with tab2:
         st.subheader("문항별 응답 결과")
         

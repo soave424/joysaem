@@ -271,7 +271,29 @@ elif st.session_state.page == 'results':
             )
             
             st.altair_chart(chart, use_container_width=True)
+
+            st.subheader(f"{st.session_state.student_info['name']}님의 소영역 역량 프로필")
+            
+            # Create data for chart
+            sub_chart_data = pd.DataFrame({
+                '역량': list(sub_scores.keys()),
+                '점수': list(sub_scores.values()),
+                '대영역': [sub_to_main_mapping[sub] for sub in sub_scores.keys()]
+            })
+            
+            # Create bar chart for sub competencies
+            sub_chart = alt.Chart(sub_chart_data).mark_bar().encode(
+                x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
+                y=alt.Y('역량:N', sort='-x'),
+                color=alt.Color('대영역:N'),
+                tooltip=['역량', '점수', '대영역']
+            ).properties(
+                height=400
+            )
+            
+            st.altair_chart(sub_chart, use_container_width=True)
         
+       
         with col2:
             st.subheader("대영역별 상세 결과")
             
@@ -298,32 +320,7 @@ elif st.session_state.page == 'results':
                 </div>
                 """, unsafe_allow_html=True)
     
-    with tab2:
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.subheader(f"{st.session_state.student_info['name']}님의 소영역 역량 프로필")
-            
-            # Create data for chart
-            sub_chart_data = pd.DataFrame({
-                '역량': list(sub_scores.keys()),
-                '점수': list(sub_scores.values()),
-                '대영역': [sub_to_main_mapping[sub] for sub in sub_scores.keys()]
-            })
-            
-            # Create bar chart for sub competencies
-            sub_chart = alt.Chart(sub_chart_data).mark_bar().encode(
-                x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
-                y=alt.Y('역량:N', sort='-x'),
-                color=alt.Color('대영역:N'),
-                tooltip=['역량', '점수', '대영역']
-            ).properties(
-                height=400
-            )
-            
-            st.altair_chart(sub_chart, use_container_width=True)
-        
-     
+
             st.subheader("소영역별 상세 결과")
             
             # Display detailed results for sub competencies

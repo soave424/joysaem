@@ -352,39 +352,7 @@ elif st.session_state.page == 'results':
                 </div>
                 """, unsafe_allow_html=True)
         
-        # 혁신성과 변화민첩성에 관한 특별 그래프
-        st.subheader("혁신성과 변화민첩성 비교")
-        
-        # 혁신성과 변화민첩성 데이터 추출
-        innovation_agility_data = {
-            k: v for k, v in sub_scores.items() if k in ["혁신성", "변화민첩성"]
-        }
-        
-        # 막대 그래프 데이터 생성
-        comparison_data = pd.DataFrame({
-            '역량': list(innovation_agility_data.keys()),
-            '점수': list(innovation_agility_data.values())
-        })
-        
-        # 막대 그래프 생성
-        comparison_chart = alt.Chart(comparison_data).mark_bar().encode(
-            x=alt.X('역량:N'),
-            y=alt.Y('점수:Q', scale=alt.Scale(domain=[0, 5])),
-            color=alt.Color('역량:N'),
-            tooltip=['역량', '점수']
-        ).properties(
-            height=300
-        )
-        
-        st.altair_chart(comparison_chart, use_container_width=True)
-        
-        st.markdown("""
-        <div style="margin-top: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-            <h3>혁신성과 변화민첩성의 의미</h3>
-            <p><strong>혁신성</strong>: 새로운 아이디어를 생각하고 창출하는 능력으로, 창의적인 사고와 혁신적인 접근 방식을 개발하는 역량입니다.</p>
-            <p><strong>변화민첩성</strong>: 변화를 빠르게 인지하고 적응하며, 문제를 발견하고 신속하게 해결책을 적용하는 능력입니다.</p>
-        </div>
-        """, unsafe_allow_html=True)
+     
     
     with tab3:
         st.subheader("문항별 응답 결과")

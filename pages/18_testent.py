@@ -307,7 +307,9 @@ elif st.session_state.page == 'results':
        
         with col2:
             st.subheader("영역별 결과")
-            
+                # 점수에 따라 내림차순 정렬
+            sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
+
             # Display detailed results for main competencies
             for competency, score in main_scores.items():
                 # Determine level based on score
@@ -333,7 +335,9 @@ elif st.session_state.page == 'results':
     
 
             st.subheader("소영역별 상세 결과")
-            
+                # 점수에 따라 내림차순 정렬
+            sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
+
             # Display detailed results for sub competencies
             for competency, score in sub_scores.items():
                 # Determine level based on score

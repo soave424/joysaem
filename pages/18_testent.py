@@ -246,7 +246,7 @@ elif st.session_state.page == 'results':
             sub_scores[competency] = avg_score
     
     # Create tabs for different result views
-    tab1, tab2, tab3 = st.tabs(["대영역 결과", "소영역 결과", "응답 상세"])
+    tab1, tab2 = st.tabs(["영역별 결과", "응답 상세"])
     
     with tab1:
         col1, col2 = st.columns([1, 1])
@@ -295,7 +295,7 @@ elif st.session_state.page == 'results':
         
        
         with col2:
-            st.subheader("대영역별 상세 결과")
+            st.subheader("영역별 결과")
             
             # Display detailed results for main competencies
             for competency, score in main_scores.items():

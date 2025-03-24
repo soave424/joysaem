@@ -133,7 +133,7 @@ if st.session_state.page == 'assessment':
         st.markdown("""
         <p style="font-size: 16px;">아래 문항은 창업가정신과 관련한 생각이나 태도를 알아보기 위한 간이 검사 질문입니다. <br>
                     초등학교 4학년 이상의 학생은 아래 사이트에서 꼭 검사를 제대로 진행해주세요. <br>
-                     <a href={yeep_url} target="_blank">https://yeep.go.kr/intro/coreCmptyIntro.do</a> <br>
+                     <a href="https://yeep.go.kr/intro/coreCmptyIntro.do", target="_blank">https://yeep.go.kr/intro/coreCmptyIntro.do</a> <br>
         각 문항을 읽고 자신의 생각과 가장 일치하는 답변을 선택해주세요.</p>
         """, unsafe_allow_html=True)
         

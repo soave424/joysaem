@@ -186,6 +186,18 @@ if st.session_state.page == 'assessment':
                 else:
                     cols[col].markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
+            # Show results button if all questions are answered
+        if len(st.session_state.answers) == len(questions):
+            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
+            st.button(
+                "결과 보기", 
+                key="show_results", 
+                use_container_width=True, 
+                type="primary",
+                on_click=results_click
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+            
     # Right column - Questions and answer options
     with col2:
         for i, question in enumerate(questions, 1):
@@ -210,17 +222,7 @@ if st.session_state.page == 'assessment':
             
             st.markdown("<hr>", unsafe_allow_html=True)
         
-        # Show results button if all questions are answered
-        if len(st.session_state.answers) == len(questions):
-            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
-            st.button(
-                "결과 보기", 
-                key="show_results", 
-                use_container_width=True, 
-                type="primary",
-                on_click=results_click
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Results page
 elif st.session_state.page == 'results':

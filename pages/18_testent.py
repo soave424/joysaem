@@ -231,8 +231,6 @@ if st.session_state.page == 'assessment':
     
         st.markdown('</div>', unsafe_allow_html=True)
 
-
-            
     # Right column - Questions and answer options
     with col2:
         for i, question in enumerate(questions, 1):
@@ -271,7 +269,7 @@ if st.session_state.page == 'assessment':
 
 # Results page
 elif st.session_state.page == 'results':
-    st.title("창의가정신 역량검사 결과")
+    st.title("창업가정신 역량검사 결과")
     
     # Calculate main competency scores
     main_scores = {}
@@ -316,12 +314,18 @@ elif st.session_state.page == 'results':
     
     # 역량 상위 4개, 하위 4개 찾기
     sub_categories_list = list(sorted_sub_scores.keys())
-    top_3_subs = sub_categories_list[:4] if len(sub_categories_list) >= 3 else sub_categories_list
-    bottom_3_subs = sub_categories_list[-4:] if len(sub_categories_list) >= 3 else []
+    top_3_subs = sub_categories_list[:4] if len(sub_categories_list) >= 4 else sub_categories_list
+    bottom_3_subs = sub_categories_list[-4:] if len(sub_categories_list) >= 4 else []
     bottom_3_subs.reverse()  # 점수가 낮은 순으로 정렬
     
+    # 중간 역량 계산
+    top_set = set(top_3_subs)
+    bottom_set = set(bottom_3_subs)
+    all_set = set(sub_categories_list)
+    other_subs = list(all_set - top_set - bottom_set)
+    
     # Create tabs for different result views
-    tab1, tab2, tab3 = st.tabs(["역량군 결과","핵심역량 결과", "응답 상세"])
+    tab1, tab2, tab3 = st.tabs(["역량군 결과", "핵심역량 결과", "응답 상세"])
     
     with tab1:
         col1, col2 = st.columns([1, 1])
@@ -347,7 +351,6 @@ elif st.session_state.page == 'results':
             
             st.altair_chart(chart, use_container_width=True)
 
-           
         with col2:
             # 역량군과 역량을 분리하여 표시
             st.markdown("<h2>📊 역량군 결과</h2>", unsafe_allow_html=True)
@@ -379,11 +382,11 @@ elif st.session_state.page == 'results':
                     {f'<p style="color: #1e8449; font-weight: bold;">🏆 여러분의 창업가정신 핵심역량군입니다!</p>' if is_top else ''}
                 </div>
                 """, unsafe_allow_html=True)
-
-    with tab1:
+    
+    with tab2:
         col1, col2 = st.columns([1, 1])
         with col1:
- st.subheader(f"{st.session_state.student_info['name']}님의 창업가정신 핵심역량 프로필")
+            st.subheader(f"{st.session_state.student_info['name']}님의 창업가정신 핵심역량 프로필")
             
             # Create data for chart
             sub_chart_data = pd.DataFrame({
@@ -404,111 +407,110 @@ elif st.session_state.page == 'results':
             
             st.altair_chart(sub_chart, use_container_width=True)
         
-            with col2:
-
-                st.markdown("<h2>📈 핵심역량 결과</h2>", unsafe_allow_html=True)
-                st.markdown("<hr>", unsafe_allow_html=True)
+        with col2:
+            st.markdown("<h2>📈 핵심역량 결과</h2>", unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
+            # 상위 4개 핵심역량 표시 (2개씩 한 줄에)
+            st.markdown("<h3>🔼 상위 핵심역량 (강점)</h3>", unsafe_allow_html=True)
+            for i in range(0, len(top_3_subs), 2):
+                col1, col2 = st.columns(2)
                 
-                # 상위 4개 핵심역량 표시 (2개씩 한 줄에)
-                st.markdown("<h3>🔼 상위 핵심역량 (강점)</h3>", unsafe_allow_html=True)
-                for i in range(0, len(top_3_subs), 2):
+                # 첫 번째 열
+                with col1:
+                    if i < len(top_3_subs):
+                        competency = top_3_subs[i]
+                        score = sorted_sub_scores[competency]
+                        emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
+                        main_comp = sub_to_main_mapping[competency]
+                        
+                        st.markdown(f"""
+                        <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #f2fff2;">
+                            <h3 class="top-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # 두 번째 열
+                with col2:
+                    if i+1 < len(top_3_subs):
+                        competency = top_3_subs[i+1]
+                        score = sorted_sub_scores[competency]
+                        emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
+                        main_comp = sub_to_main_mapping[competency]
+                        
+                        st.markdown(f"""
+                        <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #f2fff2;">
+                            <h3 class="top-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            # 하위 4개 핵심역량 표시 (2개씩 한 줄에)
+            if bottom_3_subs:
+                st.markdown("<h3>🔽 하위 핵심역량 (개선 필요)</h3>", unsafe_allow_html=True)
+                for i in range(0, len(bottom_3_subs), 2):
                     col1, col2 = st.columns(2)
                     
                     # 첫 번째 열
                     with col1:
-                        if i < len(top_3_subs):
-                            competency = top_3_subs[i]
+                        if i < len(bottom_3_subs):
+                            competency = bottom_3_subs[i]
                             score = sorted_sub_scores[competency]
                             emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
                             main_comp = sub_to_main_mapping[competency]
                             
                             st.markdown(f"""
-                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #f2fff2;">
-                                <h3 class="top-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #fff2f2;">
+                                <h3 class="bottom-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
                             </div>
                             """, unsafe_allow_html=True)
                     
                     # 두 번째 열
                     with col2:
-                        if i+1 < len(top_3_subs):
-                            competency = top_3_subs[i+1]
+                        if i+1 < len(bottom_3_subs):
+                            competency = bottom_3_subs[i+1]
                             score = sorted_sub_scores[competency]
                             emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
                             main_comp = sub_to_main_mapping[competency]
                             
                             st.markdown(f"""
-                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #f2fff2;">
-                                <h3 class="top-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #fff2f2;">
+                                <h3 class="bottom-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
                             </div>
                             """, unsafe_allow_html=True)
-                
-                # 하위 4개 핵심역량 표시 (2개씩 한 줄에)
-                if bottom_3_subs:
-                    st.markdown("<h3>🔽 하위 핵심역량 (개선 필요)</h3>", unsafe_allow_html=True)
-                    for i in range(0, len(bottom_3_subs), 2):
-                        col1, col2 = st.columns(2)
-                        
-                        # 첫 번째 열
-                        with col1:
-                            if i < len(bottom_3_subs):
-                                competency = bottom_3_subs[i]
-                                score = sorted_sub_scores[competency]
-                                emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
-                                main_comp = sub_to_main_mapping[competency]
-                                
-                                st.markdown(f"""
-                                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #fff2f2;">
-                                    <h3 class="bottom-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        # 두 번째 열
-                        with col2:
-                            if i+1 < len(bottom_3_subs):
-                                competency = bottom_3_subs[i+1]
-                                score = sorted_sub_scores[competency]
-                                emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
-                                main_comp = sub_to_main_mapping[competency]
-                                
-                                st.markdown(f"""
-                                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #fff2f2;">
-                                    <h3 class="bottom-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-                                </div>
-                                """, unsafe_allow_html=True)
-                
-                # 나머지 핵심역량 표시 (2개씩 한 줄에)
-                if other_subs:
-                    st.markdown("<h3>기타 핵심역량</h3>", unsafe_allow_html=True)
-                    for i in range(0, len(other_subs), 2):
-                        col1, col2 = st.columns(2)
-                        
-                        # 첫 번째 열
-                        with col1:
-                            if i < len(other_subs):
-                                competency = other_subs[i]
-                                score = sorted_sub_scores[competency]
-                                emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
-                                main_comp = sub_to_main_mapping[competency]
-                                
-                                st.markdown(f"""
-                                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-                                </div>
-                                """, unsafe_allow_html=True)
-                        
-                        # 두 번째 열
-                        with col2:
-                            if i+1 < len(other_subs):
-                                competency = other_subs[i+1]
-                                score = sorted_sub_scores[competency]
-                                emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
-                                main_comp = sub_to_main_mapping[competency]
-                                
-                                st.markdown(f"""
-                                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                                    <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-                                </div>
-                                """, unsafe_allow_html=True)
+            
+            # 나머지 핵심역량 표시 (2개씩 한 줄에)
+            if other_subs:
+                st.markdown("<h3>기타 핵심역량</h3>", unsafe_allow_html=True)
+                for i in range(0, len(other_subs), 2):
+                    col1, col2 = st.columns(2)
+                    
+                    # 첫 번째 열
+                    with col1:
+                        if i < len(other_subs):
+                            competency = other_subs[i]
+                            score = sorted_sub_scores[competency]
+                            emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
+                            main_comp = sub_to_main_mapping[competency]
+                            
+                            st.markdown(f"""
+                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                                <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    # 두 번째 열
+                    with col2:
+                        if i+1 < len(other_subs):
+                            competency = other_subs[i+1]
+                            score = sorted_sub_scores[competency]
+                            emoji = "🌟" if score >= 4.5 else "😊" if score >= 3.5 else "🙂" if score >= 2.5 else "💪"
+                            main_comp = sub_to_main_mapping[competency]
+                            
+                            st.markdown(f"""
+                            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                                <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                            </div>
+                            """, unsafe_allow_html=True)
 
     with tab3:
         st.subheader("문항별 응답 결과")
@@ -529,6 +531,7 @@ elif st.session_state.page == 'results':
                 if i in qs:
                     main_category = main
                     break
+            
             
             response = st.session_state.answers.get(i, "미응답")
             response_data.append({

@@ -140,7 +140,7 @@ if st.session_state.page == 'assessment':
         st.markdown("<hr>", unsafe_allow_html=True)
     
     # Student info input
-    with col2:
+    with col1:
         name_col, grade_col = st.columns(2)
         with name_col:
             student_name = st.text_input("이름", key="student_name", value=st.session_state.student_info['name'])
@@ -149,8 +149,6 @@ if st.session_state.page == 'assessment':
             grade = st.text_input("학년/반", key="grade", value=st.session_state.student_info['grade'])
             st.session_state.student_info['grade'] = grade
     
-    # Left column - Question numbers with indicators
-    with col1:
         st.markdown("<h3 style='text-align: center;'>창업가정신 핵심역량<br>간이검사</h3>", unsafe_allow_html=True)
         
         # Create progress indicator

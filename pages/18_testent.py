@@ -37,7 +37,7 @@ custom_css = """
             background-color: #c1c1c1;
         }
 
-        /* 최상위 영역 강조 스타일 */
+        /* 최상위 역량 강조 스타일 */
         .top-category {
             background-color: #f0f0f0;
             border: 2px solid #ddd;
@@ -45,13 +45,13 @@ custom_css = """
             padding: 12px !important;
         }
         
-        /* 소영역 상위 항목 스타일 */
+        /* 핵심역량 상위 항목 스타일 */
         .top-subcategory {
             color: #1e8449 !important;
             font-weight: bold;
         }
         
-        /* 소영역 하위 항목 스타일 */
+        /* 핵심역량 하위 항목 스타일 */
         .bottom-subcategory {
             color: #c0392b !important;
             font-weight: bold;
@@ -118,15 +118,15 @@ yeep_url = "https://yeep.go.kr/intro/coreCmptyIntro.do"
 options = ["전혀 그렇지 않다", "그렇지 않다", "보통", "그렇다", "매우 그렇다"]
 option_values = {option: idx for idx, option in enumerate(options, 1)}
 
-# Define competency categories - 대영역과 소영역 모두 정의
+# Define competency categories - 핵심역량군과 핵심역량 모두 정의
 main_competencies = {
-    "가치창출역량": [1, 2, 3, 4, 5, 6],
-    "도전역량": [7, 8, 9, 10, 11, 12],
-    "자기주도역량": [13, 14, 15, 16, 17, 18],
-    "집단창의역량": [19, 20, 21, 22, 23, 24]
+    "가치창출역량군": [1, 2, 3, 4, 5, 6],
+    "도전역량군": [7, 8, 9, 10, 11, 12],
+    "자기주도역량군": [13, 14, 15, 16, 17, 18],
+    "집단창의역량군": [19, 20, 21, 22, 23, 24]
 }
 
-# 소영역 정의
+# 핵심역량 정의
 sub_competencies = {
     "혁신성": [1, 2],
     "사회적 가치지향": [3, 4],
@@ -142,20 +142,20 @@ sub_competencies = {
     "협력성": [23, 24]
 }
 
-# 소영역과 대영역의 매핑
+# 역량군과 역량의 매핑
 sub_to_main_mapping = {
-    "혁신성": "가치창출역량",
-    "사회적 가치지향": "가치창출역량",
-    "변화민첩성": "가치창출역량",
-    "성취지향성": "도전역량",
-    "위험감수역량": "도전역량",
-    "회복탄력성": "도전역량",
-    "자율성": "자기주도역량",
-    "자기관리역량": "자기주도역량",
-    "끈기": "자기주도역량",
-    "공동의사결정": "집단창의역량",
-    "자원연계": "집단창의역량",
-    "협력성": "집단창의역량"
+    "혁신성": "가치창출역량군",
+    "사회적 가치지향": "가치창출역량군",
+    "변화민첩성": "가치창출역량군",
+    "성취지향성": "도전역량군",
+    "위험감수역량": "도전역량군",
+    "회복탄력성": "도전역량군",
+    "자율성": "자기주도역량군",
+    "자기관리역량": "자기주도역량군",
+    "끈기": "자기주도역량군",
+    "공동의사결정": "집단창의역량군",
+    "자원연계": "집단창의역량군",
+    "협력성": "집단창의역량군"
 }
 
 # Main app logic
@@ -229,17 +229,7 @@ if st.session_state.page == 'assessment':
                 else:
                     cols[col].markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-        # Show results button if all questions are answered
-        if len(st.session_state.answers) == len(questions):
-            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
-            st.button(
-                "결과 보기", 
-                key="show_results", 
-                use_container_width=True, 
-                type="primary",
-                on_click=results_click
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+
         
         st.markdown('</div>', unsafe_allow_html=True)
             
@@ -287,6 +277,18 @@ elif st.session_state.page == 'results':
             avg_score = competency_score / valid_questions
             main_scores[competency] = avg_score
     
+        # Show results button if all questions are answered
+        if len(st.session_state.answers) == len(questions):
+            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
+            st.button(
+                "결과 보기", 
+                key="show_results", 
+                use_container_width=True, 
+                type="primary",
+                on_click=results_click
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+
     # Calculate sub competency scores
     sub_scores = {}
     for competency, question_ids in sub_competencies.items():
@@ -303,62 +305,62 @@ elif st.session_state.page == 'results':
             avg_score = competency_score / valid_questions
             sub_scores[competency] = avg_score
     
-    # 대영역 점수 기준 내림차순 정렬
+    # 역량군 점수 기준 내림차순 정렬
     sorted_main_scores = dict(sorted(main_scores.items(), key=lambda item: item[1], reverse=True))
-    # 소영역 점수 기준 내림차순 정렬
+    # 역량 점수 기준 내림차순 정렬
     sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
     
-    # 상위 대영역 찾기 (1위)
+    # 핵심역량군 찾기 (1위)
     top_main_category = list(sorted_main_scores.keys())[0] if sorted_main_scores else None
     
-    # 소영역 상위 3개, 하위 3개 찾기
+    # 역량 상위 4개, 하위 4개 찾기
     sub_categories_list = list(sorted_sub_scores.keys())
-    top_3_subs = sub_categories_list[:3] if len(sub_categories_list) >= 3 else sub_categories_list
-    bottom_3_subs = sub_categories_list[-3:] if len(sub_categories_list) >= 3 else []
+    top_3_subs = sub_categories_list[:4] if len(sub_categories_list) >= 3 else sub_categories_list
+    bottom_3_subs = sub_categories_list[-4:] if len(sub_categories_list) >= 3 else []
     bottom_3_subs.reverse()  # 점수가 낮은 순으로 정렬
     
     # Create tabs for different result views
-    tab1, tab2 = st.tabs(["영역별 결과", "응답 상세"])
+    tab1, tab2 = st.tabs(["역량별 결과", "응답 상세"])
     
     with tab1:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.subheader(f"{st.session_state.student_info['name']}님의 대영역 역량 프로필")
+            st.subheader(f"{st.session_state.student_info['name']}님의 창업가정신 핵심역량군 프로필")
             
             # Create data for chart
             chart_data = pd.DataFrame({
-                '역량': list(main_scores.keys()),
+                '역량군': list(main_scores.keys()),
                 '점수': list(main_scores.values())
             })
             
             # Create bar chart for main competencies
             chart = alt.Chart(chart_data).mark_bar().encode(
                 x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
-                y=alt.Y('역량:N', sort='-x'),
-                color=alt.Color('역량:N', legend=None),
-                tooltip=['역량', '점수']
+                y=alt.Y('역량군:N', sort='-x'),
+                color=alt.Color('역량군:N', legend=None),
+                tooltip=['역량군', '점수']
             ).properties(
                 height=300
             )
             
             st.altair_chart(chart, use_container_width=True)
 
-            st.subheader(f"{st.session_state.student_info['name']}님의 소영역 역량 프로필")
+            st.subheader(f"{st.session_state.student_info['name']}님의 창업가정신 핵심역량 프로필")
             
             # Create data for chart
             sub_chart_data = pd.DataFrame({
                 '역량': list(sub_scores.keys()),
                 '점수': list(sub_scores.values()),
-                '대영역': [sub_to_main_mapping[sub] for sub in sub_scores.keys()]
+                '역량군': [sub_to_main_mapping[sub] for sub in sub_scores.keys()]
             })
             
             # Create bar chart for sub competencies
             sub_chart = alt.Chart(sub_chart_data).mark_bar().encode(
                 x=alt.X('점수:Q', scale=alt.Scale(domain=[0, 5])),
                 y=alt.Y('역량:N', sort='-x'),
-                color=alt.Color('대영역:N'),
-                tooltip=['역량', '점수', '대영역']
+                color=alt.Color('역량군:N'),
+                tooltip=['역량', '점수', '역량군']
             ).properties(
                 height=400
             )
@@ -366,11 +368,11 @@ elif st.session_state.page == 'results':
             st.altair_chart(sub_chart, use_container_width=True)
         
         with col2:
-            # 대영역과 소영역을 분리하여 표시
-            st.markdown("<h2>📊 대영역 결과</h2>", unsafe_allow_html=True)
+            # 역량군과 역량을 분리하여 표시
+            st.markdown("<h2>📊 역량군 결과</h2>", unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
             
-            # 대영역 결과 표시
+            # 역량군 결과 표시
             for competency, score in sorted_main_scores.items():
                 # Determine level based on score
                 if score >= 4.5:
@@ -386,22 +388,22 @@ elif st.session_state.page == 'results':
                     level = "노력 필요"
                     emoji = "💪"
                 
-                # 최상위 대영역인 경우 강조
+                # 최상위 역량군인 경우 강조
                 is_top = competency == top_main_category
                 top_class = 'class="top-category"' if is_top else ""
                 
                 st.markdown(f"""
                 <div {top_class} style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
                     <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
-                    {f'<p style="color: #1e8449; font-weight: bold;">🏆 최상위 대영역입니다!</p>' if is_top else ''}
+                    {f'<p style="color: #1e8449; font-weight: bold;">🏆 여러분의 창업가정신 핵심역량군입니다!</p>' if is_top else ''}
                 </div>
                 """, unsafe_allow_html=True)
 
-            st.markdown("<h2>📈 소영역 결과</h2>", unsafe_allow_html=True)
+            st.markdown("<h2>📈 핵심역량 결과</h2>", unsafe_allow_html=True)
             st.markdown("<hr>", unsafe_allow_html=True)
             
-            # 상위 3개 소영역 표시 (2개씩 한 줄에)
-            st.markdown("<h3>🔼 상위 소영역 (강점)</h3>", unsafe_allow_html=True)
+            # 상위 4개 핵심역량 표시 (2개씩 한 줄에)
+            st.markdown("<h3>🔼 상위 핵심역량 (강점)</h3>", unsafe_allow_html=True)
             for i in range(0, len(top_3_subs), 2):
                 col1, col2 = st.columns(2)
                 
@@ -433,9 +435,9 @@ elif st.session_state.page == 'results':
                         </div>
                         """, unsafe_allow_html=True)
             
-            # 하위 3개 소영역 표시 (2개씩 한 줄에)
+            # 하위 4개 핵심역량 표시 (2개씩 한 줄에)
             if bottom_3_subs:
-                st.markdown("<h3>🔽 하위 소영역 (개선 필요)</h3>", unsafe_allow_html=True)
+                st.markdown("<h3>🔽 하위 핵심역량 (개선 필요)</h3>", unsafe_allow_html=True)
                 for i in range(0, len(bottom_3_subs), 2):
                     col1, col2 = st.columns(2)
                     
@@ -467,9 +469,9 @@ elif st.session_state.page == 'results':
                             </div>
                             """, unsafe_allow_html=True)
             
-            # 나머지 소영역 표시 (2개씩 한 줄에)
+            # 나머지 핵심역량 표시 (2개씩 한 줄에)
             if other_subs:
-                st.markdown("<h3>기타 소영역</h3>", unsafe_allow_html=True)
+                st.markdown("<h3>기타 핵심역량</h3>", unsafe_allow_html=True)
                 for i in range(0, len(other_subs), 2):
                     col1, col2 = st.columns(2)
                     
@@ -504,17 +506,17 @@ elif st.session_state.page == 'results':
     with tab2:
         st.subheader("문항별 응답 결과")
         
-        # 소영역 정보 추가
+        # 핵심역량 정보 추가
         response_data = []
         for i, question in enumerate(questions, 1):
-            # 어떤 소영역에 속하는지 찾기
+            # 어떤 핵심역량에 속하는지 찾기
             sub_category = None
             for sub, qs in sub_competencies.items():
                 if i in qs:
                     sub_category = sub
                     break
             
-            # 어떤 대영역에 속하는지 찾기
+            # 어떤 역량군에 속하는지 찾기
             main_category = None
             for main, qs in main_competencies.items():
                 if i in qs:
@@ -527,8 +529,8 @@ elif st.session_state.page == 'results':
                 "질문": question, 
                 "응답": response,
                 "점수": option_values.get(response, 0) if response != "미응답" else 0,
-                "소영역": sub_category,
-                "대영역": main_category
+                "역량": sub_category,
+                "역량군": main_category
             })
         
         response_df = pd.DataFrame(response_data)

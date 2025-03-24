@@ -71,6 +71,8 @@ questions = [
     "나는 친구들과 목표를 이야기하며, 함께 일하는 게 더 좋다고 생각한다."
 ]
 
+yeep_url = "https://yeep.go.kr/intro/coreCmptyIntro.do"
+
 # Define answer options
 options = ["전혀 그렇지 않다", "그렇지 않다", "보통", "그렇다", "매우 그렇다"]
 option_values = {option: idx for idx, option in enumerate(options, 1)}
@@ -129,9 +131,9 @@ if st.session_state.page == 'assessment':
         """, unsafe_allow_html=True)
         
         st.markdown("""
-        <p style="font-size: 16px;">아래 문항은 창업가정신과 관련한 생각이나 태도를 알아보기 위한 질문입니다.<br>
-                    간이 검사이므로 초등학교 4학년 이상의 학생은 아래 사이트에서 꼭 검사를 제대로 진행해주세요. <br>
-                    https://yeep.go.kr/intro/coreCmptyIntro.do
+        <p style="font-size: 16px;">아래 문항은 창업가정신과 관련한 생각이나 태도를 알아보기 위한 간이 검사 질문입니다. <br>
+                    초등학교 4학년 이상의 학생은 아래 사이트에서 꼭 검사를 제대로 진행해주세요. <br>
+                     <a href="yeep_url}" target="_blank">{https://yeep.go.kr/intro/coreCmptyIntro.do}</a>: <br>
         각 문항을 읽고 자신의 생각과 가장 일치하는 답변을 선택해주세요.</p>
         """, unsafe_allow_html=True)
         
@@ -149,7 +151,7 @@ if st.session_state.page == 'assessment':
     
     # Left column - Question numbers with indicators
     with col1:
-        st.markdown("<h3 style='text-align: center;'>창의가정신 핵심역량<br>진단도구</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center;'>창업가정신 핵심역량<br>간이검사</h3>", unsafe_allow_html=True)
         
         # Create progress indicator
         total_questions = len(questions)

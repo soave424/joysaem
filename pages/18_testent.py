@@ -8,16 +8,57 @@ import io
 # 사이드바가 접힌 상태로 시작
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
-# CSS를 사용하여 사이드바 완전히 숨기기
-hide_sidebar_style = """
+# CSS를 사용하여 사이드바 완전히 숨기기 및 col1 고정
+custom_css = """
     <style>
         div[data-testid="stSidebar"] {display: none;}
+        
+        /* 왼쪽 열 고정 스타일 */
+        [data-testid="column"]:nth-of-type(1) {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+        
+        /* 오른쪽 열 마진 추가 */
+        [data-testid="column"]:nth-of-type(2) {
+            padding-left: 20px;
+        }
+        
+        /* 필요시 스크롤바 스타일 조정 */
+        ::-webkit-scrollbar {
+            width: 10px;
+            background-color: #F5F5F5;
+        }
+        ::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            background-color: #c1c1c1;
+        }
+
+        /* 최상위 영역 강조 스타일 */
+        .top-category {
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 12px !important;
+        }
+        
+        /* 소영역 상위 항목 스타일 */
+        .top-subcategory {
+            color: #1e8449 !important;
+            font-weight: bold;
+        }
+        
+        /* 소영역 하위 항목 스타일 */
+        .bottom-subcategory {
+            color: #c0392b !important;
+            font-weight: bold;
+        }
     </style>
 """
-st.markdown(hide_sidebar_style, unsafe_allow_html=True)
-
-# # Set page configuration
-# st.set_page_config(page_title="역량검사", layout="wide")
+st.markdown(custom_css, unsafe_allow_html=True)
 
 # Initialize session state variables
 if 'page' not in st.session_state:
@@ -122,7 +163,7 @@ if st.session_state.page == 'assessment':
     # Create a two-column layout
     col1, col2 = st.columns([1, 3])
     
-    # Header
+    # Header - col2로 이동
     with col2:
         st.markdown("""
         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -139,8 +180,10 @@ if st.session_state.page == 'assessment':
 
         st.markdown("<hr>", unsafe_allow_html=True)
     
-    # Student info input
+    # Student info input - col1에 있음
     with col1:
+        st.markdown('<div style="padding: 10px;">', unsafe_allow_html=True)
+        
         name_col, grade_col = st.columns(2)
         with name_col:
             student_name = st.text_input("이름", key="student_name", value=st.session_state.student_info['name'])
@@ -158,7 +201,7 @@ if st.session_state.page == 'assessment':
         
         # Progress bar container
         st.markdown(f"""
-        <div style="margin-top: 50px; margin-bottom: 20px;">
+        <div style="margin-top: 30px; margin-bottom: 20px;">
             <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; margin-bottom: 5px;">
                 <div style="background-color: #FF8C00; width: {progress_percentage}%; height: 10px; border-radius: 5px;"></div>
             </div>
@@ -186,7 +229,7 @@ if st.session_state.page == 'assessment':
                 else:
                     cols[col].markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-            # Show results button if all questions are answered
+        # Show results button if all questions are answered
         if len(st.session_state.answers) == len(questions):
             st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
             st.button(
@@ -197,6 +240,8 @@ if st.session_state.page == 'assessment':
                 on_click=results_click
             )
             st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
             
     # Right column - Questions and answer options
     with col2:
@@ -221,8 +266,6 @@ if st.session_state.page == 'assessment':
                 )
             
             st.markdown("<hr>", unsafe_allow_html=True)
-        
-
 
 # Results page
 elif st.session_state.page == 'results':
@@ -259,6 +302,20 @@ elif st.session_state.page == 'results':
         if valid_questions > 0:
             avg_score = competency_score / valid_questions
             sub_scores[competency] = avg_score
+    
+    # 대영역 점수 기준 내림차순 정렬
+    sorted_main_scores = dict(sorted(main_scores.items(), key=lambda item: item[1], reverse=True))
+    # 소영역 점수 기준 내림차순 정렬
+    sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
+    
+    # 상위 대영역 찾기 (1위)
+    top_main_category = list(sorted_main_scores.keys())[0] if sorted_main_scores else None
+    
+    # 소영역 상위 3개, 하위 3개 찾기
+    sub_categories_list = list(sorted_sub_scores.keys())
+    top_3_subs = sub_categories_list[:3] if len(sub_categories_list) >= 3 else sub_categories_list
+    bottom_3_subs = sub_categories_list[-3:] if len(sub_categories_list) >= 3 else []
+    bottom_3_subs.reverse()  # 점수가 낮은 순으로 정렬
     
     # Create tabs for different result views
     tab1, tab2 = st.tabs(["영역별 결과", "응답 상세"])
@@ -308,63 +365,121 @@ elif st.session_state.page == 'results':
             
             st.altair_chart(sub_chart, use_container_width=True)
         
-
-    # tab1의 col2 내부에서 소영역별 상세 결과 부분을 수정
-    with col2:
-        st.subheader("영역별 결과")
-        # 점수에 따라 내림차순 정렬 - 이미 있는 코드
-        sorted_main_scores = dict(sorted(main_scores.items(), key=lambda item: item[1], reverse=True))
-
-        # 대영역 결과 표시 (이미 있는 코드를 sorted_main_scores로 수정)
-        for competency, score in sorted_main_scores.items():
-            # Determine level based on score
-            if score >= 4.5:
-                level = "매우 우수"
-                emoji = "🌟"
-            elif score >= 3.5:
-                level = "우수"
-                emoji = "😊"
-            elif score >= 2.5:
-                level = "보통"
-                emoji = "🙂"
-            else:
-                level = "노력 필요"
-                emoji = "💪"
-                
-            st.markdown(f"""
-            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.subheader("소영역별 상세 결과")
-        # 점수에 따라 내림차순 정렬 - 이미 있는 코드
-        sorted_sub_scores = dict(sorted(sub_scores.items(), key=lambda item: item[1], reverse=True))
-
-        # 소영역 결과 표시 (수정된 코드는 sorted_sub_scores를 사용)
-        for competency, score in sorted_sub_scores.items():
-            # Determine level based on score
-            if score >= 4.5:
-                level = "매우 우수"
-                emoji = "🌟"
-            elif score >= 3.5:
-                level = "우수"
-                emoji = "😊"
-            elif score >= 2.5:
-                level = "보통"
-                emoji = "🙂"
-            else:
-                level = "노력 필요"
-                emoji = "💪"
+        with col2:
+            # 대영역과 소영역을 분리하여 표시
+            st.markdown("<h2>📊 대영역 결과</h2>", unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
             
-            # Get the main competency for this sub competency
-            main_comp = sub_to_main_mapping[competency]
+            # 대영역 결과 표시
+            for competency, score in sorted_main_scores.items():
+                # Determine level based on score
+                if score >= 4.5:
+                    level = "매우 우수"
+                    emoji = "🌟"
+                elif score >= 3.5:
+                    level = "우수"
+                    emoji = "😊"
+                elif score >= 2.5:
+                    level = "보통"
+                    emoji = "🙂"
+                else:
+                    level = "노력 필요"
+                    emoji = "💪"
                 
-            st.markdown(f"""
-            <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
-                <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
-            </div>
-            """, unsafe_allow_html=True)
+                # 최상위 대영역인 경우 강조
+                is_top = competency == top_main_category
+                top_class = 'class="top-category"' if is_top else ""
+                
+                st.markdown(f"""
+                <div {top_class} style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <h3>{emoji} {competency}: {level} <span style="font-size: 0.8em; color: #666;">({score:.1f}/5.0)<span></h3>
+                    {f'<p style="color: #1e8449; font-weight: bold;">🏆 최상위 대영역입니다!</p>' if is_top else ''}
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("<h2>📈 소영역 결과</h2>", unsafe_allow_html=True)
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
+            # 상위 3개 소영역 먼저 표시
+            st.markdown("<h3>🔼 상위 소영역 (강점)</h3>", unsafe_allow_html=True)
+            for competency in top_3_subs:
+                score = sorted_sub_scores[competency]
+                if score >= 4.5:
+                    level = "매우 우수"
+                    emoji = "🌟"
+                elif score >= 3.5:
+                    level = "우수"
+                    emoji = "😊"
+                elif score >= 2.5:
+                    level = "보통"
+                    emoji = "🙂"
+                else:
+                    level = "노력 필요"
+                    emoji = "💪"
+                
+                # Get the main competency for this sub competency
+                main_comp = sub_to_main_mapping[competency]
+                    
+                st.markdown(f"""
+                <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #f2fff2;">
+                    <h3 class="top-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # 하위 3개 소영역 표시
+            if bottom_3_subs:
+                st.markdown("<h3>🔽 하위 소영역 (개선 필요)</h3>", unsafe_allow_html=True)
+                for competency in bottom_3_subs:
+                    score = sorted_sub_scores[competency]
+                    if score >= 4.5:
+                        level = "매우 우수"
+                        emoji = "🌟"
+                    elif score >= 3.5:
+                        level = "우수"
+                        emoji = "😊"
+                    elif score >= 2.5:
+                        level = "보통"
+                        emoji = "🙂"
+                    else:
+                        level = "노력 필요"
+                        emoji = "💪"
+                    
+                    # Get the main competency for this sub competency
+                    main_comp = sub_to_main_mapping[competency]
+                        
+                    st.markdown(f"""
+                    <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd; background-color: #fff2f2;">
+                        <h3 class="bottom-subcategory">{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # 나머지 소영역 표시
+            other_subs = [sub for sub in sorted_sub_scores.keys() if sub not in top_3_subs and sub not in bottom_3_subs]
+            if other_subs:
+                st.markdown("<h3>기타 소영역</h3>", unsafe_allow_html=True)
+                for competency in other_subs:
+                    score = sorted_sub_scores[competency]
+                    if score >= 4.5:
+                        level = "매우 우수"
+                        emoji = "🌟"
+                    elif score >= 3.5:
+                        level = "우수"
+                        emoji = "😊"
+                    elif score >= 2.5:
+                        level = "보통"
+                        emoji = "🙂"
+                    else:
+                        level = "노력 필요"
+                        emoji = "💪"
+                    
+                    # Get the main competency for this sub competency
+                    main_comp = sub_to_main_mapping[competency]
+                        
+                    st.markdown(f"""
+                    <div style="margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                        <h3>{emoji} {competency} <span style="font-size: 0.8em; color: #666;">({main_comp}_{score:.1f}/5.0)</span></h3>
+                    </div>
+                    """, unsafe_allow_html=True)
 
     with tab2:
         st.subheader("문항별 응답 결과")

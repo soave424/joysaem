@@ -124,12 +124,14 @@ if st.session_state.page == 'assessment':
     with col2:
         st.markdown("""
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h1>창의가정신 역량검사</h1>
+            <h1>창업가정신 핵심역량 간이검사</h1>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("""
-        <p style="font-size: 16px;">아래 문항은 창의가정신과 관련한 생각이나 태도를 알아보기 위한 질문입니다.<br>
+        <p style="font-size: 16px;">아래 문항은 창업가정신과 관련한 생각이나 태도를 알아보기 위한 질문입니다.<br>
+                    간이 검사이므로 초등학교 4학년 이상의 학생은 아래 사이트에서 꼭 검사를 제대로 진행해주세요. <br>
+                    https://yeep.go.kr/intro/coreCmptyIntro.do
         각 문항을 읽고 자신의 생각과 가장 일치하는 답변을 선택해주세요.</p>
         """, unsafe_allow_html=True)
         

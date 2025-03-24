@@ -229,9 +229,9 @@ if st.session_state.page == 'assessment':
                 else:
                     cols[col].markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-
-        
         st.markdown('</div>', unsafe_allow_html=True)
+
+
             
     # Right column - Questions and answer options
     with col2:
@@ -254,8 +254,20 @@ if st.session_state.page == 'assessment':
                     on_click=answer_click,
                     args=(i, option)
                 )
-            
+
             st.markdown("<hr>", unsafe_allow_html=True)
+        # Show results button if all questions are answered
+        if len(st.session_state.answers) == len(questions):
+            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
+            st.button(
+                "결과 보기", 
+                key="show_results", 
+                use_container_width=True, 
+                type="primary",
+                on_click=results_click
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Results page
 elif st.session_state.page == 'results':
@@ -277,17 +289,6 @@ elif st.session_state.page == 'results':
             avg_score = competency_score / valid_questions
             main_scores[competency] = avg_score
     
-        # Show results button if all questions are answered
-        if len(st.session_state.answers) == len(questions):
-            st.markdown("<div style='text-align: center; margin-top: 20px;'>", unsafe_allow_html=True)
-            st.button(
-                "결과 보기", 
-                key="show_results", 
-                use_container_width=True, 
-                type="primary",
-                on_click=results_click
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
 
     # Calculate sub competency scores
     sub_scores = {}

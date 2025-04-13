@@ -136,7 +136,8 @@ def check_password():
 # 사용자 페이지
 def user_view(df):
     st.subheader("의견 공유")
-    st.button("🔄 새로고침", on_click=st.rerun)
+    if st.button("🔄 새로고침"):
+        st.rerun()
 
     with st.form("comment_form"):
         name = st.text_input("이름(선택)")
@@ -182,7 +183,6 @@ def user_view(df):
                     st.markdown(f"{row['comment']}")
                     st.markdown("---")
 
-# 관리자 페이지는 이전과 동일
 # 관리자 페이지
 def admin_view(df):
     st.subheader("관리자 페이지 - 글 관리")
@@ -236,7 +236,6 @@ def admin_view(df):
                         save_data(df)
                         st.rerun()
                     st.markdown("---")
-
 
 # 실행
 def main():

@@ -5,3 +5,6 @@ gspread
 google-auth
 python-dotenv
 aiohttp
+opencv-python
+pillow
+numpy

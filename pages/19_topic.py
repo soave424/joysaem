@@ -7,13 +7,16 @@ import os
 # 데이터 파일 경로 설정
 DATA_FILE = "comments.csv"
 
+# 태그 목록 정의
+TAGS = ["공개", "비공개", "참여", "연구", "소통", "응원", "운영노하우", "정정요구", "질문", "추가의견"]
+
 # 페이지 설정
 st.set_page_config(page_title="댓글 게시판", layout="wide")
 
 # 데이터 초기화 및 불러오기
 def initialize_data():
     if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["id", "name", "comment", "timestamp", "approved"])
+        df = pd.DataFrame(columns=["id", "name", "comment", "tag", "timestamp", "approved"])
         df.to_csv(DATA_FILE, index=False)
     return pd.read_csv(DATA_FILE)
 
@@ -66,13 +69,15 @@ def user_view(df):
     with st.form("comment_form"):
         name = st.text_input("이름")
         comment = st.text_area("댓글")
+        tag = st.selectbox("태그 선택", TAGS)
         submitted = st.form_submit_button("댓글 제출")
         
-        if submitted and name and comment:
+        if submitted and comment:  # 이름은 필수가 아님
             new_comment = {
                 "id": str(uuid.uuid4()),
-                "name": name,
+                "name": name if name else "익명",  # 이름이 없으면 "익명"으로 설정
                 "comment": comment,
+                "tag": tag,
                 "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "approved": False
             }
@@ -88,11 +93,27 @@ def user_view(df):
     if approved_comments.empty:
         st.info("아직 승인된 댓글이 없습니다.")
     else:
-        for _, row in approved_comments.iterrows():
-            with st.container():
-                st.markdown(f"**{row['name']}** - {row['timestamp']}")
-                st.markdown(f"{row['comment']}")
-                st.markdown("---")
+        # 태그별 필터링 옵션
+        filter_tag = st.multiselect("태그로 필터링", ["모든 태그"] + TAGS, default=["모든 태그"])
+        
+        # "모든 태그"가 선택되었거나 아무것도 선택되지 않았을 때는 모든 댓글 표시
+        if "모든 태그" in filter_tag or not filter_tag:
+            filtered_comments = approved_comments
+        else:
+            filtered_comments = approved_comments[approved_comments["tag"].isin(filter_tag)]
+        
+        if filtered_comments.empty:
+            st.info("해당 태그의 승인된 댓글이 없습니다.")
+        else:
+            for _, row in filtered_comments.iterrows():
+                with st.container():
+                    col1, col2 = st.columns([5, 1])
+                    with col1:
+                        st.markdown(f"**{row['name']}** - {row['timestamp']}")
+                    with col2:
+                        st.markdown(f"**태그: {row['tag']}**")
+                    st.markdown(f"{row['comment']}")
+                    st.markdown("---")
 
 # 관리자 페이지
 def admin_view(df):
@@ -105,15 +126,24 @@ def admin_view(df):
     with pending_tab:
         pending_comments = df[df["approved"] == False]
         
-        if pending_comments.empty:
+        # 태그별 필터링 옵션
+        filter_tag = st.multiselect("태그로 필터링 (승인 대기)", ["모든 태그"] + TAGS, default=["모든 태그"], key="pending_filter")
+        
+        # "모든 태그"가 선택되었거나 아무것도 선택되지 않았을 때는 모든 댓글 표시
+        if "모든 태그" in filter_tag or not filter_tag:
+            filtered_pending = pending_comments
+        else:
+            filtered_pending = pending_comments[pending_comments["tag"].isin(filter_tag)]
+        
+        if filtered_pending.empty:
             st.info("승인 대기 중인 댓글이 없습니다.")
         else:
-            for idx, row in pending_comments.iterrows():
+            for idx, row in filtered_pending.iterrows():
                 with st.container():
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2, col3 = st.columns([3, 1, 1])
                     
                     with col1:
-                        st.markdown(f"**{row['name']}** - {row['timestamp']}")
+                        st.markdown(f"**{row['name']}** - {row['timestamp']} - **태그: {row['tag']}**")
                         st.markdown(f"{row['comment']}")
                     
                     with col2:
@@ -121,7 +151,8 @@ def admin_view(df):
                             df.at[idx, "approved"] = True
                             save_data(df)
                             st.rerun()
-                        
+                    
+                    with col3:
                         if st.button("삭제", key=f"delete_{row['id']}"):
                             df = df.drop(idx)
                             save_data(df)
@@ -133,15 +164,24 @@ def admin_view(df):
     with approved_tab:
         approved_comments = df[df["approved"] == True]
         
-        if approved_comments.empty:
+        # 태그별 필터링 옵션
+        filter_tag_approved = st.multiselect("태그로 필터링 (승인됨)", ["모든 태그"] + TAGS, default=["모든 태그"], key="approved_filter")
+        
+        # "모든 태그"가 선택되었거나 아무것도 선택되지 않았을 때는 모든 댓글 표시
+        if "모든 태그" in filter_tag_approved or not filter_tag_approved:
+            filtered_approved = approved_comments
+        else:
+            filtered_approved = approved_comments[approved_comments["tag"].isin(filter_tag_approved)]
+        
+        if filtered_approved.empty:
             st.info("승인된 댓글이 없습니다.")
         else:
-            for idx, row in approved_comments.iterrows():
+            for idx, row in filtered_approved.iterrows():
                 with st.container():
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2 = st.columns([5, 1])
                     
                     with col1:
-                        st.markdown(f"**{row['name']}** - {row['timestamp']}")
+                        st.markdown(f"**{row['name']}** - {row['timestamp']} - **태그: {row['tag']}**")
                         st.markdown(f"{row['comment']}")
                     
                     with col2:

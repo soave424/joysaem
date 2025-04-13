@@ -101,6 +101,43 @@ def parse_tags(tags_json):
     except:
         return []
 
+# 태그 필터 UI 생성 함수
+def create_tag_filters(session_key):
+    # 세션 상태에 필터 태그 저장
+    if session_key not in st.session_state:
+        st.session_state[session_key] = ["모든 태그"]
+    
+    # 태그 개수에 맞게 컬럼 생성 (모든 태그 + 실제 태그들)
+    cols = st.columns(len(TAGS) + 1)
+    
+    # "모든 태그" 버튼
+    if cols[0].button("모든 태그", key=f"all_tags_{session_key}", 
+                      use_container_width=True,
+                      type="primary" if "모든 태그" in st.session_state[session_key] else "secondary"):
+        st.session_state[session_key] = ["모든 태그"]
+        st.rerun()
+    
+    # 각 태그별 버튼 생성
+    for i, tag in enumerate(TAGS):
+        if cols[i + 1].button(tag, key=f"{session_key}_{tag}", 
+                          use_container_width=True,
+                          type="primary" if tag in st.session_state[session_key] else "secondary"):
+            if "모든 태그" in st.session_state[session_key]:
+                st.session_state[session_key] = [tag]
+            else:
+                if tag in st.session_state[session_key]:
+                    st.session_state[session_key].remove(tag)
+                else:
+                    st.session_state[session_key].append(tag)
+                
+                if not st.session_state[session_key]:  # 선택된 태그가 없으면
+                    st.session_state[session_key] = ["모든 태그"]
+            
+            st.rerun()
+    
+    # 선택된 필터 표시는 제거 (버튼 자체가 이미 선택 상태로 표시됨)
+    return st.session_state[session_key]
+
 # 사용자 페이지
 def user_view(df):
     st.subheader("의견 공유")
@@ -132,52 +169,17 @@ def user_view(df):
     if approved_comments.empty:
         st.info("아직 승인된 댓글이 없습니다.")
     else:
-        # 색상이 있는 태그 필터 버튼들 표시
+        # 태그 필터링 UI 생성
         st.write("태그로 필터링:")
-        cols = st.columns(5)  # 한 줄에 5개씩 태그 버튼 표시
-        
-        # 세션 상태에 필터 태그 저장
-        if "filter_tags" not in st.session_state:
-            st.session_state.filter_tags = ["모든 태그"]
-            
-        # "모든 태그" 버튼
-        if cols[0].button("모든 태그", key="all_tags", 
-                          use_container_width=True,
-                          type="primary" if "모든 태그" in st.session_state.filter_tags else "secondary"):
-            st.session_state.filter_tags = ["모든 태그"]
-            st.rerun()
-            
-        # 각 태그별 버튼 생성
-        for i, tag in enumerate(TAGS):
-            col_idx = (i + 1) % 5  # 한 줄에 5개씩
-            if cols[col_idx].button(tag, key=f"tag_{tag}", 
-                                  use_container_width=True,
-                                  type="primary" if tag in st.session_state.filter_tags else "secondary"):
-                if "모든 태그" in st.session_state.filter_tags:
-                    st.session_state.filter_tags = [tag]
-                else:
-                    if tag in st.session_state.filter_tags:
-                        st.session_state.filter_tags.remove(tag)
-                    else:
-                        st.session_state.filter_tags.append(tag)
-                    
-                    if not st.session_state.filter_tags:  # 선택된 태그가 없으면
-                        st.session_state.filter_tags = ["모든 태그"]
-                        
-                st.rerun()
-        
-        # 현재 적용된 필터 표시
-        if st.session_state.filter_tags != ["모든 태그"]:
-            filter_html = "적용된 필터: " + "".join([get_tag_style(tag) for tag in st.session_state.filter_tags])
-            st.markdown(filter_html, unsafe_allow_html=True)
+        filter_tags = create_tag_filters("filter_tags")
             
         # 필터링 적용
-        if "모든 태그" in st.session_state.filter_tags:
+        if "모든 태그" in filter_tags:
             filtered_comments = approved_comments
         else:
             # 선택된 태그 중 하나라도 포함된 댓글 필터링
             filtered_comments = approved_comments[approved_comments["tags"].apply(
-                lambda x: any(tag in parse_tags(x) for tag in st.session_state.filter_tags)
+                lambda x: any(tag in parse_tags(x) for tag in filter_tags)
             )]
         
         if filtered_comments.empty:
@@ -206,52 +208,17 @@ def admin_view(df):
     with pending_tab:
         pending_comments = df[df["approved"] == False]
         
-        # 색상이 있는 태그 필터 버튼들 표시
+        # 태그 필터링 UI 생성
         st.write("태그로 필터링:")
-        cols = st.columns(5)  # 한 줄에 5개씩 태그 버튼 표시
+        filter_tags_pending = create_tag_filters("filter_tags_pending")
         
-        # 세션 상태에 필터 태그 저장 (승인 대기용)
-        if "filter_tags_pending" not in st.session_state:
-            st.session_state.filter_tags_pending = ["모든 태그"]
-            
-        # "모든 태그" 버튼
-        if cols[0].button("모든 태그", key="all_tags_pending", 
-                          use_container_width=True,
-                          type="primary" if "모든 태그" in st.session_state.filter_tags_pending else "secondary"):
-            st.session_state.filter_tags_pending = ["모든 태그"]
-            st.rerun()
-            
-        # 각 태그별 버튼 생성
-        for i, tag in enumerate(TAGS):
-            col_idx = (i + 1) % 5  # 한 줄에 5개씩
-            if cols[col_idx].button(tag, key=f"tag_pending_{tag}", 
-                                  use_container_width=True,
-                                  type="primary" if tag in st.session_state.filter_tags_pending else "secondary"):
-                if "모든 태그" in st.session_state.filter_tags_pending:
-                    st.session_state.filter_tags_pending = [tag]
-                else:
-                    if tag in st.session_state.filter_tags_pending:
-                        st.session_state.filter_tags_pending.remove(tag)
-                    else:
-                        st.session_state.filter_tags_pending.append(tag)
-                    
-                    if not st.session_state.filter_tags_pending:  # 선택된 태그가 없으면
-                        st.session_state.filter_tags_pending = ["모든 태그"]
-                        
-                st.rerun()
-        
-        # 현재 적용된 필터 표시
-        if st.session_state.filter_tags_pending != ["모든 태그"]:
-            filter_html = "적용된 필터: " + "".join([get_tag_style(tag) for tag in st.session_state.filter_tags_pending])
-            st.markdown(filter_html, unsafe_allow_html=True)
-            
         # 필터링 적용
-        if "모든 태그" in st.session_state.filter_tags_pending:
+        if "모든 태그" in filter_tags_pending:
             filtered_pending = pending_comments
         else:
             # 선택된 태그 중 하나라도 포함된 댓글 필터링
             filtered_pending = pending_comments[pending_comments["tags"].apply(
-                lambda x: any(tag in parse_tags(x) for tag in st.session_state.filter_tags_pending)
+                lambda x: any(tag in parse_tags(x) for tag in filter_tags_pending)
             )]
         
         if filtered_pending.empty:
@@ -289,52 +256,17 @@ def admin_view(df):
     with approved_tab:
         approved_comments = df[df["approved"] == True]
         
-        # 색상이 있는 태그 필터 버튼들 표시
+        # 태그 필터링 UI 생성
         st.write("태그로 필터링:")
-        cols = st.columns(5)  # 한 줄에 5개씩 태그 버튼 표시
+        filter_tags_approved = create_tag_filters("filter_tags_approved")
         
-        # 세션 상태에 필터 태그 저장 (승인된 댓글용)
-        if "filter_tags_approved" not in st.session_state:
-            st.session_state.filter_tags_approved = ["모든 태그"]
-            
-        # "모든 태그" 버튼
-        if cols[0].button("모든 태그", key="all_tags_approved", 
-                          use_container_width=True,
-                          type="primary" if "모든 태그" in st.session_state.filter_tags_approved else "secondary"):
-            st.session_state.filter_tags_approved = ["모든 태그"]
-            st.rerun()
-            
-        # 각 태그별 버튼 생성
-        for i, tag in enumerate(TAGS):
-            col_idx = (i + 1) % 5  # 한 줄에 5개씩
-            if cols[col_idx].button(tag, key=f"tag_approved_{tag}", 
-                                  use_container_width=True,
-                                  type="primary" if tag in st.session_state.filter_tags_approved else "secondary"):
-                if "모든 태그" in st.session_state.filter_tags_approved:
-                    st.session_state.filter_tags_approved = [tag]
-                else:
-                    if tag in st.session_state.filter_tags_approved:
-                        st.session_state.filter_tags_approved.remove(tag)
-                    else:
-                        st.session_state.filter_tags_approved.append(tag)
-                    
-                    if not st.session_state.filter_tags_approved:  # 선택된 태그가 없으면
-                        st.session_state.filter_tags_approved = ["모든 태그"]
-                        
-                st.rerun()
-        
-        # 현재 적용된 필터 표시
-        if st.session_state.filter_tags_approved != ["모든 태그"]:
-            filter_html = "적용된 필터: " + "".join([get_tag_style(tag) for tag in st.session_state.filter_tags_approved])
-            st.markdown(filter_html, unsafe_allow_html=True)
-            
         # 필터링 적용
-        if "모든 태그" in st.session_state.filter_tags_approved:
+        if "모든 태그" in filter_tags_approved:
             filtered_approved = approved_comments
         else:
             # 선택된 태그 중 하나라도 포함된 댓글 필터링
             filtered_approved = approved_comments[approved_comments["tags"].apply(
-                lambda x: any(tag in parse_tags(x) for tag in st.session_state.filter_tags_approved)
+                lambda x: any(tag in parse_tags(x) for tag in filter_tags_approved)
             )]
         
         if filtered_approved.empty:

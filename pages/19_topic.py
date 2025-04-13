@@ -183,7 +183,60 @@ def user_view(df):
                     st.markdown("---")
 
 # 관리자 페이지는 이전과 동일
-# ...
+# 관리자 페이지
+def admin_view(df):
+    st.subheader("관리자 페이지 - 글 관리")
+    pending_tab, approved_tab = st.tabs(["승인 대기 글", "승인된 글"])
+
+    with pending_tab:
+        pending_comments = df[df["approved"] == False]
+        st.write("태그로 필터링:")
+        filter_tags_pending = create_tag_filters("filter_tags_pending")
+        filtered_pending = pending_comments if "모든 태그" in filter_tags_pending else pending_comments[pending_comments["tags"].apply(lambda x: any(tag in parse_tags(x) for tag in filter_tags_pending))]
+
+        if filtered_pending.empty:
+            st.info("승인 대기 중인 글이 없습니다.")
+        else:
+            for idx, row in filtered_pending.iterrows():
+                with st.container():
+                    st.markdown(f"**{row['name']}** - {row['timestamp']}")
+                    tags_list = parse_tags(row['tags'])
+                    st.markdown(tags_to_html(tags_list), unsafe_allow_html=True)
+                    st.markdown(f"{row['comment']}")
+                    btn_col1, btn_col2 = st.columns([1, 1])
+                    with btn_col1:
+                        if st.button("✅ 승인", key=f"approve_{row['id']}", use_container_width=True):
+                            df.at[idx, "approved"] = True
+                            save_data(df)
+                            st.rerun()
+                    with btn_col2:
+                        if st.button("🗑️ 삭제", key=f"delete_{row['id']}", use_container_width=True):
+                            df = df.drop(idx)
+                            save_data(df)
+                            st.rerun()
+                    st.markdown("---")
+
+    with approved_tab:
+        approved_comments = df[df["approved"] == True]
+        st.write("태그로 필터링:")
+        filter_tags_approved = create_tag_filters("filter_tags_approved")
+        filtered_approved = approved_comments if "모든 태그" in filter_tags_approved else approved_comments[approved_comments["tags"].apply(lambda x: any(tag in parse_tags(x) for tag in filter_tags_approved))]
+
+        if filtered_approved.empty:
+            st.info("승인된 글이 없습니다.")
+        else:
+            for idx, row in filtered_approved.iterrows():
+                with st.container():
+                    st.markdown(f"**{row['name']}** - {row['timestamp']}")
+                    tags_list = parse_tags(row['tags'])
+                    st.markdown(tags_to_html(tags_list), unsafe_allow_html=True)
+                    st.markdown(f"{row['comment']}")
+                    if st.button("🗑️ 삭제", key=f"delete_approved_{row['id']}", use_container_width=True):
+                        df = df.drop(idx)
+                        save_data(df)
+                        st.rerun()
+                    st.markdown("---")
+
 
 # 실행
 def main():

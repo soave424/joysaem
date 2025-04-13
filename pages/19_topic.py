@@ -90,7 +90,12 @@ def tags_to_html(tags_list):
     if not tags_list:
         return "태그 없음"
     html_tags = "".join([get_tag_style(tag) for tag in tags_list])
-    return html_tags
+    return f"""
+    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px;">
+        {html_tags}
+    </div>
+    """
+
 
 # 태그 문자열(JSON)을 리스트로 변환
 def parse_tags(tags_json):

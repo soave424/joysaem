@@ -137,6 +137,7 @@ def check_password():
 def user_view(df):
     st.subheader("의견 공유")
     if st.button("🔄 새로고침"):
+        st.session_state.clear()
         st.rerun()
 
     with st.form("comment_form"):

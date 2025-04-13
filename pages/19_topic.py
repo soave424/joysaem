@@ -1,7 +1,8 @@
 import streamlit as st
 
 # 페이지 설정 - 반드시 다른 st 명령어보다 먼저 와야 함
-st.set_page_config(page_title="연구회 운영 나눔", layout="wide")
+st.set_page_config(page_title="연구회 운영 나눔", layout="wide", initial_sidebar_state="collapsed")
+
 
 import pandas as pd
 import datetime

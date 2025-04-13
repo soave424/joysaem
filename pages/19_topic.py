@@ -1,7 +1,7 @@
 import streamlit as st
 
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-
+# 페이지 설정 - 반드시 다른 st 명령어보다 먼저 와야 함
+st.set_page_config(page_title="댓글 게시판", layout="wide")
 
 import pandas as pd
 import datetime
@@ -9,15 +9,11 @@ import uuid
 import os
 import json
 
-
 # 데이터 파일 경로 설정
 DATA_FILE = "comments.csv"
 
 # 태그 목록 정의
 TAGS = ["공개", "비공개", "참여", "연구", "소통", "응원", "운영노하우", "정정요구", "질문", "추가의견"]
-
-# 페이지 설정
-st.set_page_config(page_title="댓글 게시판", layout="wide")
 
 # 데이터 초기화 및 불러오기
 def initialize_data():
@@ -72,24 +68,6 @@ def parse_tags(tags_json):
         return json.loads(tags_json)
     except:
         return []
-
-# 메인 애플리케이션
-def main():
-    # 데이터 불러오기
-    df = initialize_data()
-    
-    # 사이드바에 관리자 로그인 옵션 추가
-    st.sidebar.title("관리자 페이지")
-    is_admin = check_password() if st.sidebar.checkbox("관리자 로그인") else False
-    
-    # 메인 페이지 타이틀
-    st.title("댓글 게시판")
-    
-    # 관리자 모드
-    if is_admin:
-        admin_view(df)
-    else:
-        user_view(df)
 
 # 사용자 페이지
 def user_view(df):
@@ -232,6 +210,24 @@ def admin_view(df):
                             st.rerun()
                     
                     st.markdown("---")
+
+# 메인 애플리케이션
+def main():
+    # 데이터 불러오기
+    df = initialize_data()
+    
+    # 사이드바에 관리자 로그인 옵션 추가
+    st.sidebar.title("관리자 페이지")
+    is_admin = check_password() if st.sidebar.checkbox("관리자 로그인") else False
+    
+    # 메인 페이지 타이틀
+    st.title("댓글 게시판")
+    
+    # 관리자 모드
+    if is_admin:
+        admin_view(df)
+    else:
+        user_view(df)
 
 if __name__ == "__main__":
     main()

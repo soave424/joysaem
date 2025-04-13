@@ -1,11 +1,14 @@
 import streamlit as st
+
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
+
 import pandas as pd
 import datetime
 import uuid
 import os
 import json
 
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # 데이터 파일 경로 설정
 DATA_FILE = "comments.csv"

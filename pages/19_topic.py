@@ -146,7 +146,7 @@ def user_view(df):
         name = st.text_input("이름(선택)")
         comment = st.text_area("내용")
         selected_tags = st.multiselect("태그 선택 (여러 개 선택 가능)", TAGS)
-        submitted = st.form_submit_button("댓글 제출")
+        submitted = st.form_submit_button("제출")
         
         if submitted and comment:  # 이름은 필수가 아님
             new_comment = {
@@ -160,14 +160,14 @@ def user_view(df):
             
             df = pd.concat([df, pd.DataFrame([new_comment])], ignore_index=True)
             save_data(df)
-            st.success("댓글이 제출되었습니다. 관리자 승인 후 게시됩니다.")
+            st.success("글이 제출되었습니다. 관리자 승인 후 게시됩니다.")
     
     # 승인된 댓글만 표시
-    st.subheader("승인된 댓글")
+    st.subheader("승인된 글")
     approved_comments = df[df["approved"] == True].sort_values(by="timestamp", ascending=False)
     
     if approved_comments.empty:
-        st.info("아직 승인된 댓글이 없습니다.")
+        st.info("아직 승인된 글이 없습니다.")
     else:
         # 태그 필터링 UI 생성
         st.write("태그로 필터링:")
@@ -183,7 +183,7 @@ def user_view(df):
             )]
         
         if filtered_comments.empty:
-            st.info("해당 태그의 승인된 댓글이 없습니다.")
+            st.info("해당 태그의 승인된 글이 없습니다.")
         else:
             for _, row in filtered_comments.iterrows():
                 with st.container():
@@ -199,10 +199,10 @@ def user_view(df):
 
 # 관리자 페이지
 def admin_view(df):
-    st.subheader("관리자 페이지 - 댓글 관리")
+    st.subheader("관리자 페이지 - 글 관리")
     
     # 탭 생성
-    pending_tab, approved_tab = st.tabs(["승인 대기 댓글", "승인된 댓글"])
+    pending_tab, approved_tab = st.tabs(["승인 대기 글", "승인된 글"])
     
     # 승인 대기 댓글 탭
     with pending_tab:
@@ -222,7 +222,7 @@ def admin_view(df):
             )]
         
         if filtered_pending.empty:
-            st.info("승인 대기 중인 댓글이 없습니다.")
+            st.info("승인 대기 중인 글이 없습니다.")
         else:
             for idx, row in filtered_pending.iterrows():
                 with st.container():
@@ -270,20 +270,25 @@ def admin_view(df):
             )]
         
         if filtered_approved.empty:
-            st.info("승인된 댓글이 없습니다.")
+            st.info("승인된 글이 없습니다.")
         else:
             for idx, row in filtered_approved.iterrows():
                 with st.container():
                     col1, col2 = st.columns([5, 1])
                     
+                    # 관리자 페이지 - 댓글 표시 부분 수정
+                    # 승인 대기 댓글 표시 부분
                     with col1:
                         st.markdown(f"**{row['name']}** - {row['timestamp']}")
                         
-                        # 태그 표시
+                        # 태그 표시 - 가로로 한 줄에 표시되도록 수정
                         tags_list = parse_tags(row['tags'])
-                        st.markdown(tags_to_html(tags_list), unsafe_allow_html=True)
+                        tag_html = "<div style='display: flex; flex-wrap: nowrap; gap: 5px;'>"
+                        tag_html += "".join([get_tag_style(tag) for tag in tags_list])
+                        tag_html += "</div>"
+                        st.markdown(tag_html, unsafe_allow_html=True)
                         
-                        # 댓글 내용
+                        #  내용
                         st.markdown(f"{row['comment']}")
                     
                     with col2:
@@ -304,7 +309,7 @@ def main():
     is_admin = check_password() if st.sidebar.checkbox("관리자 로그인") else False
     
     # 메인 페이지 타이틀
-    st.title("댓글 게시판")
+    st.title("연구회 운영 나눔")
     
     # 관리자 모드
     if is_admin:

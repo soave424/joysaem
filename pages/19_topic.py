@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 페이지 설정 - 반드시 다른 st 명령어보다 먼저 와야 함
-st.set_page_config(page_title="댓글 게시판", layout="wide")
+st.set_page_config(page_title="연구회 운영 나눔", layout="wide")
 
 import pandas as pd
 import datetime
@@ -102,11 +102,11 @@ def parse_tags(tags_json):
 
 # 사용자 페이지
 def user_view(df):
-    st.subheader("새 댓글 작성")
+    st.subheader("의견 공유")
     
     with st.form("comment_form"):
-        name = st.text_input("이름")
-        comment = st.text_area("댓글")
+        name = st.text_input("이름(선택)")
+        comment = st.text_area("내용")
         selected_tags = st.multiselect("태그 선택 (여러 개 선택 가능)", TAGS)
         submitted = st.form_submit_button("댓글 제출")
         

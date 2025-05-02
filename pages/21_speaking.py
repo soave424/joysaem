@@ -1,125 +1,123 @@
 import streamlit as st
-from gtts import gTTS
+import pyttsx3
+import tempfile
 import os
 import base64
-from io import BytesIO
-import tempfile
-import time
 
-def text_to_speech(text, language='en', speed=1.0):
-    """Convert text to speech and return an HTML audio element"""
-    # Adjust speed by using slow parameter (slow=True means slower speech)
-    slow = False if speed >= 1.0 else True
+def text_to_speech(text, voice_id=None, rate=150):
+    """
+    텍스트를 음성으로 변환하고 오디오 파일을 반환합니다.
+    """
+    # 임시 파일 생성
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+    temp_filename = temp_file.name
+    temp_file.close()
     
-    # Create a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as fp:
-        # Generate speech
-        tts = gTTS(text=text, lang=language, slow=slow)
-        tts.save(fp.name)
-        
-        # Read the file and encode as base64
-        with open(fp.name, 'rb') as audio_file:
-            audio_bytes = audio_file.read()
-        
-        # Clean up the temporary file
-        os.unlink(fp.name)
-        
-        # Encode the audio as base64
-        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-        
-        # Create an HTML audio element
-        html_audio = f'<audio controls autoplay><source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3"></audio>'
-        
-        return html_audio
+    # TTS 엔진 초기화
+    engine = pyttsx3.init()
+    
+    # 음성 속성 설정
+    if voice_id:
+        engine.setProperty('voice', voice_id)
+    
+    # 말하기 속도 설정 (기본값: 200)
+    engine.setProperty('rate', rate)
+    
+    # 음성 파일 저장
+    engine.save_to_file(text, temp_filename)
+    engine.runAndWait()
+    
+    # 파일 읽기 및 base64로 인코딩
+    with open(temp_filename, 'rb') as f:
+        audio_bytes = f.read()
+    
+    # 임시 파일 삭제
+    os.unlink(temp_filename)
+    
+    # base64로 인코딩하여 HTML 오디오 태그 생성
+    audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+    audio_tag = f'<audio autoplay controls><source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3"></audio>'
+    
+    return audio_tag
 
-def get_available_languages():
-    """Return a dictionary of available languages for gTTS"""
-    return {
-        'English': 'en',
-        'Korean': 'ko',
-        'Japanese': 'ja',
-        'Chinese': 'zh-CN',
-        'Spanish': 'es',
-        'French': 'fr',
-        'German': 'de',
-        'Italian': 'it',
-        'Portuguese': 'pt',
-        'Russian': 'ru',
-        'Hindi': 'hi',
-        'Arabic': 'ar'
-    }
+def get_available_voices():
+    """
+    사용 가능한 음성 목록을 반환합니다.
+    """
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    
+    voice_dict = {}
+    for voice in voices:
+        # 음성 ID와 이름 저장
+        voice_dict[f"{voice.name} ({voice.languages[0] if voice.languages else 'Unknown'})"] = voice.id
+    
+    return voice_dict
 
-def main():
-    st.set_page_config(page_title="Text-to-Speech App", layout="wide")
-    
-    st.title("Text-to-Speech Application")
-    st.write("Enter text and convert it to speech using Google's Text-to-Speech API")
-    
-    # Text input
-    text_input = st.text_area("Enter text to convert to speech:", height=150)
-    
-    # Language selection
-    languages = get_available_languages()
-    selected_language_name = st.selectbox("Select language:", list(languages.keys()))
-    selected_language_code = languages[selected_language_name]
-    
-    # Speed adjustment
-    speed = st.slider("Speed:", min_value=0.5, max_value=1.5, value=1.0, step=0.1)
-    
-    # Display speed value
-    st.write(f"Current speed: {speed}")
-    
-    # Create columns for buttons
-    col1, col2 = st.columns(2)
-    
-    # Speak button
-    if col1.button("Speak"):
-        if text_input.strip():
-            with st.spinner("Generating speech..."):
-                # Generate speech
-                audio_html = text_to_speech(text_input, selected_language_code, speed)
-                
-                # Display audio player
+# 페이지 설정
+st.set_page_config(page_title="TTS 애플리케이션", layout="wide")
+
+# 제목 및 설명
+st.title("텍스트 음성 변환 (TTS) 애플리케이션")
+st.write("텍스트를 입력하고 음성으로 변환하세요.")
+
+# 텍스트 입력 영역
+text_input = st.text_area("읽을 텍스트를 입력하세요:", height=150)
+
+# 음성 선택
+try:
+    voices = get_available_voices()
+    voice_name = st.selectbox("음성 선택:", list(voices.keys()))
+    voice_id = voices[voice_name]
+except:
+    st.warning("음성 목록을 가져오는 데 문제가 발생했습니다. 기본 음성이 사용됩니다.")
+    voice_id = None
+    voice_name = "기본 음성"
+
+# 속도 조절
+rate = st.slider("속도:", min_value=50, max_value=300, value=150, step=10)
+st.write(f"현재 속도: {rate}")
+
+# 버튼 행 생성
+col1, col2 = st.columns(2)
+
+# 말하기 버튼
+if col1.button("말하기"):
+    if text_input.strip():
+        with st.spinner("음성을 생성하는 중..."):
+            try:
+                audio_html = text_to_speech(text_input, voice_id, rate)
                 st.markdown(audio_html, unsafe_allow_html=True)
                 
-                # Store the last played text
+                # 세션 상태에 저장
                 st.session_state['last_text'] = text_input
-                st.session_state['last_language'] = selected_language_code
-                st.session_state['last_speed'] = speed
-        else:
-            st.error("Please enter text to speak.")
-    
-    # Stop button (this is a bit tricky in Streamlit as we can't directly control the audio)
-    if col2.button("Stop"):
-        st.warning("Audio playback stopped.")
-        # This is a workaround - we replace the audio element with an empty one
-        st.markdown('<audio controls></audio>', unsafe_allow_html=True)
-    
-    # Information about available voices
-    st.subheader("About the voices")
-    st.info("""
-    This application uses Google's Text-to-Speech (gTTS) service, which provides high-quality voices.
-    Different languages have different voice characteristics. The speed control allows you to adjust
-    how fast or slow the speech is produced.
-    """)
-    
-    # Usage instructions
-    with st.expander("How to use"):
-        st.write("""
-        1. Enter the text you want to convert to speech in the text area above.
-        2. Select the language from the dropdown menu.
-        3. Adjust the speech speed using the slider.
-        4. Click the 'Speak' button to generate and play the speech.
-        5. Click the 'Stop' button to stop the current playback.
-        """)
+                st.session_state['last_voice'] = voice_id
+                st.session_state['last_rate'] = rate
+            except Exception as e:
+                st.error(f"음성 생성 중 오류가 발생했습니다: {e}")
+    else:
+        st.error("말할 텍스트를 입력해주세요.")
 
-if __name__ == "__main__":
-    # Initialize session state
-    if 'last_text' not in st.session_state:
-        st.session_state['last_text'] = ""
-    if 'last_language' not in st.session_state:
-        st.session_state['last_language'] = "en"
-    if 'last_speed' not in st.session_state:
-        st.session_state['last_speed'] = 1.0
-    
-    main()
+# 중지 버튼 (Streamlit에서는 제한적으로 작동)
+if col2.button("중지"):
+    st.warning("오디오 재생이 중지되었습니다.")
+    st.markdown('<audio controls></audio>', unsafe_allow_html=True)
+
+# 정보 표시
+st.subheader("사용 가능한 음성 정보")
+st.info(f"""
+현재 선택된 음성: {voice_name}
+이 애플리케이션은 컴퓨터에 설치된 TTS 엔진을 사용합니다.
+다른 음성이 필요한 경우 운영 체제 설정에서 추가 음성 팩을 설치할 수 있습니다.
+인터넷 연결이 필요하지 않으며 로컬에서 모든 변환이 이루어집니다.
+""")
+
+# 사용 방법
+with st.expander("사용 방법"):
+    st.write("""
+    1. 변환할 텍스트를 위의 텍스트 영역에 입력하세요.
+    2. 드롭다운 메뉴에서 원하는 음성을 선택하세요.
+    3. 슬라이더를 사용하여 말하기 속도를 조절하세요.
+    4. '말하기' 버튼을 클릭하여 음성을 생성하고 재생하세요.
+    5. '중지' 버튼을 클릭하여 현재 재생을 중지하세요.
+    """)

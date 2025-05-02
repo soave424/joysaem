@@ -1,7 +1,4 @@
 import streamlit as st
-import requests
-import time
-import json
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -21,59 +18,50 @@ st.code(example_text, language="text")
 if st.button("예제 텍스트 사용하기"):
     st.session_state.example_text = example_text
 
-# DeepL API 호출 함수 (requests 사용)
+# 기본 사전 정의 (API 없이도 기본적인 단어 의미 제공)
+default_dictionary = {
+    'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
+    'banana': '바나나 - 길고 휘어진 노란색 과일',
+    'cat': '고양이 - 털이 많은 작은 집 동물',
+    'dog': '개 - 충성스러운 반려동물',
+    'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
+    'friend': '친구 - 당신과 가까운 사람',
+    'good': '좋은 - 품질이 높거나 바람직함',
+    'hello': '안녕 - 인사말',
+    'love': '사랑 - 깊은 애정',
+    'play': '놀다 - 즐거움을 위해 활동하다',
+    'rain': '비 - 구름에서 떨어지는 물방울',
+    'sun': '태양 - 지구에 빛과 열을 제공하는 별',
+    'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
+    'use': '사용하다 - 목적을 위해 무언가를 활용하다',
+    'water': '물 - 투명한 액체',
+    'when': '언제 - 시간을 묻는 의문사',
+    'student': '학생 - 배우는 사람',
+    'school': '학교 - 교육 기관',
+    'teacher': '교사 - 가르치는 사람',
+    'learn': '배우다 - 지식이나 기술을 얻다',
+    'english': '영어 - 영국, 미국 등에서 사용되는 언어',
+    'read': '읽다 - 문자를 보고 이해하다',
+    'write': '쓰다 - 단어나 문장을 만들다',
+    'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다',
+    'drink': '마시다 - 입으로 액체를 섭취하다',
+    'eat': '먹다 - 음식을 섭취하다',
+    'umbrella': '우산 - 비를 막는 기구'
+}
+
+# 단어 의미 조회 함수 (API 대신 기본 사전 사용)
 def get_word_meaning(word):
-    # 환경 변수에서 API 인증 정보 가져오기
-    try:
-        auth_key = st.secrets["DeepL_API_Key"]
-        
-        # API 요청을 위한 URL (Free 계정용)
-        url = "https://api-free.deepl.com/v2/translate"
-        
-        # 더 나은 번역을 위해 문맥 추가
-        context = f"The word '{word}' means"
-        
-        # 요청 데이터
-        payload = {
-            "text": [context],
-            "target_lang": "KO",
-            "source_lang": "EN"
-        }
-        
-        # 요청 헤더
-        headers = {
-            "Authorization": f"DeepL-Auth-Key {auth_key}",
-            "Content-Type": "application/json"
-        }
-        
-        # API 요청
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-        
-        # 응답 확인
-        if response.status_code == 200:
-            result = response.json()
-            if "translations" in result and len(result["translations"]) > 0:
-                # 번역 결과 반환
-                return result["translations"][0]["text"]
-        
-        return None
-    except Exception as e:
-        st.warning(f"DeepL API 오류: {str(e)}")
-        return None
+    # 소문자로 변환하여 검색
+    word_lower = word.lower()
+    if word_lower in default_dictionary:
+        return default_dictionary[word_lower]
+    return f"'{word}'에 대한 번역 정보가 없습니다."
 
-# 단어 번역 캐싱
-@st.cache_data(ttl=3600)  # 1시간 캐싱
-def translate_word(word):
-    translation = get_word_meaning(word)
-    # 약간의 지연을 추가하여 API 호출 제한을 방지
-    time.sleep(0.5)
-    return translation
-
-# API 엔드포인트 처리
+# 단어 조회 API 엔드포인트 처리
 word_param = st.query_params.get("word", "")
 if word_param:
-    translation = translate_word(word_param)
-    st.json({"word": word_param, "translation": translation})
+    meaning = get_word_meaning(word_param)
+    st.json({"word": word_param, "translation": meaning})
 
 # HTML 코드 삽입
 html_code = """
@@ -102,7 +90,7 @@ html_code = """
     <div id='word-info' style='margin-top: 20px; display: none; padding: 15px; background-color: #f9f9f9; border-radius: 5px;'>
         <h3 id='selected-word' style='margin-top: 0; color: #333;'></h3>
         <div id='word-meaning'></div>
-        <div id='loading-translation' style='display: none; margin-top: 10px;'>번역 중...</div>
+        <div id='loading-translation' style='display: none; margin-top: 10px;'>검색 중...</div>
     </div>
     
     <script>
@@ -284,7 +272,7 @@ html_code = """
             
             // 단어 뜻 찾기
             try {
-                // DeepL API에 번역 요청
+                // API 요청 (Streamlit에 구현된 기본 사전 API 호출)
                 const response = await fetch('/?word=' + encodeURIComponent(word));
                 const data = await response.json();
                 
@@ -294,10 +282,10 @@ html_code = """
                     wordMeaningDiv.innerHTML = `
                         <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
                         <p style='font-size: 15px;'>${data.translation}</p>
-                        <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
+                        <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다)</p>
                     `;
                 } else {
-                    // 기본 사전 사용
+                    // 기본 사전 (JavaScript 내)
                     const dictionary = {
                         'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
                         'banana': '바나나 - 길고 휘어진 노란색 과일',
@@ -333,22 +321,62 @@ html_code = """
                         wordMeaningDiv.innerHTML = `
                             <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
                             <p style='font-size: 15px;'>${meaning}</p>
-                            <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다)</p>
+                            <p style='font-size: 12px; color: #666;'>(로컬 사전에서 가져온 의미입니다)</p>
                         `;
                     } else {
                         wordMeaningDiv.innerHTML = `
                             <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
-                            <p style='font-size: 14px; color: #666;'>DeepL API 연결을 확인하거나 다른 단어를 시도해보세요.</p>
+                            <p style='font-size: 14px; color: #666;'>사전에 등록되지 않은 단어입니다.</p>
                         `;
                     }
                 }
             } catch (error) {
                 loadingDiv.style.display = 'none';
-                wordMeaningDiv.innerHTML = `
-                    <p>단어 검색 중 오류가 발생했습니다.</p>
-                    <p style='font-size: 14px; color: #666;'>나중에 다시 시도해주세요.</p>
-                `;
-                console.error('API 호출 오류:', error);
+                
+                // 에러 발생 시 로컬 사전 사용
+                const dictionary = {
+                    'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
+                    'banana': '바나나 - 길고 휘어진 노란색 과일',
+                    'cat': '고양이 - 털이 많은 작은 집 동물',
+                    'dog': '개 - 충성스러운 반려동물',
+                    'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
+                    'friend': '친구 - 당신과 가까운 사람',
+                    'good': '좋은 - 품질이 높거나 바람직함',
+                    'hello': '안녕 - 인사말',
+                    'love': '사랑 - 깊은 애정',
+                    'play': '놀다 - 즐거움을 위해 활동하다',
+                    'rain': '비 - 구름에서 떨어지는 물방울',
+                    'sun': '태양 - 지구에 빛과 열을 제공하는 별',
+                    'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
+                    'use': '사용하다 - 목적을 위해 무언가를 활용하다',
+                    'water': '물 - 투명한 액체',
+                    'when': '언제 - 시간을 묻는 의문사',
+                    'student': '학생 - 배우는 사람',
+                    'school': '학교 - 교육 기관',
+                    'teacher': '교사 - 가르치는 사람',
+                    'learn': '배우다 - 지식이나 기술을 얻다',
+                    'english': '영어 - 영국, 미국 등에서 사용되는 언어',
+                    'read': '읽다 - 문자를 보고 이해하다',
+                    'write': '쓰다 - 단어나 문장을 만들다',
+                    'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다',
+                    'drink': '마시다 - 입으로 액체를 섭취하다',
+                    'eat': '먹다 - 음식을 섭취하다',
+                    'umbrella': '우산 - 비를 막는 기구'
+                };
+                
+                const meaning = dictionary[word.toLowerCase()];
+                if (meaning) {
+                    wordMeaningDiv.innerHTML = `
+                        <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
+                        <p style='font-size: 15px;'>${meaning}</p>
+                        <p style='font-size: 12px; color: #666;'>(로컬 사전에서 가져온 의미입니다)</p>
+                    `;
+                } else {
+                    wordMeaningDiv.innerHTML = `
+                        <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
+                        <p style='font-size: 14px; color: #666;'>사전에 등록되지 않은 단어입니다.</p>
+                    `;
+                }
             }
         }
         
@@ -398,8 +426,7 @@ st.components.v1.html(html_code, height=700)
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
 텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
-DeepL API를 통해 영어 단어의 한국어 의미를 제공합니다.
-API가 제대로 설정되지 않은 경우 기본 사전(약 27개 단어)을 사용합니다.
+현재 버전은 기본 사전만 사용하므로 제한된 영어 단어(약 27개)에 대해서만 의미를 제공합니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 
@@ -414,30 +441,11 @@ with st.expander("사용 방법"):
     6. 드롭다운 메뉴에서 다른 음성을 선택하거나 슬라이더로 속도를 조절할 수 있습니다.
     """)
 
-# 환경 설정 안내
-with st.expander("API 설정 방법"):
+# 기능 안내
+with st.expander("기능 한계 안내"):
     st.write("""
-    DeepL API를 사용하려면 다음 단계를 따르세요:
+    현재 버전에서는 외부 API 없이 기본 내장 사전만 사용하고 있습니다. 
+    따라서 제한된 영어 단어에 대해서만 한국어 의미를 제공합니다.
     
-    1. [DeepL API](https://www.deepl.com/pro#developer)에서 계정을 생성합니다.
-    2. 로그인 후 API 키를 발급받습니다.
-    3. 발급받은 API 키를 Streamlit의 secrets.toml 파일에 다음과 같이 추가합니다:
-    
-    ```toml
-    DeepL_API_Key = "발급받은 API 키"
-    ```
-    
-    4. Streamlit Cloud를 사용하는 경우, 앱 설정의 Secrets 섹션에 위 내용을 추가합니다.
-    """)
-
-# 필요한 패키지 설치 안내
-with st.expander("패키지 설치 안내"):
-    st.write("""
-    이 애플리케이션을 실행하려면 다음 패키지가 필요합니다:
-    
-    ```
-    pip install streamlit requests
-    ```
-    
-    `deepl` 패키지는 사용하지 않고 대신 `requests`를 통해 DeepL API를 호출합니다.
+    추후 환경이 개선되면 DeepL API나 다른 번역 서비스를 통합하여 더 많은 단어의 의미를 제공할 수 있습니다.
     """)

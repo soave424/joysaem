@@ -1,6 +1,7 @@
 import streamlit as st
-import deepl
+import requests
 import time
+import json
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -20,23 +21,42 @@ st.code(example_text, language="text")
 if st.button("예제 텍스트 사용하기"):
     st.session_state.example_text = example_text
 
-# DeepL API 호출 함수
+# DeepL API 호출 함수 (requests 사용)
 def get_word_meaning(word):
     # 환경 변수에서 API 인증 정보 가져오기
     try:
         auth_key = st.secrets["DeepL_API_Key"]
         
-        # DeepL 번역기 객체 생성
-        translator = deepl.Translator(auth_key)
+        # API 요청을 위한 URL (Free 계정용)
+        url = "https://api-free.deepl.com/v2/translate"
         
         # 더 나은 번역을 위해 문맥 추가
-        context = f"The word '{word}' means in Korean"
+        context = f"The word '{word}' means"
         
-        # 영어 텍스트를 한국어로 번역
-        result = translator.translate_text(context, target_lang="KO")
+        # 요청 데이터
+        payload = {
+            "text": [context],
+            "target_lang": "KO",
+            "source_lang": "EN"
+        }
         
-        # 번역 결과 반환
-        return result.text
+        # 요청 헤더
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {auth_key}",
+            "Content-Type": "application/json"
+        }
+        
+        # API 요청
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        
+        # 응답 확인
+        if response.status_code == 200:
+            result = response.json()
+            if "translations" in result and len(result["translations"]) > 0:
+                # 번역 결과 반환
+                return result["translations"][0]["text"]
+        
+        return None
     except Exception as e:
         st.warning(f"DeepL API 오류: {str(e)}")
         return None
@@ -50,11 +70,10 @@ def translate_word(word):
     return translation
 
 # API 엔드포인트 처리
-if "translate_word" in st.session_state:
-    word_param = st.query_params.get("word", "")
-    if word_param:
-        translation = translate_word(word_param)
-        st.session_state.translation_result = {"word": word_param, "translation": translation}
+word_param = st.query_params.get("word", "")
+if word_param:
+    translation = translate_word(word_param)
+    st.json({"word": word_param, "translation": translation})
 
 # HTML 코드 삽입
 html_code = """
@@ -266,7 +285,7 @@ html_code = """
             // 단어 뜻 찾기
             try {
                 // DeepL API에 번역 요청
-                const response = await fetch('/word_translation?word=' + encodeURIComponent(word));
+                const response = await fetch('/?word=' + encodeURIComponent(word));
                 const data = await response.json();
                 
                 loadingDiv.style.display = 'none';
@@ -375,18 +394,6 @@ if 'example_text' in st.session_state:
 # HTML 삽입
 st.components.v1.html(html_code, height=700)
 
-# Streamlit에서 API 엔드포인트 처리
-if st.query_params.get("word"):
-    word = st.query_params.get("word")
-    translation = translate_word(word)
-    st.json({"translation": translation})
-
-# 단어 번역 결과 제공하는 엔드포인트
-word_param = st.query_params.get("word_translation", "")
-if word_param:
-    translation = translate_word(word_param)
-    st.json({"word": word_param, "translation": translation})
-
 # 사용 안내
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
@@ -421,4 +428,16 @@ with st.expander("API 설정 방법"):
     ```
     
     4. Streamlit Cloud를 사용하는 경우, 앱 설정의 Secrets 섹션에 위 내용을 추가합니다.
+    """)
+
+# 필요한 패키지 설치 안내
+with st.expander("패키지 설치 안내"):
+    st.write("""
+    이 애플리케이션을 실행하려면 다음 패키지가 필요합니다:
+    
+    ```
+    pip install streamlit requests
+    ```
+    
+    `deepl` 패키지는 사용하지 않고 대신 `requests`를 통해 DeepL API를 호출합니다.
     """)

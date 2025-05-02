@@ -14,6 +14,8 @@ def get_word_meaning(word):
     try:
         client_id = st.secrets["NCLIENT_ID"]
         client_secret = st.secrets["NCLIENT_SECRET"]
+
+  
     except:
         st.warning("네이버 API 인증 정보가 설정되지 않았습니다. 기본 사전을 사용합니다.")
         return None

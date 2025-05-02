@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Streamlit 페이지 설정
-st.set_page_config(page_title="TTS 애플리케이션", layout="wide")
+st.set_page_config(page_title="TTS 애플리케이션", layout="wide", initial_sidebar_state="collapsed")
 
 # 제목
 st.title("텍스트 음성 변환 애플리케이션")

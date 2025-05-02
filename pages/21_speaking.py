@@ -1,6 +1,4 @@
 import streamlit as st
-import base64
-import html
 
 # 페이지 설정
 st.set_page_config(page_title="브라우저 TTS 애플리케이션", layout="wide")
@@ -12,19 +10,11 @@ st.write("브라우저의 Web Speech API를 사용하여 텍스트를 음성으�
 # 텍스트 입력 영역
 text_input = st.text_area("읽을 텍스트를 입력하세요:", height=150)
 
-# 컨트롤 영역
-col1, col2, col3 = st.columns(3)
+# 속도 조절
+speed = st.slider("속도:", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
 
-with col1:
-    st.subheader("속도")
-    speed = st.slider("", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
-
-# HTML과 JavaScript를 사용하여 Web Speech API 구현
-# 특수 문자 처리를 위해 HTML 이스케이프
-escaped_text = html.escape(text_input)
-
-# 브라우저에서 실행될 JavaScript 코드
-js_code = f"""
+# HTML 코드 생성
+html_code = f"""
 <div style="margin-top: 20px;">
     <button id="speak-button" style="background-color: #4CAF50; color: white; padding: 10px 20px; 
         border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
@@ -55,35 +45,15 @@ js_code = f"""
         // 기존 옵션 제거
         voiceSelect.innerHTML = '';
         
-        // 구글/크롬 음성과 기타 음성 분류
-        const googleVoices = voices.filter(voice => voice.name.includes('Google') || voice.name.includes('Chrome'));
-        const otherVoices = voices.filter(voice => !voice.name.includes('Google') && !voice.name.includes('Chrome'));
-        
-        // 구글 음성 추가
-        googleVoices.forEach(voice => {{
+        // 모든 음성 추가
+        voices.forEach(voice => {{
             const option = document.createElement('option');
             option.value = voice.name;
             option.textContent = `${{voice.name}} (${{voice.lang}})`;
             voiceSelect.appendChild(option);
         }});
         
-        // 구분선 추가
-        if (googleVoices.length > 0 && otherVoices.length > 0) {{
-            const separator = document.createElement('option');
-            separator.disabled = true;
-            separator.textContent = '──────────';
-            voiceSelect.appendChild(separator);
-        }}
-        
-        // 기타 음성 추가
-        otherVoices.forEach(voice => {{
-            const option = document.createElement('option');
-            option.value = voice.name;
-            option.textContent = `${{voice.name}} (${{voice.lang}})`;
-            voiceSelect.appendChild(option);
-        }});
-        
-        // 한국어 음성 또는 영어 음성 자동 선택
+        // 한국어 또는 영어 음성 자동 선택
         let koreanVoice = voices.find(voice => voice.lang.includes('ko'));
         let englishVoice = voices.find(voice => voice.lang.includes('en'));
         
@@ -111,14 +81,14 @@ js_code = f"""
             // 이전 음성 취소
             window.speechSynthesis.cancel();
             
-            // 텍스트 가져오기
-            const text = `{escaped_text}`;
+            // 텍스트 가져오기 - Streamlit에서 전달된 값 사용
+            const text = {text_input!r};
             
             if (text.trim() !== "") {{
                 // 음성 합성 객체 생성
                 const utterance = new SpeechSynthesisUtterance(text);
                 
-                // 속도 설정
+                // 속도 설정 - Streamlit에서 전달된 값 사용
                 utterance.rate = {speed};
                 
                 // 음성 설정
@@ -151,13 +121,13 @@ js_code = f"""
         }}
         
         // onvoiceschanged 이벤트가 없는 경우를 대비해 직접 호출
-        setTimeout(loadVoices, 100);
+        setTimeout(loadVoices, 500);
     }}
 </script>
 """
 
-# JavaScript 코드 삽입
-st.markdown(js_code, unsafe_allow_html=True)
+# HTML 코드 삽입
+st.components.v1.html(html_code, height=200)
 
 # 정보 표시
 st.info("""

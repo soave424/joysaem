@@ -1,5 +1,6 @@
 import streamlit as st
-import requests
+import deepl
+import time
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -8,46 +9,45 @@ st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wi
 st.title("단어별 읽기 및 의미 확인 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.")
 
-# 네이버 API 호출 함수
+# 예제 텍스트 섹션 (페이지 상단에 배치)
+st.subheader("예제 텍스트")
+example_text = """The cat and dog are good friends. They love to play in the sun. 
+When it rains, they use an umbrella. They drink water and eat apples and bananas.
+Students learn English at school. Teachers help them read and write."""
+st.code(example_text, language="text")
+
+# 예제 텍스트 사용 버튼
+if st.button("예제 텍스트 사용하기"):
+    st.session_state.example_text = example_text
+
+# DeepL API 호출 함수
 def get_word_meaning(word):
     # 환경 변수에서 API 인증 정보 가져오기
     try:
-        client_id = st.secrets["NCLIENT_ID"]
-        client_secret = st.secrets["NCLIENT_SECRET"]
-
-  
-    except:
-        st.warning("네이버 API 인증 정보가 설정되지 않았습니다. 기본 사전을 사용합니다.")
-        return None
+        auth_key = st.secrets["DeepL_API_Key"]
         
-    url = "https://openapi.naver.com/v1/papago/n2mt"
-    headers = {
-        "X-Naver-Client-Id": client_id,
-        "X-Naver-Client-Secret": client_secret
-    }
-    data = {
-        "source": "en",
-        "target": "ko",
-        "text": word
-    }
-    
-    try:
-        response = requests.post(url, headers=headers, data=data)
-        if response.status_code == 200:
-            result = response.json()
-            if 'message' in result and 'result' in result['message']:
-                return result['message']['result']['translatedText']
-            return None
-        else:
-            return None
+        # DeepL 번역기 객체 생성
+        translator = deepl.Translator(auth_key)
+        
+        # 더 나은 번역을 위해 문맥 추가
+        context = f"The word '{word}' means in Korean"
+        
+        # 영어 텍스트를 한국어로 번역
+        result = translator.translate_text(context, target_lang="KO")
+        
+        # 번역 결과 반환
+        return result.text
     except Exception as e:
-        st.error(f"API 호출 오류: {str(e)}")
+        st.warning(f"DeepL API 오류: {str(e)}")
         return None
 
-# 단어 번역 API 엔드포인트
+# 단어 번역 캐싱
 @st.cache_data(ttl=3600)  # 1시간 캐싱
 def translate_word(word):
-    return get_word_meaning(word)
+    translation = get_word_meaning(word)
+    # 약간의 지연을 추가하여 API 호출 제한을 방지
+    time.sleep(0.5)
+    return translation
 
 # API 엔드포인트 처리
 if "translate_word" in st.session_state:
@@ -83,13 +83,21 @@ html_code = """
     <div id='word-info' style='margin-top: 20px; display: none; padding: 15px; background-color: #f9f9f9; border-radius: 5px;'>
         <h3 id='selected-word' style='margin-top: 0; color: #333;'></h3>
         <div id='word-meaning'></div>
-        <div id='loading-translation' style='display: none; margin-top: 10px;'>검색 중...</div>
+        <div id='loading-translation' style='display: none; margin-top: 10px;'>번역 중...</div>
     </div>
     
     <script>
         // 전역 변수
         let voices = [];
         let selectedVoice = null;
+        
+        // 초기 텍스트 설정
+        function loadInitialText() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('example_text')) {
+                document.getElementById('text-to-speak').value = decodeURIComponent(urlParams.get('example_text'));
+            }
+        }
         
         // 음성 목록 로드
         function loadVoices() {
@@ -98,23 +106,41 @@ html_code = """
             
             voiceSelect.innerHTML = '';
             
-            voices.forEach(voice => {
+            // 영어 음성과 기타 음성 분류
+            const englishVoices = voices.filter(voice => voice.lang.includes('en'));
+            const otherVoices = voices.filter(voice => !voice.lang.includes('en'));
+            
+            // 영어 음성 먼저 추가
+            englishVoices.forEach(voice => {
                 const option = document.createElement('option');
                 option.value = voice.name;
                 option.textContent = voice.name + ' (' + voice.lang + ')';
                 voiceSelect.appendChild(option);
-                
-                // 영어 음성 자동 선택
-                if (voice.lang.includes('en')) {
-                    selectedVoice = voice;
-                    option.selected = true;
-                }
             });
             
-            // 음성이 선택되지 않았으면 첫 번째 음성 선택
-            if (!selectedVoice && voices.length > 0) {
+            // 구분선 추가
+            if (englishVoices.length > 0 && otherVoices.length > 0) {
+                const separator = document.createElement('option');
+                separator.disabled = true;
+                separator.textContent = '──────────';
+                voiceSelect.appendChild(separator);
+            }
+            
+            // 기타 음성 추가
+            otherVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = voice.name + ' (' + voice.lang + ')';
+                voiceSelect.appendChild(option);
+            });
+            
+            // 영어 음성 자동 선택
+            if (englishVoices.length > 0) {
+                selectedVoice = englishVoices[0];
+                voiceSelect.value = englishVoices[0].name;
+            } else if (voices.length > 0) {
                 selectedVoice = voices[0];
-                voiceSelect.options[0].selected = true;
+                voiceSelect.value = voices[0].name;
             }
         }
         
@@ -138,7 +164,7 @@ html_code = """
             words.forEach((word, index) => {
                 const wordButton = document.createElement('span');
                 
-                // 단어에서 구두점 제거
+                // 단어에서 구두점 제거한 깨끗한 단어
                 const cleanWord = word.replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
                 
                 wordButton.textContent = word;
@@ -149,10 +175,11 @@ html_code = """
                 wordButton.style.borderRadius = '3px';
                 wordButton.style.cursor = 'pointer';
                 wordButton.dataset.word = cleanWord;
+                wordButton.dataset.originalWord = word;
                 
                 // 클릭 이벤트 추가
                 wordButton.addEventListener('click', function() {
-                    speakWord(this.dataset.word);
+                    speakWord(this.dataset.originalWord);
                     showWordInfo(this.dataset.word, this);
                 });
                 
@@ -209,7 +236,9 @@ html_code = """
         }
         
         // 단어 정보 표시
-        function showWordInfo(word, element) {
+        async function showWordInfo(word, element) {
+            if (!word || word.trim() === '') return;
+            
             const wordInfoDiv = document.getElementById('word-info');
             const selectedWordHeading = document.getElementById('selected-word');
             const wordMeaningDiv = document.getElementById('word-meaning');
@@ -234,53 +263,74 @@ html_code = """
             wordMeaningDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
             
-            // 기본 사전 (주요 단어들만 포함)
-            const dictionary = {
-                'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
-                'banana': '바나나 - 길고 휘어진 노란색 과일',
-                'cat': '고양이 - 털이 많은 작은 집 동물',
-                'dog': '개 - 충성스러운 반려동물',
-                'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
-                'friend': '친구 - 당신과 가까운 사람',
-                'good': '좋은 - 품질이 높거나 바람직함',
-                'hello': '안녕 - 인사말',
-                'love': '사랑 - 깊은 애정',
-                'play': '놀다 - 즐거움을 위해 활동하다',
-                'rain': '비 - 구름에서 떨어지는 물방울',
-                'sun': '태양 - 지구에 빛과 열을 제공하는 별',
-                'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
-                'use': '사용하다 - 목적을 위해 무언가를 활용하다',
-                'water': '물 - 투명한 액체',
-                'when': '언제 - 시간을 묻는 의문사',
-                'student': '학생 - 배우는 사람',
-                'school': '학교 - 교육 기관',
-                'teacher': '교사 - 가르치는 사람',
-                'learn': '배우다 - 지식이나 기술을 얻다',
-                'english': '영어 - 영국, 미국 등에서 사용되는 언어',
-                'read': '읽다 - 문자를 보고 이해하다',
-                'write': '쓰다 - 단어나 문장을 만들다',
-                'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다'
-            };
-            
-            // 시간 지연 후 결과 표시 (실제로는 API 호출을 할 것임)
-            setTimeout(() => {
+            // 단어 뜻 찾기
+            try {
+                // DeepL API에 번역 요청
+                const response = await fetch('/word_translation?word=' + encodeURIComponent(word));
+                const data = await response.json();
+                
                 loadingDiv.style.display = 'none';
                 
-                // 기본 사전 사용
-                const meaning = dictionary[word.toLowerCase()];
-                if (meaning) {
+                if (data && data.translation) {
                     wordMeaningDiv.innerHTML = `
                         <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                        <p style='font-size: 15px;'>${meaning}</p>
-                        <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다.)</p>
+                        <p style='font-size: 15px;'>${data.translation}</p>
+                        <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
                     `;
                 } else {
-                    wordMeaningDiv.innerHTML = `
-                        <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
-                        <p style='font-size: 14px; color: #666;'>실제 앱에서는 네이버 API를 통해 더 많은 단어를 제공할 수 있습니다.</p>
-                    `;
+                    // 기본 사전 사용
+                    const dictionary = {
+                        'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
+                        'banana': '바나나 - 길고 휘어진 노란색 과일',
+                        'cat': '고양이 - 털이 많은 작은 집 동물',
+                        'dog': '개 - 충성스러운 반려동물',
+                        'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
+                        'friend': '친구 - 당신과 가까운 사람',
+                        'good': '좋은 - 품질이 높거나 바람직함',
+                        'hello': '안녕 - 인사말',
+                        'love': '사랑 - 깊은 애정',
+                        'play': '놀다 - 즐거움을 위해 활동하다',
+                        'rain': '비 - 구름에서 떨어지는 물방울',
+                        'sun': '태양 - 지구에 빛과 열을 제공하는 별',
+                        'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
+                        'use': '사용하다 - 목적을 위해 무언가를 활용하다',
+                        'water': '물 - 투명한 액체',
+                        'when': '언제 - 시간을 묻는 의문사',
+                        'student': '학생 - 배우는 사람',
+                        'school': '학교 - 교육 기관',
+                        'teacher': '교사 - 가르치는 사람',
+                        'learn': '배우다 - 지식이나 기술을 얻다',
+                        'english': '영어 - 영국, 미국 등에서 사용되는 언어',
+                        'read': '읽다 - 문자를 보고 이해하다',
+                        'write': '쓰다 - 단어나 문장을 만들다',
+                        'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다',
+                        'drink': '마시다 - 입으로 액체를 섭취하다',
+                        'eat': '먹다 - 음식을 섭취하다',
+                        'umbrella': '우산 - 비를 막는 기구'
+                    };
+                    
+                    const meaning = dictionary[word.toLowerCase()];
+                    if (meaning) {
+                        wordMeaningDiv.innerHTML = `
+                            <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
+                            <p style='font-size: 15px;'>${meaning}</p>
+                            <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다)</p>
+                        `;
+                    } else {
+                        wordMeaningDiv.innerHTML = `
+                            <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
+                            <p style='font-size: 14px; color: #666;'>DeepL API 연결을 확인하거나 다른 단어를 시도해보세요.</p>
+                        `;
+                    }
                 }
-            }, 500);
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                wordMeaningDiv.innerHTML = `
+                    <p>단어 검색 중 오류가 발생했습니다.</p>
+                    <p style='font-size: 14px; color: #666;'>나중에 다시 시도해주세요.</p>
+                `;
+                console.error('API 호출 오류:', error);
+            }
         }
         
         // 이벤트 리스너 설정
@@ -311,26 +361,45 @@ html_code = """
         } else {
             alert('이 브라우저는 음성 합성을 지원하지 않습니다.');
         }
+        
+        // 페이지 로드 시 초기 텍스트 설정
+        window.addEventListener('DOMContentLoaded', loadInitialText);
     </script>
 </div>
 """
 
+# 예제 텍스트가 선택된 경우 JavaScript에 전달
+if 'example_text' in st.session_state:
+    html_code = html_code.replace('id=\'text-to-speak\'', f'id=\'text-to-speak\' value="{st.session_state.example_text}"')
+
 # HTML 삽입
 st.components.v1.html(html_code, height=700)
+
+# Streamlit에서 API 엔드포인트 처리
+if st.query_params.get("word"):
+    word = st.query_params.get("word")
+    translation = translate_word(word)
+    st.json({"translation": translation})
+
+# 단어 번역 결과 제공하는 엔드포인트
+word_param = st.query_params.get("word_translation", "")
+if word_param:
+    translation = translate_word(word_param)
+    st.json({"word": word_param, "translation": translation})
 
 # 사용 안내
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
 텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
-기본 사전에는 약 25개의 영어 단어만 포함되어 있습니다.
-네이버 API를 설정하면 더 많은 단어의 의미를 제공할 수 있습니다.
+DeepL API를 통해 영어 단어의 한국어 의미를 제공합니다.
+API가 제대로 설정되지 않은 경우 기본 사전(약 27개 단어)을 사용합니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 
 # 사용 방법
 with st.expander("사용 방법"):
     st.write("""
-    1. 텍스트 입력 영역에 영어 텍스트를 입력합니다.
+    1. '예제 텍스트 사용하기' 버튼을 클릭하여 예제 텍스트를 사용하거나 직접 텍스트를 입력합니다.
     2. '단어 분리' 버튼을 클릭하여 텍스트를 단어별로 분리합니다.
     3. 개별 단어를 클릭하면 해당 단어의 발음을 듣고 의미를 확인할 수 있습니다.
     4. '전체 읽기' 버튼을 클릭하면 전체 텍스트를 읽습니다.
@@ -341,23 +410,15 @@ with st.expander("사용 방법"):
 # 환경 설정 안내
 with st.expander("API 설정 방법"):
     st.write("""
-    네이버 API를 사용하려면 다음 단계를 따르세요:
+    DeepL API를 사용하려면 다음 단계를 따르세요:
     
-    1. [네이버 개발자 센터](https://developers.naver.com)에서 애플리케이션을 등록합니다.
-    2. Papago NMT API를 사용할 수 있도록 설정합니다.
-    3. 발급받은 Client ID와 Client Secret을 Streamlit의 secrets.toml 파일에 다음과 같이 추가합니다:
+    1. [DeepL API](https://www.deepl.com/pro#developer)에서 계정을 생성합니다.
+    2. 로그인 후 API 키를 발급받습니다.
+    3. 발급받은 API 키를 Streamlit의 secrets.toml 파일에 다음과 같이 추가합니다:
     
     ```toml
-    NAVER_CLIENT_ID = "발급받은 클라이언트 ID"
-    NAVER_CLIENT_SECRET = "발급받은 클라이언트 시크릿"
+    DeepL_API_Key = "발급받은 API 키"
     ```
     
     4. Streamlit Cloud를 사용하는 경우, 앱 설정의 Secrets 섹션에 위 내용을 추가합니다.
     """)
-
-# 데모용 예제 텍스트
-st.subheader("예제 텍스트")
-st.code("""The cat and dog are good friends. They love to play in the sun. 
-When it rains, they use an umbrella. They drink water and eat apples and bananas.
-Students learn English at school. Teachers help them read and write.
-""", language="text")

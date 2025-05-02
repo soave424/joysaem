@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import json
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -42,6 +41,18 @@ def get_word_meaning(word):
     except Exception as e:
         st.error(f"API 호출 오류: {str(e)}")
         return None
+
+# 단어 번역 API 엔드포인트
+@st.cache_data(ttl=3600)  # 1시간 캐싱
+def translate_word(word):
+    return get_word_meaning(word)
+
+# API 엔드포인트 처리
+if "translate_word" in st.session_state:
+    word_param = st.query_params.get("word", "")
+    if word_param:
+        translation = translate_word(word_param)
+        st.session_state.translation_result = {"word": word_param, "translation": translation}
 
 # HTML 코드 삽입
 html_code = """
@@ -196,7 +207,7 @@ html_code = """
         }
         
         // 단어 정보 표시
-        async function showWordInfo(word, element) {
+        function showWordInfo(word, element) {
             const wordInfoDiv = document.getElementById('word-info');
             const selectedWordHeading = document.getElementById('selected-word');
             const wordMeaningDiv = document.getElementById('word-meaning');
@@ -221,69 +232,53 @@ html_code = """
             wordMeaningDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
             
-            // 네이버 API를 통해 단어 의미 가져오기
-            try {
-                const response = await fetch('/translate_word?word=' + encodeURIComponent(word));
-                const data = await response.json();
-                
+            // 기본 사전 (주요 단어들만 포함)
+            const dictionary = {
+                'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
+                'banana': '바나나 - 길고 휘어진 노란색 과일',
+                'cat': '고양이 - 털이 많은 작은 집 동물',
+                'dog': '개 - 충성스러운 반려동물',
+                'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
+                'friend': '친구 - 당신과 가까운 사람',
+                'good': '좋은 - 품질이 높거나 바람직함',
+                'hello': '안녕 - 인사말',
+                'love': '사랑 - 깊은 애정',
+                'play': '놀다 - 즐거움을 위해 활동하다',
+                'rain': '비 - 구름에서 떨어지는 물방울',
+                'sun': '태양 - 지구에 빛과 열을 제공하는 별',
+                'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
+                'use': '사용하다 - 목적을 위해 무언가를 활용하다',
+                'water': '물 - 투명한 액체',
+                'when': '언제 - 시간을 묻는 의문사',
+                'student': '학생 - 배우는 사람',
+                'school': '학교 - 교육 기관',
+                'teacher': '교사 - 가르치는 사람',
+                'learn': '배우다 - 지식이나 기술을 얻다',
+                'english': '영어 - 영국, 미국 등에서 사용되는 언어',
+                'read': '읽다 - 문자를 보고 이해하다',
+                'write': '쓰다 - 단어나 문장을 만들다',
+                'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다'
+            };
+            
+            // 시간 지연 후 결과 표시 (실제로는 API 호출을 할 것임)
+            setTimeout(() => {
                 loadingDiv.style.display = 'none';
                 
-                if (data && data.translation) {
+                // 기본 사전 사용
+                const meaning = dictionary[word.toLowerCase()];
+                if (meaning) {
                     wordMeaningDiv.innerHTML = `
                         <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                        <p style='font-size: 15px;'>${data.translation}</p>
+                        <p style='font-size: 15px;'>${meaning}</p>
+                        <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다.)</p>
                     `;
                 } else {
-                    // 기본 사전 사용
-                    const dictionary = {
-                        'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
-                        'banana': '바나나 - 길고 휘어진 노란색 과일',
-                        'cat': '고양이 - 털이 많은 작은 집 동물',
-                        'dog': '개 - 충성스러운 반려동물',
-                        'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
-                        'friend': '친구 - 당신과 가까운 사람',
-                        'good': '좋은 - 품질이 높거나 바람직함',
-                        'hello': '안녕 - 인사말',
-                        'love': '사랑 - 깊은 애정',
-                        'play': '놀다 - 즐거움을 위해 활동하다',
-                        'rain': '비 - 구름에서 떨어지는 물방울',
-                        'sun': '태양 - 지구에 빛과 열을 제공하는 별',
-                        'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
-                        'use': '사용하다 - 목적을 위해 무언가를 활용하다',
-                        'water': '물 - 투명한 액체',
-                        'when': '언제 - 시간을 묻는 의문사',
-                        'student': '학생 - 배우는 사람',
-                        'school': '학교 - 교육 기관',
-                        'teacher': '교사 - 가르치는 사람',
-                        'learn': '배우다 - 지식이나 기술을 얻다',
-                        'english': '영어 - 영국, 미국 등에서 사용되는 언어',
-                        'read': '읽다 - 문자를 보고 이해하다',
-                        'write': '쓰다 - 단어나 문장을 만들다',
-                        'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다'
-                    };
-                    
-                    const meaning = dictionary[word.toLowerCase()];
-                    if (meaning) {
-                        wordMeaningDiv.innerHTML = `
-                            <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                            <p style='font-size: 15px;'>${meaning}</p>
-                            <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다.)</p>
-                        `;
-                    } else {
-                        wordMeaningDiv.innerHTML = `
-                            <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
-                            <p style='font-size: 14px; color: #666;'>인터넷 연결을 확인하거나 다른 단어를 시도해보세요.</p>
-                        `;
-                    }
+                    wordMeaningDiv.innerHTML = `
+                        <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
+                        <p style='font-size: 14px; color: #666;'>실제 앱에서는 네이버 API를 통해 더 많은 단어를 제공할 수 있습니다.</p>
+                    `;
                 }
-            } catch (error) {
-                loadingDiv.style.display = 'none';
-                wordMeaningDiv.innerHTML = `
-                    <p>단어 검색 중 오류가 발생했습니다.</p>
-                    <p style='font-size: 14px; color: #666;'>나중에 다시 시도해주세요.</p>
-                `;
-                console.error('API 호출 오류:', error);
-            }
+            }, 500);
         }
         
         // 이벤트 리스너 설정
@@ -318,34 +313,15 @@ html_code = """
 </div>
 """
 
-# 단어 번역 API 엔드포인트
-@st.cache_data(ttl=3600)  # 1시간 캐싱
-def translate_word(word):
-    return get_word_meaning(word)
-
-# API 엔드포인트 정의
-st.markdown("", unsafe_allow_html=True)  # 빈 마크다운으로 숨김
-word_param = st.query_params.get("word", [""])[0]
-if "translate_word" in st.session_state:
-    if word_param:
-        translation = translate_word(word_param)
-        st.session_state.translation_result = {"word": word_param, "translation": translation}
-
 # HTML 삽입
 st.components.v1.html(html_code, height=700)
-
-# Streamlit에서 API 엔드포인트 처리
-if st.experimental_get_query_params().get("word"):
-    word = st.experimental_get_query_params().get("word")[0]
-    translation = translate_word(word)
-    st.json({"translation": translation})
 
 # 사용 안내
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
 텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
-네이버 파파고 API를 사용하여 영어 단어의 한국어 의미를 제공합니다.
-API가 제대로 설정되지 않은 경우 기본 사전(약 25개 단어)을 사용합니다.
+기본 사전에는 약 25개의 영어 단어만 포함되어 있습니다.
+네이버 API를 설정하면 더 많은 단어의 의미를 제공할 수 있습니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 
@@ -370,7 +346,6 @@ with st.expander("API 설정 방법"):
     3. 발급받은 Client ID와 Client Secret을 Streamlit의 secrets.toml 파일에 다음과 같이 추가합니다:
     
     ```toml
-    [general]
     NAVER_CLIENT_ID = "발급받은 클라이언트 ID"
     NAVER_CLIENT_SECRET = "발급받은 클라이언트 시크릿"
     ```

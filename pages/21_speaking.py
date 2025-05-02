@@ -1,101 +1,177 @@
 import streamlit as st
+import base64
+import html
 
 # 페이지 설정
-st.set_page_config(page_title="TTS 애플리케이션", layout="wide")
+st.set_page_config(page_title="브라우저 TTS 애플리케이션", layout="wide")
 
 # 제목
 st.title("텍스트 음성 변환 (TTS) 애플리케이션")
-st.write("브라우저의 Web Speech API를 사용하여, 텍스트를 음성으로 변환합니다.")
+st.write("브라우저의 Web Speech API를 사용하여 텍스트를 음성으로 변환합니다.")
 
 # 텍스트 입력 영역
 text_input = st.text_area("읽을 텍스트를 입력하세요:", height=150)
 
-# 속도 조절
-speed = st.slider("속도:", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
+# 컨트롤 영역
+col1, col2, col3 = st.columns(3)
 
-# JavaScript 코드 생성
+with col1:
+    st.subheader("속도")
+    speed = st.slider("", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
+
+# HTML과 JavaScript를 사용하여 Web Speech API 구현
+# 특수 문자 처리를 위해 HTML 이스케이프
+escaped_text = html.escape(text_input)
+
+# 브라우저에서 실행될 JavaScript 코드
 js_code = f"""
+<div style="margin-top: 20px;">
+    <button id="speak-button" style="background-color: #4CAF50; color: white; padding: 10px 20px; 
+        border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+        말하기
+    </button>
+    
+    <button id="stop-button" style="background-color: #f44336; color: white; padding: 10px 20px; 
+        border: none; border-radius: 4px; cursor: pointer;">
+        중지
+    </button>
+    
+    <div id="voice-selection" style="margin-top: 15px;">
+        <label for="voice-select">음성 선택:</label>
+        <select id="voice-select" style="padding: 5px; margin-left: 10px;"></select>
+    </div>
+</div>
+
 <script>
-function speak() {{
-    if ('speechSynthesis' in window) {{
-        // 이전 음성 취소
-        window.speechSynthesis.cancel();
+    // 음성 목록
+    let voices = [];
+    let selectedVoice = null;
+    
+    // 음성 목록 로드
+    function loadVoices() {{
+        voices = window.speechSynthesis.getVoices();
+        const voiceSelect = document.getElementById('voice-select');
         
-        // 텍스트 가져오기
-        var text = "{text_input.replace('"', '\\"')}";
+        // 기존 옵션 제거
+        voiceSelect.innerHTML = '';
         
-        if (text.trim() !== "") {{
-            // 음성 합성 객체 생성
-            var utterance = new SpeechSynthesisUtterance(text);
-            
-            // 속도 설정
-            utterance.rate = {speed};
-            
-            // 사용 가능한 음성 가져오기
-            var voices = window.speechSynthesis.getVoices();
-            
-            // 음성 선택 (가능하면 한국어 또는 영어 음성)
-            for (var i = 0; i < voices.length; i++) {{
-                if (voices[i].lang.includes('ko')) {{
-                    utterance.voice = voices[i];
-                    break;
-                }}
-                if (voices[i].lang.includes('en')) {{
-                    utterance.voice = voices[i];
-                }}
-            }}
-            
-            // 음성 합성 시작
-            window.speechSynthesis.speak(utterance);
+        // 구글/크롬 음성과 기타 음성 분류
+        const googleVoices = voices.filter(voice => voice.name.includes('Google') || voice.name.includes('Chrome'));
+        const otherVoices = voices.filter(voice => !voice.name.includes('Google') && !voice.name.includes('Chrome'));
+        
+        // 구글 음성 추가
+        googleVoices.forEach(voice => {{
+            const option = document.createElement('option');
+            option.value = voice.name;
+            option.textContent = `${{voice.name}} (${{voice.lang}})`;
+            voiceSelect.appendChild(option);
+        }});
+        
+        // 구분선 추가
+        if (googleVoices.length > 0 && otherVoices.length > 0) {{
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '──────────';
+            voiceSelect.appendChild(separator);
         }}
-    }} else {{
-        alert("죄송합니다, 이 브라우저는 음성 합성을 지원하지 않습니다.");
+        
+        // 기타 음성 추가
+        otherVoices.forEach(voice => {{
+            const option = document.createElement('option');
+            option.value = voice.name;
+            option.textContent = `${{voice.name}} (${{voice.lang}})`;
+            voiceSelect.appendChild(option);
+        }});
+        
+        // 한국어 음성 또는 영어 음성 자동 선택
+        let koreanVoice = voices.find(voice => voice.lang.includes('ko'));
+        let englishVoice = voices.find(voice => voice.lang.includes('en'));
+        
+        if (koreanVoice) {{
+            selectedVoice = koreanVoice;
+            voiceSelect.value = koreanVoice.name;
+        }} else if (englishVoice) {{
+            selectedVoice = englishVoice;
+            voiceSelect.value = englishVoice.name;
+        }} else if (voices.length > 0) {{
+            selectedVoice = voices[0];
+            voiceSelect.value = voices[0].name;
+        }}
     }}
-}}
-
-function stopSpeaking() {{
+    
+    // 음성 변경 이벤트
+    document.getElementById('voice-select').addEventListener('change', function() {{
+        const selectedName = this.value;
+        selectedVoice = voices.find(voice => voice.name === selectedName);
+    }});
+    
+    // 말하기 버튼 클릭 이벤트
+    document.getElementById('speak-button').addEventListener('click', function() {{
+        if ('speechSynthesis' in window) {{
+            // 이전 음성 취소
+            window.speechSynthesis.cancel();
+            
+            // 텍스트 가져오기
+            const text = `{escaped_text}`;
+            
+            if (text.trim() !== "") {{
+                // 음성 합성 객체 생성
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // 속도 설정
+                utterance.rate = {speed};
+                
+                // 음성 설정
+                if (selectedVoice) {{
+                    utterance.voice = selectedVoice;
+                }}
+                
+                // 음성 합성 시작
+                window.speechSynthesis.speak(utterance);
+            }} else {{
+                alert("텍스트를 입력해주세요.");
+            }}
+        }} else {{
+            alert("이 브라우저는 음성 합성을 지원하지 않습니다.");
+        }}
+    }});
+    
+    // 중지 버튼 클릭 이벤트
+    document.getElementById('stop-button').addEventListener('click', function() {{
+        if ('speechSynthesis' in window) {{
+            window.speechSynthesis.cancel();
+        }}
+    }});
+    
+    // 페이지 로드 시 음성 목록 초기화
     if ('speechSynthesis' in window) {{
-        window.speechSynthesis.cancel();
+        // 일부 브라우저에서는 onvoiceschanged 이벤트가 발생하지 않을 수 있음
+        if (speechSynthesis.onvoiceschanged !== undefined) {{
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }}
+        
+        // onvoiceschanged 이벤트가 없는 경우를 대비해 직접 호출
+        setTimeout(loadVoices, 100);
     }}
-}}
-
-// 음성 목록 로드 대기
-if ('speechSynthesis' in window) {{
-    if (speechSynthesis.onvoiceschanged !== undefined) {{
-        speechSynthesis.onvoiceschanged = function() {{
-            // 음성 목록이 로드됨
-        }};
-    }}
-}}
 </script>
-
-<button onclick="speak()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
-    말하기
-</button>
-
-<button onclick="stopSpeaking()" style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">
-    중지
-</button>
 """
 
-# JavaScript 코드 실행
+# JavaScript 코드 삽입
 st.markdown(js_code, unsafe_allow_html=True)
 
 # 정보 표시
 st.info("""
-이 애플리케이션은 브라우저의 Web Speech API를 사용합니다. 
-음성은 사용자의 브라우저와 운영 체제에 설치된 음성에 따라 달라집니다.
-Google Chrome 브라우저에서 가장 잘 작동합니다.
+이 애플리케이션은 브라우저의 Web Speech API를 사용합니다.
+음성 품질과 사용 가능한 음성은 브라우저와 운영 체제에 따라 다릅니다.
+Google Chrome에서 가장 잘 작동합니다.
 """)
 
-# 사용 방법
+# 도움말
 with st.expander("사용 방법"):
     st.write("""
-    1. 변환할 텍스트를 위의 텍스트 영역에 입력하세요.
-    2. 슬라이더를 사용하여 말하기 속도를 조절하세요.
-    3. '말하기' 버튼을 클릭하여 음성을 생성하고 재생하세요.
-    4. '중지' 버튼을 클릭하여 현재 재생을 중지하세요.
-    
-    참고: 이 애플리케이션은 브라우저의 내장 TTS 기능을 사용하므로, 
-    브라우저와 운영 체제에 따라 사용 가능한 음성과 품질이 달라질 수 있습니다.
+    1. 텍스트 입력 영역에 변환할 텍스트를 입력합니다.
+    2. 원하는 음성을 선택합니다 (한국어 음성이 있는 경우 자동으로 선택됩니다).
+    3. 속도 슬라이더로 말하기 속도를 조절합니다.
+    4. '말하기' 버튼을 클릭하여 음성을 재생합니다.
+    5. '중지' 버튼을 클릭하여 재생을 중단합니다.
     """)

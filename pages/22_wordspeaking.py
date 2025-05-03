@@ -176,7 +176,7 @@ html_code = """
 </div>
 """
 
-html(html_code, height=500)
+html(html_code, height=580)
 
 # 단어 학습 결과 출력
 col1, col2 = st.columns(2, gap="large")

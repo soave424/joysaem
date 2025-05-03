@@ -193,8 +193,8 @@ with col1:
             st.session_state.word_history.append(input_word)
 
 with col2:
-    st.markdown("## 📖 번역 결과")
-    st.code("\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
+    st.markdown("📖 번역 결과")
+    st.code((st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
 # 학습한 단어 목록
 if st.session_state.word_history:

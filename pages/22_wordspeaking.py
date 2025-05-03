@@ -28,7 +28,7 @@ if "word_history" not in st.session_state:
 st.title("📘 단어 학습 TTS + 번역 애플리케이션")
 
 # 좌우로 화면 분할
-col_left, col_right = st.columns(2, gap="large")
+col_left, col_right = st.columns([3, 2], gap="large")
 
 # 왼쪽: HTML + JS 삽입 (단어 분리 및 TTS 기능 포함)
 with col_left:

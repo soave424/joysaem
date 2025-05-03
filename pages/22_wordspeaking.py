@@ -26,7 +26,6 @@ if "word_history" not in st.session_state:
 
 # 제목
 st.title("📘 단어 학습 TTS + 번역 애플리케이션")
-st.write("텍스트를 입력하고 단어를 학습하세요. 발음과 번역이 함께 제공됩니다.")
 
 # HTML + JS 삽입 (단어 분리 및 TTS 기능 포함)
 html_code = """
@@ -180,12 +179,9 @@ html_code = """
 html(html_code, height=750)
 
 # 단어 학습 결과 출력
-st.markdown("### 📚 단어 학습 결과")
 col1, col2 = st.columns(2, gap="large")
 with col1:
-    # st.markdown("#### 📝 단어 직접 입력 학습")
     input_word = st.text_input("학습할 단어 입력", key="input_word_field")
-
     if input_word and input_word != st.session_state.input_word:
         st.session_state.input_word = input_word
         st.session_state.translated = translate_word(input_word)
@@ -193,14 +189,17 @@ with col1:
             st.session_state.word_history.append(input_word)
 
 with col2:
-    st.markdown("📖 번역 결과")
-    st.code((st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
+    st.markdown("<div style='margin-top: 23px'><b>번역 결과</b></div>", unsafe_allow_html=True)
+    st.code("\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
-# 학습한 단어 목록
+# 학습한 단어 목록 및 리셋 버튼
 if st.session_state.word_history:
     st.markdown("### 🗂️ 학습한 단어 목록")
     for word in st.session_state.word_history:
         translated = translate_word(word)
         st.markdown(f"- `{word}` → {translated}")
+    if st.button("🔄 목록 초기화"):
+        st.session_state.word_history = []
+        st.experimental_rerun()
 
 st.info("단어를 입력하거나 텍스트를 입력 후 단어를 분리해 발음할 수 있습니다. 번역은 직접 입력창을 통해 확인하세요. Chrome에서 최적 작동합니다.")

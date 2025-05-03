@@ -179,7 +179,7 @@ with col_left:
         </script>
     </div>
     """
-    html(html_code, height=900)
+    html(html_code, height=1000)
 
 # 오른쪽: 단어 학습 인터페이스
 with col_right:

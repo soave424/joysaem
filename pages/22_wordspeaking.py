@@ -24,23 +24,43 @@ if "clicked_word" not in st.session_state:
 if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
-raw_clicked = st.query_params.get("word")
-clicked = raw_clicked[0] if raw_clicked else ""
+# URL 파라미터에서 단어 가져오기
+clicked = st.query_params.get("word", "")
 if clicked:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
     if clicked not in st.session_state.word_history:
         st.session_state.word_history.append(clicked)
-if clicked and clicked != st.session_state.clicked_word:
-    st.session_state.clicked_word = clicked
-    st.session_state.translated = translate_word(clicked)
-    if clicked not in st.session_state.word_history:
-        st.session_state.word_history.append(clicked)
-    st.experimental_rerun()
 
 # 제목
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
+
+# 로컬 스토리지를 통한 상태 동기화를 위한 JavaScript 코드
+js_code = """
+<script>
+// 함수: 로컬 스토리지에서 Streamlit으로 데이터 전달
+function syncWithStreamlit() {
+    const clickedWord = localStorage.getItem('clicked_word');
+    if (clickedWord) {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set("word", clickedWord);
+        window.location.href = currentUrl.toString(); // 페이지 새로고침하여 Streamlit에 변경사항 전달
+    }
+}
+
+// 페이지 로드 시 실행
+document.addEventListener('DOMContentLoaded', function() {
+    // 1초 후 로컬 스토리지 확인 (컴포넌트가 완전히 로드된 후)
+    setTimeout(function() {
+        syncWithStreamlit();
+    }, 1000);
+});
+</script>
+"""
+
+# 로컬 스토리지 동기화 스크립트 삽입
+st.components.v1.html(js_code, height=0)
 
 # HTML + JS 삽입
 html_code = """
@@ -67,6 +87,7 @@ html_code = """
     <script>
         let voices = [];
         let selectedVoice = null;
+        let processedText = ""; // 처리된 텍스트 저장
 
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
@@ -113,25 +134,43 @@ html_code = """
                 alert('텍스트를 입력해주세요.');
                 return;
             }
+            
+            // 처리된 텍스트 저장
+            processedText = text;
+            localStorage.setItem('processed_text', text);
+            
             wordContainer.innerHTML = '';
-            const words = text.split(/\s+/);
+            const words = text.split(/\\s+/);
             words.forEach((word, index) => {
                 const wordButton = document.createElement('span');
-                const cleanWord = word.replace(/[^a-zA-Z0-9\u00C0-\u017F]/g, '');
+                const cleanWord = word.replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
                 wordButton.textContent = word;
                 wordButton.style.cssText = 'display:inline-block;margin:0 5px 5px 0;padding:5px 10px;background:#e0e0e0;border-radius:3px;cursor:pointer;';
                 wordButton.dataset.originalWord = cleanWord;
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
+                    
+                    // 로컬 스토리지에 선택된 단어 저장
+                    localStorage.setItem('clicked_word', this.dataset.originalWord);
+                    
+                    // URL 파라미터 설정 및 페이지 새로고침
                     const currentUrl = new URL(window.location.href);
                     currentUrl.searchParams.set("word", this.dataset.originalWord);
-                    window.history.pushState({}, "", currentUrl);
-                    // location.reload(); // 새로고침 제거하여 Streamlit 반응 유도 안함
+                    window.location.href = currentUrl.toString();
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
             });
+            
+            // 단어 분리 완료 후 첫 번째 단어를 자동으로 선택 (선택 사항)
+            if (words.length > 0) {
+                const firstWord = words[0].replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
+                localStorage.setItem('clicked_word', firstWord);
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set("word", firstWord);
+                window.location.href = currentUrl.toString();
+            }
         }
 
         function highlightWord(element) {
@@ -170,6 +209,15 @@ html_code = """
             }
         }
 
+        // 로컬 스토리지에서 이전에 처리된 텍스트 복원
+        function restoreFromLocalStorage() {
+            const savedText = localStorage.getItem('processed_text');
+            if (savedText) {
+                document.getElementById('text-to-speak').value = savedText;
+                processText(); // 자동으로 단어 분리 실행
+            }
+        }
+
         document.getElementById('voice-select').addEventListener('change', function() {
             selectedVoice = voices.find(voice => voice.name === this.value);
         });
@@ -189,6 +237,9 @@ html_code = """
                 speechSynthesis.onvoiceschanged = loadVoices;
             }
             setTimeout(loadVoices, 500);
+            
+            // 이전 상태 복원
+            setTimeout(restoreFromLocalStorage, 1000);
         } else {
             alert('이 브라우저는 음성 합성을 지원하지 않습니다.');
         }

@@ -36,32 +36,6 @@ if clicked:
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
 
-# 로컬 스토리지를 통한 상태 동기화를 위한 JavaScript 코드
-js_code = """
-<script>
-// 함수: 로컬 스토리지에서 Streamlit으로 데이터 전달
-function syncWithStreamlit() {
-    const clickedWord = localStorage.getItem('clicked_word');
-    if (clickedWord) {
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.set("word", clickedWord);
-        window.location.href = currentUrl.toString(); // 페이지 새로고침하여 Streamlit에 변경사항 전달
-    }
-}
-
-// 페이지 로드 시 실행
-document.addEventListener('DOMContentLoaded', function() {
-    // 1초 후 로컬 스토리지 확인 (컴포넌트가 완전히 로드된 후)
-    setTimeout(function() {
-        syncWithStreamlit();
-    }, 1000);
-});
-</script>
-"""
-
-# 로컬 스토리지 동기화 스크립트 삽입
-st.components.v1.html(js_code, height=0)
-
 # HTML + JS 삽입
 html_code = """
 <div style='padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>
@@ -87,7 +61,6 @@ html_code = """
     <script>
         let voices = [];
         let selectedVoice = null;
-        let processedText = ""; // 처리된 텍스트 저장
 
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
@@ -134,11 +107,6 @@ html_code = """
                 alert('텍스트를 입력해주세요.');
                 return;
             }
-            
-            // 처리된 텍스트 저장
-            processedText = text;
-            localStorage.setItem('processed_text', text);
-            
             wordContainer.innerHTML = '';
             const words = text.split(/\\s+/);
             words.forEach((word, index) => {
@@ -146,30 +114,25 @@ html_code = """
                 const cleanWord = word.replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
                 wordButton.textContent = word;
                 wordButton.style.cssText = 'display:inline-block;margin:0 5px 5px 0;padding:5px 10px;background:#e0e0e0;border-radius:3px;cursor:pointer;';
-                wordButton.dataset.originalWord = cleanWord;
+                wordButton.dataset.originalWord = word;
+                wordButton.dataset.cleanWord = cleanWord;
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    
-                    // 로컬 스토리지에 선택된 단어 저장
-                    localStorage.setItem('clicked_word', this.dataset.originalWord);
-                    
-                    // URL 파라미터 설정 및 페이지 새로고침
-                    const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set("word", this.dataset.originalWord);
-                    window.location.href = currentUrl.toString();
+                    updateQueryParam(this.dataset.cleanWord);
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
             });
             
-            // 단어 분리 완료 후 첫 번째 단어를 자동으로 선택 (선택 사항)
+            // 첫 번째 단어 자동 선택 (선택 사항)
             if (words.length > 0) {
-                const firstWord = words[0].replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
-                localStorage.setItem('clicked_word', firstWord);
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set("word", firstWord);
-                window.location.href = currentUrl.toString();
+                const firstWordElement = wordContainer.querySelector('span');
+                if (firstWordElement) {
+                    highlightWord(firstWordElement);
+                    updateQueryParam(firstWordElement.dataset.cleanWord);
+                    speakWord(firstWordElement.dataset.originalWord);
+                }
             }
         }
 
@@ -180,6 +143,22 @@ html_code = """
             });
             element.style.backgroundColor = '#2196F3';
             element.style.color = 'white';
+        }
+        
+        // 페이지 새로고침 없이 URL 파라미터 업데이트
+        function updateQueryParam(word) {
+            if (word && word.trim() !== '') {
+                // URL 파라미터 설정 (새로고침 없이)
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set("word", word);
+                window.history.replaceState({}, '', currentUrl.toString());
+                
+                // Streamlit에 이벤트 발생 알림 (iframe 통신)
+                window.parent.postMessage({
+                    type: "streamlit:setQueryParams",
+                    queryParams: { word: word }
+                }, "*");
+            }
         }
 
         function speakWord(word) {
@@ -209,15 +188,6 @@ html_code = """
             }
         }
 
-        // 로컬 스토리지에서 이전에 처리된 텍스트 복원
-        function restoreFromLocalStorage() {
-            const savedText = localStorage.getItem('processed_text');
-            if (savedText) {
-                document.getElementById('text-to-speak').value = savedText;
-                processText(); // 자동으로 단어 분리 실행
-            }
-        }
-
         document.getElementById('voice-select').addEventListener('change', function() {
             selectedVoice = voices.find(voice => voice.name === this.value);
         });
@@ -237,9 +207,6 @@ html_code = """
                 speechSynthesis.onvoiceschanged = loadVoices;
             }
             setTimeout(loadVoices, 500);
-            
-            // 이전 상태 복원
-            setTimeout(restoreFromLocalStorage, 1000);
         } else {
             alert('이 브라우저는 음성 합성을 지원하지 않습니다.');
         }
@@ -247,8 +214,22 @@ html_code = """
 </div>
 """
 
+# JavaScript와 Streamlit 간의 통신을 위한 콜백 설정
+components_callback = """
+<script>
+// Streamlit에서 메시지 받기
+window.addEventListener('message', function(e) {
+    // Streamlit의 리로드 이벤트 캐치
+    if (e.data.type === 'streamlit:render') {
+        console.log('Streamlit 리로드됨');
+    }
+});
+</script>
+"""
+
 # 삽입 실행
-html(html_code, height=750)
+html(components_callback, height=0)
+html(html_code, height=700)
 
 # 단어 학습 창
 st.markdown("### 📚 단어 학습")
@@ -268,3 +249,12 @@ if st.session_state.word_history:
 
 # 안내 메시지
 st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")
+
+# URL 파라미터 변경을 감지하고 자동으로 재실행하기 위한 코드
+current_url_params = st.experimental_get_query_params()
+if "word" in current_url_params and current_url_params["word"] != st.session_state.clicked_word:
+    st.session_state.clicked_word = current_url_params["word"][0]
+    st.session_state.translated = translate_word(st.session_state.clicked_word)
+    if st.session_state.clicked_word not in st.session_state.word_history:
+        st.session_state.word_history.append(st.session_state.clicked_word)
+    st.experimental_rerun()

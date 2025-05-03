@@ -17,40 +17,24 @@ def translate_word(word, target_lang="KO"):
     except Exception as e:
         return f"오류: {str(e)}"
 
-# 클릭된 단어 수신 및 번역 처리
-from streamlit.components.v1 import html
-
-# JavaScript 메시지 수신용 숨겨진 입력
-clicked_from_js = st.query_params.get("word", "")
-
-if clicked_from_js:
-    st.session_state.clicked_word = clicked_from_js
-    st.session_state.translated = translate_word(clicked_from_js)
-    if clicked_from_js not in st.session_state.word_history:
-        st.session_state.word_history.append(clicked_from_js)
-        save_word_history(st.session_state.word_history)
-import json, os
-HISTORY_FILE = "clicked_words.json"
-
-def save_word_history(words):
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(words, f, ensure_ascii=False)
-
-def load_word_history():
-    if os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+# 상태 초기화
 if "clicked_word" not in st.session_state:
     st.session_state.clicked_word = ""
     st.session_state.translated = ""
 if "word_history" not in st.session_state:
-    st.session_state.word_history = load_word_history()
+    st.session_state.word_history = []
 
+# 숨겨진 입력 필드 (JS와 연동)
+clicked_word_input = st.text_input("", key="clicked_word_input", label_visibility="collapsed")
 
+if clicked_word_input:
+    st.session_state.clicked_word = clicked_word_input
+    st.session_state.translated = translate_word(clicked_word_input)
+    if clicked_word_input not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked_word_input)
 
 # 제목
-st.title("📘 단어별 읽기 + 번역 애플리케이션")
+st.title("\U0001F4D8 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
 
 # HTML + JS 삽입
@@ -135,8 +119,11 @@ html_code = """
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    const hiddenInput = parent.document.querySelector('input[data-testid="stTextInput"]'); if (hiddenInput) { hiddenInput.value = this.dataset.originalWord; hiddenInput.dispatchEvent(new Event('input', { bubbles: true })); }
-                    // location.reload(); // 새로고침 제거하여 Streamlit 반응 유도 안함
+                    const hiddenInput = parent.document.querySelector('input[data-testid="stTextInput"]');
+                    if (hiddenInput) {
+                        hiddenInput.value = this.dataset.originalWord;
+                        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
@@ -205,27 +192,22 @@ html_code = """
 </div>
 """
 
-# 삽입 실행
-clicked_word = st.session_state.get("clicked_word", "")
-translated = st.session_state.get("translated", "")
-word_history = st.session_state.get("word_history", [])
-
 html(html_code, height=750)
 
 # 단어 학습 창
-st.markdown("### 📚 단어 학습")
+st.markdown("### \U0001F4DA 단어 학습")
 with st.container():
     col1, col2 = st.columns([1, 2])
     with col1:
-        st.markdown(f"**선택된 단어**")
-        st.code(clicked_word or "(아직 선택되지 않음)", language="text")
+        st.markdown("**선택된 단어**")
+        st.code(st.session_state.clicked_word or "(아직 선택되지 않음)", language="text")
     with col2:
-        st.markdown(f"**번역 결과**")
-        st.code(translated or "(단어를 클릭하면 번역이 표시됩니다)", language="text")
+        st.markdown("**번역 결과**")
+        st.code(st.session_state.translated or "(단어를 클릭하면 번역이 표시됩니다)", language="text")
 
-if word_history:
-    st.markdown("### 📝 클릭한 단어 목록")
-    for word in word_history:
+if st.session_state.word_history:
+    st.markdown("### \U0001F4DD 클릭한 단어 목록")
+    for word in st.session_state.word_history:
         st.markdown(f"- `{word}`")
 
 # 안내 메시지

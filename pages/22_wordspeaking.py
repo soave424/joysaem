@@ -21,7 +21,7 @@ def translate_word(word, target_lang="KO"):
 from streamlit.components.v1 import html
 
 # JavaScript 메시지 수신용 숨겨진 입력
-clicked_from_js = st.experimental_get_query_params().get("word", [""])[0]
+clicked_from_js = st.query_params.get("word", "")
 
 if clicked_from_js:
     st.session_state.clicked_word = clicked_from_js

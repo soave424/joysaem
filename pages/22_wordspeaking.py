@@ -34,7 +34,7 @@ col_left, col_right = st.columns(2, gap="large")
 with col_left:
     html_code = """
     <div style='padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>
-        <textarea id='text-to-speak' style='width: 100%; height: 150px; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
+        <textarea id='text-to-speak' style='width: 98%; height: 150px; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
 
         <div style='margin-bottom: 15px;'>
             <button id='process-button' style='background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;'>단어 분리</button>
@@ -195,7 +195,7 @@ with col_right:
                 st.session_state.word_history.append(input_word)
 
     with col2:
-        st.markdown("<div style='margin-top: 12px'><b>번역 결과</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 14px'><b>번역 결과</b></div>", unsafe_allow_html=True)
         st.code("\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
     if st.session_state.word_history:

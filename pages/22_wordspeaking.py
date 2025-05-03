@@ -25,12 +25,11 @@ if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
 clicked = st.query_params.get("word", "")
-if clicked and (clicked != st.session_state.get("clicked_word", "")):
+if clicked:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
     if clicked not in st.session_state.word_history:
         st.session_state.word_history.append(clicked)
-    st.experimental_rerun()
 if clicked and clicked != st.session_state.clicked_word:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)

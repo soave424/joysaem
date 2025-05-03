@@ -125,13 +125,16 @@ html_code = """
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
             });
             
-            // 첫 번째 단어 자동 선택 (선택 사항)
+            // 첫 단어 자동 선택 (선택 사항)
             if (words.length > 0) {
                 const firstWordElement = wordContainer.querySelector('span');
                 if (firstWordElement) {
                     highlightWord(firstWordElement);
-                    updateQueryParam(firstWordElement.dataset.cleanWord);
                     speakWord(firstWordElement.dataset.originalWord);
+                    // 약간의 지연 후 첫 단어로 URL 업데이트 (필요한 경우)
+                    setTimeout(() => {
+                        updateQueryParam(firstWordElement.dataset.cleanWord);
+                    }, 500);
                 }
             }
         }
@@ -145,19 +148,13 @@ html_code = """
             element.style.color = 'white';
         }
         
-        // 페이지 새로고침 없이 URL 파라미터 업데이트
+        // URL 파라미터 업데이트 - 새로고침 사용
         function updateQueryParam(word) {
             if (word && word.trim() !== '') {
-                // URL 파라미터 설정 (새로고침 없이)
+                // 새로고침 방식으로 URL 업데이트 및 번역 실행
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set("word", word);
-                window.history.replaceState({}, '', currentUrl.toString());
-                
-                // Streamlit에 이벤트 발생 알림 (iframe 통신)
-                window.parent.postMessage({
-                    type: "streamlit:setQueryParams",
-                    queryParams: { word: word }
-                }, "*");
+                window.location.href = currentUrl.toString();
             }
         }
 
@@ -214,21 +211,7 @@ html_code = """
 </div>
 """
 
-# JavaScript와 Streamlit 간의 통신을 위한 콜백 설정
-components_callback = """
-<script>
-// Streamlit에서 메시지 받기
-window.addEventListener('message', function(e) {
-    // Streamlit의 리로드 이벤트 캐치
-    if (e.data.type === 'streamlit:render') {
-        console.log('Streamlit 리로드됨');
-    }
-});
-</script>
-"""
-
 # 삽입 실행
-html(components_callback, height=0)
 html(html_code, height=700)
 
 # 단어 학습 창
@@ -249,12 +232,3 @@ if st.session_state.word_history:
 
 # 안내 메시지
 st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")
-
-# URL 파라미터 변경을 감지하고 자동으로 재실행하기 위한 코드
-current_url_params = st.experimental_get_query_params()
-if "word" in current_url_params and current_url_params["word"] != st.session_state.clicked_word:
-    st.session_state.clicked_word = current_url_params["word"][0]
-    st.session_state.translated = translate_word(st.session_state.clicked_word)
-    if st.session_state.clicked_word not in st.session_state.word_history:
-        st.session_state.word_history.append(st.session_state.clicked_word)
-    st.experimental_rerun()

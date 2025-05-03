@@ -26,6 +26,7 @@ clicked = st.query_params.get("word", "")
 if clicked and clicked != st.session_state.clicked_word:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
+    st.experimental_rerun()
 
 # 제목
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
@@ -121,7 +122,7 @@ html_code = """
                     const currentUrl = new URL(window.location.href);
                     currentUrl.searchParams.set("word", this.dataset.originalWord);
                     window.history.pushState({}, "", currentUrl);
-                    location.reload();
+                    // location.reload(); // 새로고침 제거하여 Streamlit 반응 유도 안함
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));

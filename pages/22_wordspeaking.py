@@ -29,16 +29,16 @@ st.title("📘 단어 학습 TTS + 번역 애플리케이션")
 
 # HTML + JS 삽입 (단어 분리 및 TTS 기능 포함)
 html_code = """
-<div style='padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>
-    <textarea id='text-to-speak' style='width: 100%; height: 150px; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
+<div style='padding: 5px; border: 1px solid #ddd; border-radius: 5px;'>
+    <textarea id='text-to-speak' style='width: 100%; height: 100px; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
 
-    <div style='margin-bottom: 15px;'>
+    <div style='margin-bottom: 5px;'>
         <button id='process-button' style='background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;'>단어 분리</button>
         <button id='speak-all-button' style='background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;'>전체 읽기</button>
         <button id='stop-button' style='background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;'>중지</button>
     </div>
 
-    <div style='margin-bottom: 15px;'>
+    <div style='margin-bottom: 5px;'>
         <label for='voice-select'>음성 선택:</label>
         <select id='voice-select' style='padding: 5px; margin: 0 10px;'></select>
 

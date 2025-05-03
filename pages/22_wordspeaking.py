@@ -187,7 +187,7 @@ with col_right:
     col1, col2 = st.columns([1, 2], gap="medium")
     with col1:
         st.markdown("<div style='margin-bottom: 0px'><b>단어 입력</b></div>", unsafe_allow_html=True)
-        input_word = st.text_input("", key="input_word_field")
+        input_word = st.text_input("직업 단어를 입력하세요.", key="input_word_field")
         if input_word and input_word != st.session_state.input_word:
             st.session_state.input_word = input_word
             st.session_state.translated = translate_word(input_word)
@@ -195,7 +195,7 @@ with col_right:
                 st.session_state.word_history.append(input_word)
 
     with col2:
-        st.markdown("<div style='margin-bottom: 10px'><b>번역 결과</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 10px'><b>번역 결과</b></div>", unsafe_allow_html=True)
         st.code("\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
     if st.session_state.word_history:

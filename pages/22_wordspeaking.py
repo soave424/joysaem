@@ -1,5 +1,6 @@
 import streamlit as st
 import deepl
+from streamlit_javascript import st_javascript
 from streamlit.components.v1 import html
 
 # Streamlit 설정
@@ -24,17 +25,22 @@ if "clicked_word" not in st.session_state:
 if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
-# 숨겨진 입력 필드 (JS와 연동)
-clicked_word_input = st.text_input("", key="clicked_word_input", label_visibility="collapsed")
+# 자바스크립트에서 클릭한 단어 받아오기
+clicked = st_javascript("""
+() => {
+    const stored = window.localStorage.getItem("clicked_word");
+    return stored ? stored : "";
+}
+""")
 
-if clicked_word_input:
-    st.session_state.clicked_word = clicked_word_input
-    st.session_state.translated = translate_word(clicked_word_input)
-    if clicked_word_input not in st.session_state.word_history:
-        st.session_state.word_history.append(clicked_word_input)
+if clicked and clicked != st.session_state.clicked_word:
+    st.session_state.clicked_word = clicked
+    st.session_state.translated = translate_word(clicked)
+    if clicked not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked)
 
 # 제목
-st.title("\U0001F4D8 단어별 읽기 + 번역 애플리케이션")
+st.title("📘 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
 
 # HTML + JS 삽입
@@ -67,7 +73,6 @@ html_code = """
             voices = window.speechSynthesis.getVoices();
             const voiceSelect = document.getElementById('voice-select');
             voiceSelect.innerHTML = '';
-
             const englishVoices = voices.filter(voice => voice.lang.includes('en'));
             const otherVoices = voices.filter(voice => !voice.lang.includes('en'));
 
@@ -119,11 +124,7 @@ html_code = """
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    const hiddenInput = parent.document.querySelector('input[data-testid="stTextInput"]');
-                    if (hiddenInput) {
-                        hiddenInput.value = this.dataset.originalWord;
-                        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
+                    window.localStorage.setItem("clicked_word", this.dataset.originalWord);
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
@@ -195,7 +196,7 @@ html_code = """
 html(html_code, height=750)
 
 # 단어 학습 창
-st.markdown("### \U0001F4DA 단어 학습")
+st.markdown("### 📚 단어 학습")
 with st.container():
     col1, col2 = st.columns([1, 2])
     with col1:
@@ -206,9 +207,8 @@ with st.container():
         st.code(st.session_state.translated or "(단어를 클릭하면 번역이 표시됩니다)", language="text")
 
 if st.session_state.word_history:
-    st.markdown("### \U0001F4DD 클릭한 단어 목록")
+    st.markdown("### 📝 클릭한 단어 목록")
     for word in st.session_state.word_history:
         st.markdown(f"- `{word}`")
 
-# 안내 메시지
 st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")

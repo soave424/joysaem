@@ -1,4 +1,7 @@
 import streamlit as st
+import urllib.request
+import urllib.parse
+import json
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -41,6 +44,7 @@ html_code = """
         // 전역 변수
         let voices = [];
         let selectedVoice = null;
+        let originalText = '';
         
         // 음성 목록 로드
         function loadVoices() {
@@ -97,6 +101,9 @@ html_code = """
                 return;
             }
             
+            // 현재 텍스트 저장 (컨텍스트로 사용)
+            originalText = text;
+            
             // 단어 컨테이너 초기화
             wordContainer.innerHTML = '';
             
@@ -119,11 +126,12 @@ html_code = """
                 wordButton.style.cursor = 'pointer';
                 wordButton.dataset.word = cleanWord;
                 wordButton.dataset.originalWord = word;
+                wordButton.dataset.index = index;
                 
                 // 클릭 이벤트 추가
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
-                    showWordInfo(this.dataset.word, this);
+                    showWordInfo(this.dataset.word, this, parseInt(this.dataset.index));
                 });
                 
                 wordContainer.appendChild(wordButton);
@@ -179,7 +187,7 @@ html_code = """
         }
         
         // 단어 정보 표시
-        async function showWordInfo(word, element) {
+        async function showWordInfo(word, element, index) {
             if (!word || word.trim() === '') return;
             
             const wordInfoDiv = document.getElementById('word-info');
@@ -206,10 +214,10 @@ html_code = """
             wordMeaningDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
             
-            // 단어 뜻 찾기 (API 요청)
+            // 단어 뜻 찾기 (API 요청) - 전체 문장을 컨텍스트로 전달
             try {
                 // API 요청 (Streamlit에 구현된 API 호출)
-                const response = await fetch('/?word=' + encodeURIComponent(word));
+                const response = await fetch('/?word=' + encodeURIComponent(word) + '&context=' + encodeURIComponent(originalText));
                 const data = await response.json();
                 
                 loadingDiv.style.display = 'none';
@@ -273,6 +281,8 @@ st.components.v1.html(html_code, height=700)
 
 # 단어 번역 API 엔드포인트 처리
 word_param = st.query_params.get("word", "")
+context_param = st.query_params.get("context", "")
+
 if word_param:
     try:
         # 환경 변수에서 DeepL API 키 가져오기
@@ -286,12 +296,15 @@ if word_param:
         # API 엔드포인트 URL (DeepL API Free)
         url = "https://api-free.deepl.com/v2/translate"
         
-        # 요청 데이터 구성
+        # 요청 데이터 구성 - 문맥 제공
         data = {
-            "text": [f"The word '{word_param}' means"],
-            "target_lang": "KO",
-            "source_lang": "EN"
+            "text": [f"What is the meaning of the word '{word_param}' in Korean?"],
+            "target_lang": "KO"
         }
+        
+        # 문맥 추가 (전체 문장으로 제공)
+        if context_param:
+            data["context"] = context_param
         
         # JSON 데이터로 변환
         data = json.dumps(data).encode('utf8')
@@ -312,7 +325,17 @@ if word_param:
                 
                 if "translations" in result and len(result["translations"]) > 0:
                     translation = result["translations"][0]["text"]
-                    st.json({"word": word_param, "translation": translation})
+                    
+                    # "What is the meaning of the word 'x' in Korean?" 에서 번역 결과 추출
+                    # 예상 응답: "한국어로 'x'의 의미는 '뜻'입니다."
+                    import re
+                    meaning_match = re.search(r"'([^']+)'입니다", translation)
+                    if meaning_match:
+                        cleaned_translation = meaning_match.group(1)
+                    else:
+                        cleaned_translation = translation
+                    
+                    st.json({"word": word_param, "translation": cleaned_translation})
                 else:
                     st.json({"word": word_param, "translation": None, "error": "번역 결과가 없습니다."})
         except urllib.error.HTTPError as e:
@@ -330,6 +353,7 @@ st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
 텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
 DeepL API를 통해 영어 단어의 한국어 의미를 제공합니다.
+원본 문장을 문맥(context)으로 제공하여 더 정확한 번역 결과를 얻습니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 

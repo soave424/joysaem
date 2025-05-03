@@ -30,7 +30,7 @@ st.title("📘 단어 학습 TTS + 번역 애플리케이션")
 # HTML + JS 삽입 (단어 분리 및 TTS 기능 포함)
 html_code = """
 <div style='padding: 5px; border: 1px solid #ddd; border-radius: 5px;'>
-    <textarea id='text-to-speak' style='width: 100%; height: 50%; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
+    <textarea id='text-to-speak' style='width: 80%; height: 100%; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
 
     <div style='margin-bottom: 5px;'>
         <button id='process-button' style='background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;'>단어 분리</button>

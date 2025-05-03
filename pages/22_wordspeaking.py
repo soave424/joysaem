@@ -21,26 +21,20 @@ def translate_word(word, target_lang="KO"):
 if "clicked_word" not in st.session_state:
     st.session_state.clicked_word = ""
     st.session_state.translated = ""
+if "word_history" not in st.session_state:
+    st.session_state.word_history = []
 
 clicked = st.query_params.get("word", "")
 if clicked and clicked != st.session_state.clicked_word:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
+    if clicked not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked)
     st.experimental_rerun()
 
 # 제목
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
-
-# 번역 결과 출력 (단어 아래 표시)
-if st.session_state.clicked_word:
-    with st.container():
-        st.markdown("""
-        <div style='margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;'>
-            <strong>🔍 선택된 단어:</strong> <code>{}</code><br>
-            <strong>🇰🇷 번역:</strong> {}
-        </div>
-        """.format(st.session_state.clicked_word, st.session_state.translated), unsafe_allow_html=True)
 
 # HTML + JS 삽입
 html_code = """
@@ -198,6 +192,21 @@ html_code = """
 
 # 삽입 실행
 html(html_code, height=750)
+
+# 단어 학습 창
+st.markdown("### 📚 단어 학습")
+with st.container():
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown(f"**선택된 단어**")
+        st.code(st.session_state.clicked_word or "(아직 선택되지 않음)", language="text")
+    with col2:
+        st.markdown(f"**번역 결과**")
+        st.code(st.session_state.translated or "(단어를 클릭하면 번역이 표시됩니다)", language="text")
+
+if st.session_state.word_history:
+    st.markdown("### 📝 클릭한 단어 목록")
+    st.write(", ".join(st.session_state.word_history))
 
 # 안내 메시지
 st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")

@@ -186,7 +186,7 @@ with col_right:
     st.markdown("### 📚 단어 학습")
     col1, col2 = st.columns([1, 2], gap="medium")
     with col1:
-        st.markdown("<div style='margin-bottom: 10px'><b>단어 입력</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 0px'><b>단어 입력</b></div>", unsafe_allow_html=True)
         input_word = st.text_input("", key="input_word_field")
         if input_word and input_word != st.session_state.input_word:
             st.session_state.input_word = input_word

@@ -47,7 +47,7 @@ html_code = """
         <span id='speed-value'>1.0</span>
     </div>
 
-    <div id='word-container' style='margin-top: 20px; padding: 15px; border: 1px solid #eee; border-radius: 5px; min-height: 100px; line-height: 2;'></div>
+    <div id='word-container' style='margin-top: 10px; padding: 5px; border: 1px solid #eee; border-radius: 5px; min-height: 100px; line-height: 2;'></div>
 
     <script>
         let voices = [];
@@ -176,7 +176,7 @@ html_code = """
 </div>
 """
 
-html(html_code, height=600)
+html(html_code, height=500)
 
 # 단어 학습 결과 출력
 col1, col2 = st.columns(2, gap="large")

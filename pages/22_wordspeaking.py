@@ -187,7 +187,7 @@ st.markdown("### 📚 단어 학습 결과")
 col1, col2 = st.columns([1, 2])
 with col1:
     st.markdown("** 학습할 단어 입력**")
-    input_word = st.text_input(key="input_word_field")
+    input_word = st.text_input("",key="input_word_field")
 
     if input_word and input_word != st.session_state.input_word:
         st.session_state.input_word = input_word

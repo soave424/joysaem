@@ -1,10 +1,7 @@
 import streamlit as st
-import urllib.request
-import urllib.parse
-import json
+import deepl
 import time
 import random
-import deepl
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -13,25 +10,36 @@ st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wi
 st.title("단어별 읽기 및 의미 확인 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.")
 
-# DeepL API를 사용한 단어 번역 함수
+# DeepL API를 사용한 단어 번역 함수 (deepl 라이브러리 사용)
 def translate_word(word, context=None):
     try:
         # 환경 변수에서 API 키 가져오기
         auth_key = st.secrets["DeepL_API_Key"]
         
-        # DeepL 라이브러리 사용
+        # DeepL 번역기 인스턴스 생성
         translator = deepl.Translator(auth_key)
         
-        # 번역 요청
-        result = translator.translate_text(
-            word,
-            source_lang="EN",
-            target_lang="KO",
-            context=context
-        )
+        # 번역 실행
+        # context가 있으면 formality="prefer_more" 옵션 추가
+        if context:
+            result = translator.translate_text(
+                word,
+                source_lang="EN", 
+                target_lang="KO",
+                formality="prefer_more"
+            )
+        else:
+            result = translator.translate_text(
+                word,
+                source_lang="EN", 
+                target_lang="KO"
+            )
         
+        # 결과 반환
         return result.text
+        
     except Exception as e:
+        st.error(f"번역 오류: {str(e)}")
         return f"오류 발생: {str(e)}"
 
 # 캐싱을 사용한 번역 결과 저장
@@ -271,10 +279,10 @@ html_code = """
                         const result = await response.json();
                         loadingDiv.style.display = 'none';
                         
-                        if (result && result.translation) {
+                        if (result && result.last_translation) {
                             wordMeaningDiv.innerHTML = `
                                 <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                                <p style='font-size: 15px;'>${result.translation}</p>
+                                <p style='font-size: 15px;'>${result.last_translation}</p>
                                 <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
                             `;
                         } else {
@@ -284,21 +292,21 @@ html_code = """
                             `;
                         }
                     } catch (error) {
-                        // JSON 파싱 오류
-                        checkLastTranslation(word);
+                        console.error("JSON 파싱 오류:", error);
+                        checkLastTranslation();
                     }
                 } else {
-                    // HTTP 오류
-                    checkLastTranslation(word);
+                    console.error("HTTP 오류:", response.status);
+                    checkLastTranslation();
                 }
             } catch (error) {
-                // 네트워크 오류
-                checkLastTranslation(word);
+                console.error("네트워크 오류:", error);
+                checkLastTranslation();
             }
         }
         
         // 마지막 번역 결과 확인 (세션 상태)
-        function checkLastTranslation(word) {
+        function checkLastTranslation() {
             const loadingDiv = document.getElementById('loading-translation');
             const wordMeaningDiv = document.getElementById('word-meaning');
             
@@ -342,11 +350,25 @@ html_code = """
 </div>
 """
 
-# 세션 상태에 마지막 번역 결과가 있으면 사이드바에 표시
-if 'last_word' in st.session_state and 'last_translation' in st.session_state:
-    with st.sidebar:
+# 디버깅 정보 표시
+with st.sidebar:
+    st.write("### 디버깅 정보")
+    if "DeepL_API_Key" in st.secrets:
+        st.success("DeepL API 키가 설정되어 있습니다.")
+    else:
+        st.error("DeepL API 키가 설정되어 있지 않습니다.")
+    
+    # 세션 상태에 마지막 번역 결과가 있으면 표시
+    if 'last_word' in st.session_state and 'last_translation' in st.session_state:
         st.write(f"**마지막 검색 단어:** {st.session_state.last_word}")
         st.write(f"**번역 결과:** {st.session_state.last_translation}")
+
+# 웹 요청 시 JSON 응답 반환
+if word_param:
+    st.json({
+        "last_word": st.session_state.last_word,
+        "last_translation": st.session_state.last_translation
+    })
 
 # HTML 삽입
 st.components.v1.html(html_code, height=700)

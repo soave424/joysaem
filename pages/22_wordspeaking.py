@@ -181,7 +181,7 @@ html(html_code, height=750)
 # 단어 학습 결과 출력
 col1, col2 = st.columns(2, gap="large")
 with col1:
-    st.markdown("단어 입력")
+    st.markdown("<div style='margin-bottom: 0px'><b>단어 입력</b></div>", unsafe_allow_html=True)
     input_word = st.text_input("학습할 단어 입력", key="input_word_field")
     if input_word and input_word != st.session_state.input_word:
         st.session_state.input_word = input_word

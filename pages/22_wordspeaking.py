@@ -183,7 +183,7 @@ html(html_code, height=750)
 st.markdown("### 📚 단어 학습 결과")
 col1, col2 = st.columns(2, gap="large")
 with col1:
-    st.markdown("#### 📝 단어 직접 입력 학습")
+    # st.markdown("#### 📝 단어 직접 입력 학습")
     input_word = st.text_input("학습할 단어 입력", key="input_word_field")
 
     if input_word and input_word != st.session_state.input_word:
@@ -193,7 +193,7 @@ with col1:
             st.session_state.word_history.append(input_word)
 
 with col2:
-    st.markdown("#### 📖 번역 결과")
+    st.markdown("## 📖 번역 결과")
     st.code("\n" +"\n" +"\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
 # 학습한 단어 목록

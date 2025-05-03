@@ -180,21 +180,22 @@ html_code = """
 html(html_code, height=750)
 
 # 단어 입력 학습 UI
-st.markdown("### 📝 단어 직접 입력 학습")
-input_word = st.text_input("학습할 단어를 입력하세요:", key="input_word_field")
 
-if input_word and input_word != st.session_state.input_word:
-    st.session_state.input_word = input_word
-    st.session_state.translated = translate_word(input_word)
-    if input_word not in st.session_state.word_history:
-        st.session_state.word_history.append(input_word)
 
 # 단어 학습 결과 출력
 st.markdown("### 📚 단어 학습 결과")
 col1, col2 = st.columns([1, 2])
 with col1:
-    st.markdown("**입력한 단어**")
-    st.code(st.session_state.input_word or "(아직 입력되지 않음)", language="text")
+    st.markdown("**입력 단어**")
+    input_word = st.text_input("학습할 단어를 입력하세요:", key="input_word_field")
+
+    if input_word and input_word != st.session_state.input_word:
+        st.session_state.input_word = input_word
+        st.session_state.translated = translate_word(input_word)
+        if input_word not in st.session_state.word_history:
+            st.session_state.word_history.append(input_word)
+
+
 with col2:
     st.markdown("**번역 결과**")
     st.code(st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)", language="text")

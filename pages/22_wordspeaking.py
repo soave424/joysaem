@@ -3,7 +3,7 @@ import deepl
 from streamlit.components.v1 import html
 
 # Streamlit 설정
-st.set_page_config(page_title="단어 학습 TTS + 번역", layout="wide")
+st.set_page_config(page_title="단어 학습 TTS + 번역", layout="wide", initial_sidebar_state="collapsed")
 
 # DeepL API 초기화
 auth_key = st.secrets["DeepL_API_Key"]
@@ -25,7 +25,7 @@ if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
 # 제목
-st.title("📘 단어 학습 TTS + 번역 애플리케이션")
+st.title("📘 영어 공부")
 
 # 좌우로 화면 분할
 col_left, col_right = st.columns([3, 2], gap="large")

@@ -25,6 +25,12 @@ if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
 clicked = st.query_params.get("word", "")
+if clicked and (clicked != st.session_state.get("clicked_word", "")):
+    st.session_state.clicked_word = clicked
+    st.session_state.translated = translate_word(clicked)
+    if clicked not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked)
+    st.experimental_rerun()
 if clicked and clicked != st.session_state.clicked_word:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
@@ -206,7 +212,8 @@ with st.container():
 
 if st.session_state.word_history:
     st.markdown("### 📝 클릭한 단어 목록")
-    st.write(", ".join(st.session_state.word_history))
+    for word in st.session_state.word_history:
+        st.markdown(f"- `{word}`")
 
 # 안내 메시지
 st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")

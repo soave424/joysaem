@@ -1,7 +1,6 @@
 import streamlit as st
 import deepl
 from streamlit.components.v1 import html
-from streamlit_javascript import st_javascript
 
 # Streamlit 설정
 st.set_page_config(page_title="단어 학습 TTS + 번역", layout="wide")
@@ -19,40 +18,17 @@ def translate_word(word, target_lang="KO"):
         return f"오류: {str(e)}"
 
 # 상태 초기화
-if "clicked_word" not in st.session_state:
-    st.session_state.clicked_word = ""
+if "input_word" not in st.session_state:
+    st.session_state.input_word = ""
     st.session_state.translated = ""
 if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
-# 자바스크립트에서 클릭한 단어 받아오기 (리렌더링 없이 지속 폴링 방식)
-st_javascript("""
-    const interval = setInterval(() => {
-        const word = window.localStorage.getItem("clicked_word");
-        if (word) {
-            const streamlitEvents = window.parent.postMessage;
-            streamlitEvents({type: "streamlit:setComponentValue", value: word}, "*");
-            window.localStorage.removeItem("clicked_word");
-        }
-    }, 1000);
-    true;
-""")
-
-# JS로부터 직접 값을 받기 위한 폴링용 hidden input
-clicked = st.text_input("_hidden_word_input", key="clicked_input", label_visibility="collapsed")
-
-# 선택된 단어 반영
-if clicked and clicked != st.session_state.clicked_word:
-    st.session_state.clicked_word = clicked
-    st.session_state.translated = translate_word(clicked)
-    if clicked not in st.session_state.word_history:
-        st.session_state.word_history.append(clicked)
-
 # 제목
-st.title("📘 단어별 읽기 + 번역 애플리케이션")
-st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
+st.title("📘 단어 학습 TTS + 번역 애플리케이션")
+st.write("텍스트를 입력하고 단어를 학습하세요. 발음과 번역이 함께 제공됩니다.")
 
-# HTML + JS 삽입
+# HTML + JS 삽입 (단어 분리 및 TTS 기능 포함)
 html_code = """
 <div style='padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>
     <textarea id='text-to-speak' style='width: 100%; height: 150px; padding: 10px; margin-bottom: 15px;' placeholder='텍스트를 입력하고 단어 분리 버튼을 클릭하세요...'></textarea>
@@ -133,7 +109,6 @@ html_code = """
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    window.localStorage.setItem("clicked_word", this.dataset.originalWord);
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
@@ -204,20 +179,31 @@ html_code = """
 
 html(html_code, height=750)
 
-# 단어 학습 창
-st.markdown("### 📚 단어 학습")
-with st.container():
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.markdown("**선택된 단어**")
-        st.code(st.session_state.clicked_word or "(아직 선택되지 않음)", language="text")
-    with col2:
-        st.markdown("**번역 결과**")
-        st.code(st.session_state.translated or "(단어를 클릭하면 번역이 표시됩니다)", language="text")
+# 단어 입력 학습 UI
+st.markdown("### 📝 단어 직접 입력 학습")
+input_word = st.text_input("학습할 단어를 입력하세요:", key="input_word_field")
 
+if input_word and input_word != st.session_state.input_word:
+    st.session_state.input_word = input_word
+    st.session_state.translated = translate_word(input_word)
+    if input_word not in st.session_state.word_history:
+        st.session_state.word_history.append(input_word)
+
+# 단어 학습 결과 출력
+st.markdown("### 📚 단어 학습 결과")
+col1, col2 = st.columns([1, 2])
+with col1:
+    st.markdown("**입력한 단어**")
+    st.code(st.session_state.input_word or "(아직 입력되지 않음)", language="text")
+with col2:
+    st.markdown("**번역 결과**")
+    st.code(st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)", language="text")
+
+# 학습한 단어 목록
 if st.session_state.word_history:
-    st.markdown("### 📝 클릭한 단어 목록")
+    st.markdown("### 🗂️ 학습한 단어 목록")
     for word in st.session_state.word_history:
-        st.markdown(f"- `{word}`")
+        translated = translate_word(word)
+        st.markdown(f"- `{word}` → {translated}")
 
-st.info("단어를 클릭하면 발음 + 한국어 번역이 함께 제공됩니다. Google Chrome에서 가장 잘 작동합니다.")
+st.info("단어를 입력하거나 텍스트를 입력 후 단어를 분리해 발음할 수 있습니다. 번역은 직접 입력창을 통해 확인하세요. Chrome에서 최적 작동합니다.")

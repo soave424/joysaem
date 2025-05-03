@@ -32,10 +32,15 @@ if clicked and clicked != st.session_state.clicked_word:
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 들을 수 있고, 한국어 번역도 함께 확인할 수 있습니다.")
 
-# 번역 결과 출력
+# 번역 결과 출력 (단어 아래 표시)
 if st.session_state.clicked_word:
-    st.markdown(f"### 🔍 선택된 단어: `{st.session_state.clicked_word}`")
-    st.markdown(f"**🇰🇷 번역:** {st.session_state.translated}")
+    with st.container():
+        st.markdown("""
+        <div style='margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;'>
+            <strong>🔍 선택된 단어:</strong> <code>{}</code><br>
+            <strong>🇰🇷 번역:</strong> {}
+        </div>
+        """.format(st.session_state.clicked_word, st.session_state.translated), unsafe_allow_html=True)
 
 # HTML + JS 삽입
 html_code = """

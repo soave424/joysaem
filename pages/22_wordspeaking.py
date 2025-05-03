@@ -2,6 +2,8 @@ import streamlit as st
 import urllib.request
 import urllib.parse
 import json
+import time
+import random
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
@@ -9,6 +11,82 @@ st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wi
 # 제목
 st.title("단어별 읽기 및 의미 확인 애플리케이션")
 st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.")
+
+# DeepL API를 사용한 단어 번역 함수 (백엔드)
+def translate_word(word, context=None):
+    try:
+        # 환경 변수에서 API 키 가져오기
+        auth_key = st.secrets["DeepL_API_Key"]
+        
+        # API 엔드포인트 URL (Free 또는 Pro 계정에 따라 다름)
+        url = "https://api-free.deepl.com/v2/translate"
+        
+        # 요청 데이터 구성
+        data = {
+            "text": [word],
+            "target_lang": "KO",
+            "source_lang": "EN"
+        }
+        
+        # 문맥 제공 시 추가
+        if context:
+            data["context"] = context
+        
+        # 데이터를 URL 인코딩 형식으로 변환
+        encoded_data = urllib.parse.urlencode(data).encode('utf-8')
+        
+        # 헤더 설정
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {auth_key}",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "WordSpeakingApp/1.0"
+        }
+        
+        # API 요청 객체 생성
+        req = urllib.request.Request(url, data=encoded_data, headers=headers)
+        
+        # 오류 처리 및 재시도 로직
+        max_retries = 3
+        retry_delay = 1  # 초 단위
+        
+        for attempt in range(max_retries):
+            try:
+                with urllib.request.urlopen(req) as response:
+                    result = json.loads(response.read().decode('utf-8'))
+                    
+                    if "translations" in result and len(result["translations"]) > 0:
+                        return result["translations"][0]["text"]
+                    return None
+            except urllib.error.HTTPError as e:
+                if e.code == 429:  # Too Many Requests
+                    # 지수 백오프로 재시도
+                    sleep_time = retry_delay * (2 ** attempt) + random.uniform(0, 1)
+                    time.sleep(sleep_time)
+                    continue
+                elif e.code == 456:  # Quota Exceeded
+                    return "API 사용량 한도를 초과했습니다."
+                else:
+                    return f"HTTP 오류: {e.code}"
+            except Exception as e:
+                return f"API 호출 오류: {str(e)}"
+        
+        return "API 요청 실패: 재시도 횟수 초과"
+    except Exception as e:
+        return f"오류 발생: {str(e)}"
+
+# 캐싱을 사용한 번역 결과 저장
+@st.cache_data(ttl=3600)
+def get_cached_translation(word, context=None):
+    return translate_word(word, context)
+
+# 백엔드 API 엔드포인트 (단어 번역)
+word_param = st.query_params.get("word", "")
+context_param = st.query_params.get("context", "")
+
+if word_param:
+    translation = get_cached_translation(word_param, context_param)
+    st.session_state.last_word = word_param
+    st.session_state.last_translation = translation
 
 # HTML 코드 삽입
 html_code = """
@@ -126,12 +204,11 @@ html_code = """
                 wordButton.style.cursor = 'pointer';
                 wordButton.dataset.word = cleanWord;
                 wordButton.dataset.originalWord = word;
-                wordButton.dataset.index = index;
                 
                 // 클릭 이벤트 추가
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
-                    showWordInfo(this.dataset.word, this, parseInt(this.dataset.index));
+                    showWordInfo(this.dataset.word, this);
                 });
                 
                 wordContainer.appendChild(wordButton);
@@ -187,7 +264,7 @@ html_code = """
         }
         
         // 단어 정보 표시
-        async function showWordInfo(word, element, index) {
+        async function showWordInfo(word, element) {
             if (!word || word.trim() === '') return;
             
             const wordInfoDiv = document.getElementById('word-info');
@@ -214,33 +291,108 @@ html_code = """
             wordMeaningDiv.innerHTML = '';
             loadingDiv.style.display = 'block';
             
-            // 단어 뜻 찾기 (API 요청) - 전체 문장을 컨텍스트로 전달
+            // CORS 문제를 회피하기 위해 Streamlit 서버를 통해 간접적으로 API 호출
+            // 페이지 새로고침
+            const formData = new FormData();
+            formData.append('word', word);
+            formData.append('context', originalText);
+            
+            // 현재 URL에 쿼리 파라미터로 단어와 컨텍스트 추가
+            const url = new URL(window.location.href);
+            url.searchParams.set('word', word);
+            url.searchParams.set('context', originalText);
+            
+            // Streamlit 앱 상태 업데이트 (페이지 새로고침 없이)
             try {
-                // API 요청 (Streamlit에 구현된 API 호출)
-                const response = await fetch('/?word=' + encodeURIComponent(word) + '&context=' + encodeURIComponent(originalText));
-                const data = await response.json();
+                const response = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
-                loadingDiv.style.display = 'none';
-                
-                if (data && data.translation) {
-                    wordMeaningDiv.innerHTML = `
-                        <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                        <p style='font-size: 15px;'>${data.translation}</p>
-                        <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
-                    `;
+                // 응답 확인
+                if (response.ok) {
+                    try {
+                        const result = await response.json();
+                        loadingDiv.style.display = 'none';
+                        
+                        if (result && result.translation) {
+                            wordMeaningDiv.innerHTML = `
+                                <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
+                                <p style='font-size: 15px;'>${result.translation}</p>
+                                <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
+                            `;
+                        } else {
+                            wordMeaningDiv.innerHTML = `
+                                <p>단어의 의미를 찾을 수 없습니다.</p>
+                                <p style='font-size: 14px; color: #666;'>다른 단어를 시도해보세요.</p>
+                            `;
+                        }
+                    } catch (error) {
+                        // JSON 파싱 오류
+                        checkLastTranslation(word);
+                    }
                 } else {
-                    wordMeaningDiv.innerHTML = `
-                        <p>이 단어에 대한 정보를 찾을 수 없습니다.</p>
-                        <p style='font-size: 14px; color: #666;'>DeepL API 연결을 확인하거나 다른 단어를 시도해보세요.</p>
-                    `;
+                    // HTTP 오류
+                    checkLastTranslation(word);
                 }
             } catch (error) {
-                loadingDiv.style.display = 'none';
+                // 네트워크 오류
+                checkLastTranslation(word);
+            }
+        }
+        
+        // 마지막 번역 결과 확인 (세션 상태)
+        function checkLastTranslation(word) {
+            const loadingDiv = document.getElementById('loading-translation');
+            const wordMeaningDiv = document.getElementById('word-meaning');
+            
+            loadingDiv.style.display = 'none';
+            
+            // 기본 영어-한국어 사전 
+            const dictionary = {
+                'father': '아버지 - 가족 구성원 중 남성 부모',
+                'mother': '어머니 - 가족 구성원 중 여성 부모',
+                'apple': '사과 - 둥글고 단단한 빨간색, 녹색 또는 노란색 과일',
+                'banana': '바나나 - 길고 휘어진 노란색 과일',
+                'cat': '고양이 - 털이 많은 작은 집 동물',
+                'dog': '개 - 충성스러운 반려동물',
+                'elephant': '코끼리 - 긴 코와 큰 귀를 가진 큰 회색 동물',
+                'friend': '친구 - 당신과 가까운 사람',
+                'good': '좋은 - 품질이 높거나 바람직함',
+                'hello': '안녕 - 인사말',
+                'love': '사랑 - 깊은 애정',
+                'play': '놀다 - 즐거움을 위해 활동하다',
+                'rain': '비 - 구름에서 떨어지는 물방울',
+                'sun': '태양 - 지구에 빛과 열을 제공하는 별',
+                'they': '그들 - 두 명 이상의 사람을 가리키는 대명사',
+                'use': '사용하다 - 목적을 위해 무언가를 활용하다',
+                'water': '물 - 투명한 액체',
+                'when': '언제 - 시간을 묻는 의문사',
+                'student': '학생 - 배우는 사람',
+                'school': '학교 - 교육 기관',
+                'teacher': '교사 - 가르치는 사람',
+                'learn': '배우다 - 지식이나 기술을 얻다',
+                'english': '영어 - 영국, 미국 등에서 사용되는 언어',
+                'read': '읽다 - 문자를 보고 이해하다',
+                'write': '쓰다 - 단어나 문장을 만들다',
+                'help': '돕다 - 누군가가 무언가를 할 수 있게 지원하다'
+            };
+            
+            // 기본 사전에서 확인
+            const meaning = dictionary[word.toLowerCase()];
+            if (meaning) {
                 wordMeaningDiv.innerHTML = `
-                    <p>단어 검색 중 오류가 발생했습니다.</p>
-                    <p style='font-size: 14px; color: #666;'>나중에 다시 시도해주세요.</p>
+                    <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
+                    <p style='font-size: 15px;'>${meaning}</p>
+                    <p style='font-size: 12px; color: #666;'>(기본 사전에서 가져온 의미입니다)</p>
                 `;
-                console.error('API 호출 오류:', error);
+            } else {
+                wordMeaningDiv.innerHTML = `
+                    <p>단어의 의미를 찾을 수 없습니다.</p>
+                    <p style='font-size: 14px; color: #666;'>API 연결을 확인하거나 다른 단어를 시도해보세요.</p>
+                `;
             }
         }
         
@@ -276,84 +428,20 @@ html_code = """
 </div>
 """
 
+# 세션 상태에 마지막 번역 결과가 있으면 사이드바에 표시
+if 'last_word' in st.session_state and 'last_translation' in st.session_state:
+    with st.sidebar:
+        st.write(f"**마지막 검색 단어:** {st.session_state.last_word}")
+        st.write(f"**번역 결과:** {st.session_state.last_translation}")
+
 # HTML 삽입
 st.components.v1.html(html_code, height=700)
-
-# 단어 번역 API 엔드포인트 처리
-word_param = st.query_params.get("word", "")
-context_param = st.query_params.get("context", "")
-
-if word_param:
-    try:
-        # 환경 변수에서 DeepL API 키 가져오기
-        auth_key = st.secrets["DeepL_API_Key"]
-        
-        # 번역 요청을 위한 URL과 헤더 구성
-        import urllib.request
-        import urllib.parse
-        import json
-        
-        # API 엔드포인트 URL (DeepL API Free)
-        url = "https://api-free.deepl.com/v2/translate"
-        
-        # 요청 데이터 구성 - 문맥 제공
-        data = {
-            "text": [f"What is the meaning of the word '{word_param}' in Korean?"],
-            "target_lang": "KO"
-        }
-        
-        # 문맥 추가 (전체 문장으로 제공)
-        if context_param:
-            data["context"] = context_param
-        
-        # JSON 데이터로 변환
-        data = json.dumps(data).encode('utf8')
-        
-        # 요청 헤더 설정
-        headers = {
-            "Authorization": f"DeepL-Auth-Key {auth_key}",
-            "Content-Type": "application/json"
-        }
-        
-        # 요청 객체 생성
-        req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-        
-        # API 호출 및 응답 처리
-        try:
-            with urllib.request.urlopen(req) as response:
-                result = json.loads(response.read().decode('utf8'))
-                
-                if "translations" in result and len(result["translations"]) > 0:
-                    translation = result["translations"][0]["text"]
-                    
-                    # "What is the meaning of the word 'x' in Korean?" 에서 번역 결과 추출
-                    # 예상 응답: "한국어로 'x'의 의미는 '뜻'입니다."
-                    import re
-                    meaning_match = re.search(r"'([^']+)'입니다", translation)
-                    if meaning_match:
-                        cleaned_translation = meaning_match.group(1)
-                    else:
-                        cleaned_translation = translation
-                    
-                    st.json({"word": word_param, "translation": cleaned_translation})
-                else:
-                    st.json({"word": word_param, "translation": None, "error": "번역 결과가 없습니다."})
-        except urllib.error.HTTPError as e:
-            if e.code == 456:
-                st.json({"word": word_param, "translation": None, "error": "DeepL API 사용량 한도 초과"})
-            else:
-                st.json({"word": word_param, "translation": None, "error": f"HTTP 오류: {e.code}"})
-        except Exception as e:
-            st.json({"word": word_param, "translation": None, "error": f"API 호출 중 오류 발생: {str(e)}"})
-    except Exception as e:
-        st.json({"word": word_param, "translation": None, "error": f"API 키 설정 오류: {str(e)}"})
 
 # 사용 안내
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
 텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
 DeepL API를 통해 영어 단어의 한국어 의미를 제공합니다.
-원본 문장을 문맥(context)으로 제공하여 더 정확한 번역 결과를 얻습니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 

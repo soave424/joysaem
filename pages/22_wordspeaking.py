@@ -1,7 +1,7 @@
 import streamlit as st
 import deepl
-from streamlit_javascript import st_javascript
 from streamlit.components.v1 import html
+from streamlit_javascript import st_javascript
 
 # Streamlit 설정
 st.set_page_config(page_title="단어 학습 TTS + 번역", layout="wide")
@@ -25,14 +25,23 @@ if "clicked_word" not in st.session_state:
 if "word_history" not in st.session_state:
     st.session_state.word_history = []
 
-# 자바스크립트에서 클릭한 단어 받아오기
-clicked = st_javascript("""
-() => {
-    const stored = window.localStorage.getItem("clicked_word");
-    return stored ? stored : "";
-}
+# 자바스크립트에서 클릭한 단어 받아오기 (리렌더링 없이 지속 폴링 방식)
+st_javascript("""
+    const interval = setInterval(() => {
+        const word = window.localStorage.getItem("clicked_word");
+        if (word) {
+            const streamlitEvents = window.parent.postMessage;
+            streamlitEvents({type: "streamlit:setComponentValue", value: word}, "*");
+            window.localStorage.removeItem("clicked_word");
+        }
+    }, 1000);
+    true;
 """)
 
+# JS로부터 직접 값을 받기 위한 폴링용 hidden input
+clicked = st.text_input("_hidden_word_input", key="clicked_input", label_visibility="collapsed")
+
+# 선택된 단어 반영
 if clicked and clicked != st.session_state.clicked_word:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)

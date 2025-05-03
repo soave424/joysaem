@@ -18,21 +18,16 @@ def translate_word(word, target_lang="KO"):
         return f"오류: {str(e)}"
 
 # 클릭된 단어 수신 및 번역 처리
-from streamlit_javascript import st_javascript
-clicked_js = st_javascript("""
-new Promise((resolve) => {
-  window.addEventListener("message", (event) => {
-    if (event.data.type === "wordClicked") {
-      resolve(event.data.word);
-    }
-  });
-});
-""")
-if clicked_js:
-    st.session_state.clicked_word = clicked_js
-    st.session_state.translated = translate_word(clicked_js)
-    if clicked_js not in st.session_state.word_history:
-        st.session_state.word_history.append(clicked_js)
+from streamlit.components.v1 import html
+
+# JavaScript 메시지 수신용 숨겨진 입력
+clicked_from_js = st.text_input("클릭된 단어 (내부)", key="clicked_input", label_visibility="collapsed")
+
+if clicked_from_js:
+    st.session_state.clicked_word = clicked_from_js
+    st.session_state.translated = translate_word(clicked_from_js)
+    if clicked_from_js not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked_from_js)
         save_word_history(st.session_state.word_history)
 import json, os
 HISTORY_FILE = "clicked_words.json"

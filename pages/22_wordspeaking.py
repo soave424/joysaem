@@ -18,19 +18,38 @@ def translate_word(word, target_lang="KO"):
         return f"오류: {str(e)}"
 
 # 클릭된 단어 수신 및 번역 처리
+import json, os
+HISTORY_FILE = "clicked_words.json"
+
+def save_word_history(words):
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(words, f, ensure_ascii=False)
+
+def load_word_history():
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 if "clicked_word" not in st.session_state:
     st.session_state.clicked_word = ""
     st.session_state.translated = ""
 if "word_history" not in st.session_state:
-    st.session_state.word_history = []
+    st.session_state.word_history = load_word_history()
 
-# URL 파라미터에서 단어 가져오기
-clicked = st.query_params.get("word", "")
+raw_clicked = st.query_params.get("word")
+clicked = raw_clicked[0] if raw_clicked else ""
 if clicked:
     st.session_state.clicked_word = clicked
     st.session_state.translated = translate_word(clicked)
     if clicked not in st.session_state.word_history:
         st.session_state.word_history.append(clicked)
+        save_word_history(st.session_state.word_history)
+if clicked and clicked != st.session_state.clicked_word:
+    st.session_state.clicked_word = clicked
+    st.session_state.translated = translate_word(clicked)
+    if clicked not in st.session_state.word_history:
+        st.session_state.word_history.append(clicked)
+    st.experimental_rerun()
 
 # 제목
 st.title("📘 단어별 읽기 + 번역 애플리케이션")
@@ -108,35 +127,24 @@ html_code = """
                 return;
             }
             wordContainer.innerHTML = '';
-            const words = text.split(/\\s+/);
+            const words = text.split(/\s+/);
             words.forEach((word, index) => {
                 const wordButton = document.createElement('span');
-                const cleanWord = word.replace(/[^a-zA-Z0-9\\u00C0-\\u017F]/g, '');
+                const cleanWord = word.replace(/[^a-zA-Z0-9\u00C0-\u017F]/g, '');
                 wordButton.textContent = word;
                 wordButton.style.cssText = 'display:inline-block;margin:0 5px 5px 0;padding:5px 10px;background:#e0e0e0;border-radius:3px;cursor:pointer;';
-                wordButton.dataset.originalWord = word;
-                wordButton.dataset.cleanWord = cleanWord;
+                wordButton.dataset.originalWord = cleanWord;
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    updateQueryParam(this.dataset.cleanWord);
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set("word", this.dataset.originalWord);
+                    window.history.pushState({}, "", currentUrl);
+                    // location.reload(); // 새로고침 제거하여 Streamlit 반응 유도 안함
                 });
                 wordContainer.appendChild(wordButton);
                 if (index < words.length - 1) wordContainer.appendChild(document.createTextNode(' '));
             });
-            
-            // 첫 단어 자동 선택 (선택 사항)
-            if (words.length > 0) {
-                const firstWordElement = wordContainer.querySelector('span');
-                if (firstWordElement) {
-                    highlightWord(firstWordElement);
-                    speakWord(firstWordElement.dataset.originalWord);
-                    // 약간의 지연 후 첫 단어로 URL 업데이트 (필요한 경우)
-                    setTimeout(() => {
-                        updateQueryParam(firstWordElement.dataset.cleanWord);
-                    }, 500);
-                }
-            }
         }
 
         function highlightWord(element) {
@@ -146,16 +154,6 @@ html_code = """
             });
             element.style.backgroundColor = '#2196F3';
             element.style.color = 'white';
-        }
-        
-        // URL 파라미터 업데이트 - 새로고침 사용
-        function updateQueryParam(word) {
-            if (word && word.trim() !== '') {
-                // 새로고침 방식으로 URL 업데이트 및 번역 실행
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set("word", word);
-                window.location.href = currentUrl.toString();
-            }
         }
 
         function speakWord(word) {
@@ -212,7 +210,7 @@ html_code = """
 """
 
 # 삽입 실행
-html(html_code, height=700)
+html(html_code, height=750)
 
 # 단어 학습 창
 st.markdown("### 📚 단어 학습")

@@ -21,7 +21,7 @@ def translate_word(word, target_lang="KO"):
 from streamlit.components.v1 import html
 
 # JavaScript 메시지 수신용 숨겨진 입력
-clicked_from_js = st.text_input("클릭된 단어 (내부)", key="clicked_input", label_visibility="collapsed")
+clicked_from_js = st.experimental_get_query_params().get("word", [""])[0]
 
 if clicked_from_js:
     st.session_state.clicked_word = clicked_from_js
@@ -135,7 +135,7 @@ html_code = """
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
                     highlightWord(this);
-                    window.parent.postMessage({ type: 'wordClicked', word: this.dataset.originalWord }, '*');
+                    const hiddenInput = parent.document.querySelector('input[data-testid="stTextInput"]'); if (hiddenInput) { hiddenInput.value = this.dataset.originalWord; hiddenInput.dispatchEvent(new Event('input', { bubbles: true })); }
                     // location.reload(); // 새로고침 제거하여 Streamlit 반응 유도 안함
                 });
                 wordContainer.appendChild(wordButton);

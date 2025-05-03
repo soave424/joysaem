@@ -186,8 +186,8 @@ html(html_code, height=750)
 st.markdown("### 📚 단어 학습 결과")
 col1, col2 = st.columns([1, 2])
 with col1:
-    st.markdown("**입력 단어**")
-    input_word = st.text_input("학습할 단어를 입력하세요:", key="input_word_field")
+    st.markdown("** 학습할 단어 입력**")
+    input_word = st.text_input(key="input_word_field")
 
     if input_word and input_word != st.session_state.input_word:
         st.session_state.input_word = input_word

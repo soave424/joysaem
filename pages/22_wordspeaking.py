@@ -195,7 +195,7 @@ with col_right:
                 st.session_state.word_history.append(input_word)
 
     with col2:
-        st.markdown("<div style='margin-top: 10px'><b>번역 결과</b></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 12px'><b>번역 결과</b></div>", unsafe_allow_html=True)
         st.code("\n" + (st.session_state.translated or "(단어를 입력하면 번역이 표시됩니다)"), language="text")
 
     if st.session_state.word_history:

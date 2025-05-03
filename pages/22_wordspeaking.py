@@ -1,60 +1,42 @@
 import streamlit as st
 import deepl
-import time
-import random
 
 # Streamlit 페이지 설정
-st.set_page_config(page_title="단어 학습 TTS 애플리케이션", layout="wide")
+st.set_page_config(page_title="단어 학습 TTS 및 번역 애플리케이션", layout="wide")
 
 # 제목
-st.title("단어별 읽기 및 의미 확인 애플리케이션")
-st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.")
+st.title("단어별 읽기 및 번역 애플리케이션")
+st.write("텍스트를 입력하면 단어별로 클릭하여 발음을 듣고 번역을 확인할 수 있습니다.")
 
-# DeepL API를 사용한 단어 번역 함수 (deepl 라이브러리 사용)
-def translate_word(word, context=None):
+# DeepL API 초기화
+try:
+    auth_key = st.secrets["DeepL_API_Key"]
+    translator = deepl.Translator(auth_key)
+    deepl_available = True
+except Exception as e:
+    st.sidebar.error(f"DeepL API 연결 오류: {e}")
+    deepl_available = False
+
+# 단어 번역 함수
+def translate_word(word):
+    if not deepl_available:
+        return "DeepL API 연결 오류"
+    
     try:
-        # 환경 변수에서 API 키 가져오기
-        auth_key = st.secrets["DeepL_API_Key"]
-        
-        # DeepL 번역기 인스턴스 생성
-        translator = deepl.Translator(auth_key)
-        
-        # 번역 실행
-        # context가 있으면 formality="prefer_more" 옵션 추가
-        if context:
-            result = translator.translate_text(
-                word,
-                source_lang="EN", 
-                target_lang="KO",
-                formality="prefer_more"
-            )
-        else:
-            result = translator.translate_text(
-                word,
-                source_lang="EN", 
-                target_lang="KO"
-            )
-        
-        # 결과 반환
+        result = translator.translate_text(word, source_lang="EN", target_lang="KO")
         return result.text
-        
     except Exception as e:
-        st.error(f"번역 오류: {str(e)}")
-        return f"오류 발생: {str(e)}"
+        return f"번역 오류: {e}"
 
 # 캐싱을 사용한 번역 결과 저장
 @st.cache_data(ttl=3600)
-def get_cached_translation(word, context=None):
-    return translate_word(word, context)
+def get_cached_translation(word):
+    return translate_word(word)
 
-# 백엔드 API 엔드포인트 (단어 번역)
-word_param = st.query_params.get("word", "")
-context_param = st.query_params.get("context", "")
-
-if word_param:
-    translation = get_cached_translation(word_param, context_param)
-    st.session_state.last_word = word_param
-    st.session_state.last_translation = translation
+# 사이드바에 번역 결과 표시를 위한 상태 변수
+if 'selected_word' not in st.session_state:
+    st.session_state.selected_word = ""
+    st.session_state.translation = ""
 
 # HTML 코드 삽입
 html_code = """
@@ -80,17 +62,10 @@ html_code = """
         <!-- 여기에 단어 버튼이 동적으로 추가됩니다 -->
     </div>
     
-    <div id='word-info' style='margin-top: 20px; display: none; padding: 15px; background-color: #f9f9f9; border-radius: 5px;'>
-        <h3 id='selected-word' style='margin-top: 0; color: #333;'></h3>
-        <div id='word-meaning'></div>
-        <div id='loading-translation' style='display: none; margin-top: 10px;'>번역 중...</div>
-    </div>
-    
     <script>
         // 전역 변수
         let voices = [];
         let selectedVoice = null;
-        let originalText = '';
         
         // 음성 목록 로드
         function loadVoices() {
@@ -147,9 +122,6 @@ html_code = """
                 return;
             }
             
-            // 현재 텍스트 저장 (컨텍스트로 사용)
-            originalText = text;
-            
             // 단어 컨테이너 초기화
             wordContainer.innerHTML = '';
             
@@ -170,13 +142,14 @@ html_code = """
                 wordButton.style.backgroundColor = '#e0e0e0';
                 wordButton.style.borderRadius = '3px';
                 wordButton.style.cursor = 'pointer';
-                wordButton.dataset.word = cleanWord;
                 wordButton.dataset.originalWord = word;
+                wordButton.dataset.cleanWord = cleanWord;
                 
                 // 클릭 이벤트 추가
                 wordButton.addEventListener('click', function() {
                     speakWord(this.dataset.originalWord);
-                    showWordInfo(this.dataset.word, this);
+                    highlightWord(this);
+                    updateSelectedWord(this.dataset.cleanWord);
                 });
                 
                 wordContainer.appendChild(wordButton);
@@ -187,6 +160,40 @@ html_code = """
                     wordContainer.appendChild(space);
                 }
             });
+        }
+        
+        // 선택된 단어 강조 표시
+        function highlightWord(element) {
+            // 이전에 선택된 단어의 스타일 초기화
+            const allWordButtons = document.querySelectorAll('#word-container span');
+            allWordButtons.forEach(btn => {
+                btn.style.backgroundColor = '#e0e0e0';
+                btn.style.color = 'black';
+            });
+            
+            // 현재 선택된 단어 강조
+            element.style.backgroundColor = '#2196F3';
+            element.style.color = 'white';
+        }
+        
+        // Streamlit 세션 상태 업데이트
+        function updateSelectedWord(word) {
+            if (word && word.trim() !== '') {
+                // Streamlit의 세션 상태 업데이트를 위한 URL 파라미터
+                const url = new URL(window.location.href);
+                url.searchParams.set('selected_word', word);
+                
+                // 페이지 새로고침 없이 URL 파라미터 업데이트
+                fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // 현재 URL 업데이트 (페이지 새로고침 없이)
+                window.history.replaceState({}, '', url.toString());
+            }
         }
         
         // 단어 발음
@@ -231,93 +238,6 @@ html_code = """
             }
         }
         
-        // 단어 정보 표시
-        async function showWordInfo(word, element) {
-            if (!word || word.trim() === '') return;
-            
-            const wordInfoDiv = document.getElementById('word-info');
-            const selectedWordHeading = document.getElementById('selected-word');
-            const wordMeaningDiv = document.getElementById('word-meaning');
-            const loadingDiv = document.getElementById('loading-translation');
-            
-            // 이전에 선택된 단어의 스타일 초기화
-            const allWordButtons = document.querySelectorAll('#word-container span');
-            allWordButtons.forEach(btn => {
-                btn.style.backgroundColor = '#e0e0e0';
-                btn.style.color = 'black';
-            });
-            
-            // 현재 선택된 단어 강조
-            element.style.backgroundColor = '#2196F3';
-            element.style.color = 'white';
-            
-            // 단어 정보 영역 표시
-            wordInfoDiv.style.display = 'block';
-            selectedWordHeading.textContent = word;
-            
-            // 로딩 표시
-            wordMeaningDiv.innerHTML = '';
-            loadingDiv.style.display = 'block';
-            
-            // 현재 URL에 쿼리 파라미터로 단어와 컨텍스트 추가
-            const url = new URL(window.location.href);
-            url.searchParams.set('word', word);
-            url.searchParams.set('context', originalText);
-            
-            // Streamlit 앱 상태 업데이트 (페이지 새로고침 없이)
-            try {
-                const response = await fetch(url.toString(), {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                // 응답 확인
-                if (response.ok) {
-                    try {
-                        const result = await response.json();
-                        loadingDiv.style.display = 'none';
-                        
-                        if (result && result.last_translation) {
-                            wordMeaningDiv.innerHTML = `
-                                <p style='font-size: 16px; margin-bottom: 5px;'><strong>의미:</strong></p>
-                                <p style='font-size: 15px;'>${result.last_translation}</p>
-                                <p style='font-size: 12px; color: #666;'>(DeepL API로 번역된 결과입니다)</p>
-                            `;
-                        } else {
-                            wordMeaningDiv.innerHTML = `
-                                <p>단어의 의미를 찾을 수 없습니다.</p>
-                                <p style='font-size: 14px; color: #666;'>다른 단어를 시도해보세요.</p>
-                            `;
-                        }
-                    } catch (error) {
-                        console.error("JSON 파싱 오류:", error);
-                        checkLastTranslation();
-                    }
-                } else {
-                    console.error("HTTP 오류:", response.status);
-                    checkLastTranslation();
-                }
-            } catch (error) {
-                console.error("네트워크 오류:", error);
-                checkLastTranslation();
-            }
-        }
-        
-        // 마지막 번역 결과 확인 (세션 상태)
-        function checkLastTranslation() {
-            const loadingDiv = document.getElementById('loading-translation');
-            const wordMeaningDiv = document.getElementById('word-meaning');
-            
-            loadingDiv.style.display = 'none';
-            
-            wordMeaningDiv.innerHTML = `
-                <p>번역 서비스에 접근할 수 없습니다.</p>
-                <p style='font-size: 14px; color: #666;'>잠시 후 다시 시도해보세요.</p>
-            `;
-        }
-        
         // 이벤트 리스너 설정
         document.getElementById('voice-select').addEventListener('change', function() {
             const selectedName = this.value;
@@ -350,34 +270,31 @@ html_code = """
 </div>
 """
 
-# 디버깅 정보 표시
-with st.sidebar:
-    st.write("### 디버깅 정보")
-    if "DeepL_API_Key" in st.secrets:
-        st.success("DeepL API 키가 설정되어 있습니다.")
-    else:
-        st.error("DeepL API 키가 설정되어 있지 않습니다.")
-    
-    # 세션 상태에 마지막 번역 결과가 있으면 표시
-    if 'last_word' in st.session_state and 'last_translation' in st.session_state:
-        st.write(f"**마지막 검색 단어:** {st.session_state.last_word}")
-        st.write(f"**번역 결과:** {st.session_state.last_translation}")
-
-# 웹 요청 시 JSON 응답 반환
-if word_param:
-    st.json({
-        "last_word": st.session_state.last_word,
-        "last_translation": st.session_state.last_translation
-    })
+# 선택된 단어 처리
+selected_word = st.query_params.get("selected_word", "")
+if selected_word and selected_word != st.session_state.selected_word:
+    st.session_state.selected_word = selected_word
+    st.session_state.translation = get_cached_translation(selected_word)
 
 # HTML 삽입
-st.components.v1.html(html_code, height=700)
+st.components.v1.html(html_code, height=600)
+
+# 선택한 단어와 번역 결과 표시
+if st.session_state.selected_word:
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"### 선택한 단어")
+        st.markdown(f"### **{st.session_state.selected_word}**")
+    with col2:
+        st.markdown(f"### 번역 결과")
+        st.markdown(f"### **{st.session_state.translation}**")
 
 # 사용 안내
 st.info("""
 이 애플리케이션은 단어별 학습을 돕기 위한 도구입니다.
-텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 의미를 확인할 수 있습니다.
-DeepL API를 통해 영어 단어의 한국어 의미를 제공합니다.
+텍스트를 입력하고 '단어 분리' 버튼을 클릭하면 각 단어를 클릭하여 발음을 듣고 한국어 번역을 확인할 수 있습니다.
+DeepL API를 통해 영어 단어의 한국어 번역을 제공합니다.
 Google Chrome에서 가장 잘 작동합니다.
 """)
 
@@ -386,7 +303,7 @@ with st.expander("사용 방법"):
     st.write("""
     1. 텍스트 입력 영역에 영어 텍스트를 입력합니다.
     2. '단어 분리' 버튼을 클릭하여 텍스트를 단어별로 분리합니다.
-    3. 개별 단어를 클릭하면 해당 단어의 발음을 듣고 의미를 확인할 수 있습니다.
+    3. 개별 단어를 클릭하면 해당 단어의 발음을 듣고 한국어 번역을 확인할 수 있습니다.
     4. '전체 읽기' 버튼을 클릭하면 전체 텍스트를 읽습니다.
     5. '중지' 버튼을 클릭하여 음성을 중단합니다.
     6. 드롭다운 메뉴에서 다른 음성을 선택하거나 슬라이더로 속도를 조절할 수 있습니다.

@@ -30,15 +30,14 @@ if st.button("학교 정보 조회"):
                     results.append({
                         "학교명": row.findtext("SCHUL_NM", ""),
                         "시도명": row.findtext("LCTN_SC_NM", ""),
-                        "시도교육청": row.findtext("ATPT_OFCDC_SC_NM", ""),
                         "도로명주소": row.findtext("ORG_RDNMA", ""),
                     })
                 else:
-                    results.append({"학교명": name, "시도명": "-", "시도교육청": "-", "도로명주소": "검색결과 없음"})
+                    results.append({"학교명": name, "시도명": "-", "도로명주소": "검색결과 없음"})
             else:
-                results.append({"학교명": name, "시도명": "-", "시도교육청": "-", "도로명주소": f"에러: {res.status_code}"})
+                results.append({"학교명": name, "시도명": "-",  "도로명주소": f"에러: {res.status_code}"})
         except Exception as e:
-            results.append({"학교명": name, "시도명": "-", "시도교육청": "-", "도로명주소": str(e)})
+            results.append({"학교명": name, "시도명": "-", "도로명주소": str(e)})
 
     df = pd.DataFrame(results)
     st.success("조회 완료!")

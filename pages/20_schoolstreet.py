@@ -25,12 +25,18 @@ if st.button("학교 정보 조회"):
             res = requests.get(url)
             if res.status_code == 200:
                 root = ET.fromstring(res.content)
-                row = root.find(".//row")
-                if row is not None:
+                rows = root.findall(".//row")
+
+                # 정확히 일치하는 항목 우선 검색
+                exact_match = next((row for row in rows if row.findtext("SCHUL_NM", "") == name), None)
+
+                target_row = exact_match if exact_match is not None else (rows[0] if rows else None)
+
+                if target_row is not None:
                     results.append({
-                        "학교명": row.findtext("SCHUL_NM", ""),
-                        "시도명": row.findtext("LCTN_SC_NM", ""),
-                        "도로명주소": row.findtext("ORG_RDNMA", ""),
+                        "학교명": target_row.findtext("SCHUL_NM", ""),
+                        "시도명": target_row.findtext("LCTN_SC_NM", ""),
+                        "도로명주소": target_row.findtext("ORG_RDNMA", ""),
                     })
                 else:
                     results.append({"학교명": name, "시도명": "-", "도로명주소": "검색결과 없음"})

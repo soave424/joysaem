@@ -142,17 +142,32 @@ with col_left:
             function speakAll() {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
-                    const text = document.getElementById('text-to-speak').value;
-                    if (text.trim() !== '') {
-                        const utterance = new SpeechSynthesisUtterance(text);
-                        utterance.rate = parseFloat(document.getElementById('speed').value);
-                        if (selectedVoice) utterance.voice = selectedVoice;
-                        window.speechSynthesis.speak(utterance);
-                    } else {
+                    const text = document.getElementById('text-to-speak').value.trim();
+                    if (!text) {
                         alert('텍스트를 입력해주세요.');
+                        return;
                     }
+
+                    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text]; // 문장 단위 분리
+                    let index = 0;
+
+                    function speakNext() {
+                        if (index < sentences.length) {
+                            const utterance = new SpeechSynthesisUtterance(sentences[index].trim());
+                            utterance.rate = parseFloat(document.getElementById('speed').value);
+                            if (selectedVoice) utterance.voice = selectedVoice;
+                            utterance.onend = () => {
+                                index++;
+                                speakNext(); // 다음 문장 재귀적으로 호출
+                            };
+                            speechSynthesis.speak(utterance);
+                        }
+                    }
+
+                    speakNext(); // 첫 문장부터 시작
                 }
             }
+
 
             document.getElementById('voice-select').addEventListener('change', function() {
                 selectedVoice = voices.find(voice => voice.name === this.value);

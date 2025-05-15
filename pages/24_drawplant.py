@@ -2,8 +2,8 @@ import requests
 from urllib.parse import unquote
 import streamlit as st
 
-# 인코딩된 인증키 (두 번 인코딩된 경우)
-encoded_api_key = "0j%252Bc3BOf8nTntEn0%252FNlIq3EK8azPsOMVwWVFm2YhS0%252BZ5cS4ocmeoWP6Jvi3TrEssunkoO0BuhTIqTOX4DOD4w%253D%253D"
+# Streamlit Secrets에서 API 키 불러오기
+encoded_api_key = st.secrets["PlankDrawD_API_Key"]
 
 # 인증키 디코딩 (두 번 디코딩)
 api_key = unquote(unquote(encoded_api_key))

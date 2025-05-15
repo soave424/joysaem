@@ -37,8 +37,6 @@ if st.button("검색"):
             if not img_url:
                 st.info("이미지 URL이 없습니다.")
             else:
-                st.write("이미지 원본 URL:", img_url)
-
                 # 4) HTTP URL 그대로 백엔드에서 다운로드
                 img_resp = requests.get(img_url)
                 if img_resp.status_code == 200:

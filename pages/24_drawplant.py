@@ -45,5 +45,5 @@ if st.button("검색"):
             else:
                 # 5) HTTPS로 변환 후, 브라우저 직접 로드
                 https_url = img_url.replace("http://", "https://")
-                st.write("이미지 URL:", https_url)  # URL 확인용
-                st.image(https_url, caption=f"{plant_name} 세밀화")
+                st.write("이미지 URL:", img_url)  # URL 확인용
+                st.image(img_url, caption=f"{plant_name} 세밀화")

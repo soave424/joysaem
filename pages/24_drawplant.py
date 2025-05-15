@@ -1,15 +1,5 @@
 import requests
-from urllib3 import PoolManager
-from requests.adapters import HTTPAdapter
-import certifi
 import streamlit as st
-
-# TLS 1.2 강제 설정을 위한 커스텀 어댑터 설정
-class TLSAdapter(HTTPAdapter):
-    def init_poolmanager(self, *args, **kwargs):
-        context = super(TLSAdapter, self).init_poolmanager(*args, **kwargs)
-        context.ssl_context.set_ciphers('TLS_AES_128_GCM_SHA256')  # 특정 TLS 버전과 암호화 방식 설정
-        return context
 
 # API URL과 인증키
 API_URL = "https://apis.data.go.kr/1400119/PlantMiniService/miniatureSearch"
@@ -23,14 +13,9 @@ params = {
     'pageNo': 1,  # 페이지 번호
 }
 
-# TLS 1.2 강제 사용
-session = requests.Session()
-adapter = TLSAdapter()
-session.mount('https://', adapter)
-
-# 인증서 경로 지정 및 요청 보내기
+# SSL 인증서 검증을 비활성화하는 방법
 try:
-    response = session.get(API_URL, params=params, verify=certifi.where())  # certifi로 인증서 경로 지정
+    response = requests.get(API_URL, params=params, verify=False)  # verify=False로 SSL 검증 비활성화
     response.raise_for_status()  # HTTP 오류가 있을 경우 예외 발생
     
     # 성공적인 응답 처리

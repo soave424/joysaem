@@ -2,8 +2,7 @@ import streamlit as st
 import requests
 import xml.etree.ElementTree as ET
 
-# 1) Secrets에 디코딩된 키(PlankDrawD_API_Key)를 "api_key"로 등록하세요
-api_key = st.secrets["api_key"]
+api_key = st.secrets["PlankDrawD_API_Key"]
 
 BASE_URL = "http://apis.data.go.kr/1400119/PlantMiniService"
 

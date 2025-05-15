@@ -62,9 +62,10 @@ if st.session_state.bug_items:
     with col1:
         st.subheader("표본 목록")
         for it in st.session_state.bug_items:
-            name    = it.findtext("insctofnmkrlngnm") or it.findtext("insctOfnmScnm")
+            common = it.findtext("insctOfnmKrlngNm")  # 국명 :contentReference[oaicite:3]{index=3}
+            sci    = it.findtext("btnc")               # 학명 :contentReference[oaicite:5]{index=5}
+            label  = f"{common or sci} ({it.findtext('insctSmplNo')})"
             smpl_no = it.findtext("insctSmplNo")
-            label   = f"{name} ({smpl_no})"
             if st.button(label, key=smpl_no):
                 st.session_state.chosen = smpl_no
 

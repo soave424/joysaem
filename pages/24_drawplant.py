@@ -3,7 +3,7 @@ import requests
 import xml.etree.ElementTree as ET
 
 # 1) Secrets에 api_key를 등록하세요 (key 이름은 "api_key" 가정)
-api_key = st.secrets["PlankDrawE_API_Key"]
+api_key = st.secrets["PlankDrawD_API_Key"]
 
 BASE_URL = "http://apis.data.go.kr/1400119/PlantMiniService"
 

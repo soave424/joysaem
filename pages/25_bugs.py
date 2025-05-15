@@ -78,45 +78,57 @@ if st.session_state.bug_items:
             if st.button("다음 ▶", disabled=next_disabled):
                 st.session_state.page_no += 1
 
+    # 오른쪽: 선택된 표본 상세정보 (spcmInfo)
     with col2:
         if not st.session_state.chosen:
             st.info("왼쪽에서 표본을 선택하세요.")
         else:
+            # spcmInfo 호출
             resp2 = requests.get(
                 f"{BASE_URL}/spcmInfo",
                 params={"serviceKey": api_key, "q1": st.session_state.chosen}
             )
             root2 = ET.fromstring(resp2.text)
-            item  = root2.find(".//item")
 
-            # 이미지
-            img_url = item.findtext("imgUrl")
-            if img_url and img_url.strip() and img_url.upper()!="NONE":
-                img_resp = requests.get(img_url)
-                if img_resp.status_code == 200:
-                    st.image(img_resp.content, use_container_width=True)
+            # ① 모든 <item> 노드 가져오기
+            items2 = root2.findall(".//item")
+            if not items2:
+                st.error("상세정보가 없습니다. (item 태그를 찾을 수 없음)")
+            else:
+                # ② 첫 번째 <item> 요소 선택
+                item = items2[0]
+
+                # 이미지
+                img_url = item.findtext("imgUrl")  # 이미지URL 태그 :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+                if img_url and img_url.strip().upper() not in ("NONE", ""):
+                    st.subheader("🖼 이미지")
+                    img_resp = requests.get(img_url)
+                    if img_resp.status_code == 200:
+                        st.image(img_resp.content, use_container_width=True)
+                    else:
+                        st.error(f"이미지 로드 실패 (HTTP {img_resp.status_code})")
                 else:
-                    st.error(f"이미지 로드 실패 (HTTP {img_resp.status_code})")
+                    st.warning("이미지 정보가 없습니다.")
 
-            # 기본 정보
-            st.subheader("기본 정보")
-            st.write("• 표본번호:", item.findtext("insctSmplNo"))
-            st.write("• 학명:",     item.findtext("insctOfnmScnm"))
-            st.write("• 국명:",     item.findtext("insctofnmkrlngnm"))
-            st.write("• 채집일:",   item.findtext("clctDyDesc"))
-            st.write("• 몸통길이:", item.findtext("torsoLngth"), "mm")
-            st.write("• 날개길이:", item.findtext("wingLngth"), "mm")
-            st.write("• 과명:",     item.findtext("fmlyKorNm") or item.findtext("fmlyNm"))
-            st.write("• 목명:",     item.findtext("ordKorNm") or item.findtext("ordNm"))
+                # 기본 정보
+                st.subheader("📋 기본 정보")
+                st.write("• 표본번호:", item.findtext("insctSmplNo"))
+                st.write("• 학명:",     item.findtext("insctOfnmScnm"))
+                st.write("• 국명:",     item.findtext("insctofnmkrlngnm"))
+                st.write("• 채집일:",   item.findtext("clctDyDesc"))
+                st.write("• 몸통길이:", item.findtext("torsoLngth"), "mm")
+                st.write("• 날개길이:", item.findtext("wingLngth"), "mm")
+                st.write("• 과명:",     item.findtext("familyKorNm") or item.findtext("fmlyNm"))
+                st.write("• 목명:",     item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-            # 추가 설명
-            def show_section(label, tag):
-                txt = item.findtext(tag)
-                if txt and txt.strip():
-                    st.markdown(f"**{label}**")
-                    st.write(txt)
+                # 추가 설명
+                def show_section(label, tag):
+                    txt = item.findtext(tag)
+                    if txt and txt.strip():
+                        st.markdown(f"**{label}**")
+                        st.write(txt)
 
-            show_section("• 저작권",      "cprtCtnt")
-            show_section("• 중국명",      "chnNm")
-            show_section("• 라벨 채집지","labelUsgCllcnNmplc")
-            show_section("• 최종수정일시","lastUpdtDtm")
+                show_section("• 저작권",      "cprtCtnt")
+                show_section("• 중국명",      "chnNm")
+                show_section("• 라벨 채집지","labelUsgCllcnNmplc")
+                show_section("• 최종수정일시","lastUpdtDtm")

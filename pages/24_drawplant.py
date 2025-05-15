@@ -1,4 +1,5 @@
 import requests
+import certifi
 import streamlit as st
 
 # API URL과 인증키
@@ -13,9 +14,9 @@ params = {
     'pageNo': 1,  # 페이지 번호
 }
 
-# 인증서 경로와 함께 요청 보내기
+# certifi를 사용하여 인증서 경로 명시
 try:
-    response = requests.get(API_URL, params=params, verify=True)  # verify=True를 사용하여 SSL 인증서 검증
+    response = requests.get(API_URL, params=params, verify=certifi.where())  # certifi로 인증서 경로 지정
     response.raise_for_status()  # HTTP 오류가 있을 경우 예외 발생
     
     # 성공적인 응답 처리

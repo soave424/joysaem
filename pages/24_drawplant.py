@@ -13,9 +13,9 @@ params = {
     'pageNo': 1,  # 페이지 번호
 }
 
-# SSL 인증서 검증을 비활성화하는 방법
+# 인증서 경로와 함께 요청 보내기
 try:
-    response = requests.get(API_URL, params=params, verify=False)  # verify=False로 SSL 검증 비활성화
+    response = requests.get(API_URL, params=params, verify=True)  # verify=True를 사용하여 SSL 인증서 검증
     response.raise_for_status()  # HTTP 오류가 있을 경우 예외 발생
     
     # 성공적인 응답 처리

@@ -1,22 +1,27 @@
 import requests
-import certifi
+from urllib.parse import unquote
 import streamlit as st
 
-# API URL과 인증키
+# 인코딩된 인증키 (두 번 인코딩된 경우)
+encoded_api_key = "0j%252Bc3BOf8nTntEn0%252FNlIq3EK8azPsOMVwWVFm2YhS0%252BZ5cS4ocmeoWP6Jvi3TrEssunkoO0BuhTIqTOX4DOD4w%253D%253D"
+
+# 인증키 디코딩 (두 번 디코딩)
+api_key = unquote(unquote(encoded_api_key))
+
+# API URL
 API_URL = "https://apis.data.go.kr/1400119/PlantMiniService/miniatureSearch"
-API_KEY = st.secrets["PlankDraw_API_Key"]
 
 params = {
-    'serviceKey': API_KEY,  # 인증키
+    'serviceKey': api_key,  # 디코딩된 인증키 사용
     'st': 1,  # 국명으로 검색
     'sw': "가는",  # 검색어
     'numOfRows': 10,  # 한 페이지에 결과 10개
     'pageNo': 1,  # 페이지 번호
 }
 
-# certifi를 사용하여 인증서 경로 명시
+# API 요청 보내기
 try:
-    response = requests.get(API_URL, params=params, verify=certifi.where())  # certifi로 인증서 경로 지정
+    response = requests.get(API_URL, params=params, verify=True)  # 인증서 검증 활성화
     response.raise_for_status()  # HTTP 오류가 있을 경우 예외 발생
     
     # 성공적인 응답 처리

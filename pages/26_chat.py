@@ -2,39 +2,85 @@ import streamlit as st
 import xml.etree.ElementTree as ET
 from openai import OpenAI
 
-# 1) 시크릿에 저장한 키 불러오기
-api_key = st.secrets["OPENAI_API_KEY"]
+import streamlit as st
+from streamlit.components.v1 import html
 
-# 2) 최신 OpenAI 클라이언트 인스턴스 생성
-client = OpenAI(api_key=api_key)
 
-# 3) 메시지 이력 초기화
+
+st.set_page_config(layout="wide")
+st.title("💬 Custom GPT-like Chat")
+
+# --- 세션 상태 초기화
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "당신은 친절한 도우미입니다."}
+        {"role": "system", "content": "You are a helpful assistant."}
     ]
 
-st.title("💬 GPT와 대화")
+OpenAI.api_key =st.secrets["OPENAI_API_KEY"]
 
-# 사용자 입력
-user_input = st.text_input("메시지를 입력하세요", "")
-if st.button("전송") and user_input:
-    # 4) 대화 이력에 추가
+def query_gpt(user_input):
     st.session_state.messages.append({"role": "user", "content": user_input})
-
-    # 5) ChatCompletion 호출 (구버전 메서드가 아니라 이렇게!)
-    resp = client.chat.completions.create(
+    resp = OpenAI.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=st.session_state.messages
     )
-
-    # 6) 어시스턴트 응답
     assistant_reply = resp.choices[0].message.content
     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
 
-# 7) 화면에 대화 이력 표시
-for msg in st.session_state.messages:
-    if msg["role"] == "user":
-        st.markdown(f"**You:** {msg['content']}")
-    elif msg["role"] == "assistant":
-        st.markdown(f"**GPT:** {msg['content']}")
+# --- 사용자 입력
+user_input = st.text_input("메시지를 입력하세요…", key="input")
+if user_input:
+    query_gpt(user_input)
+    st.session_state.input = ""  # 입력창 초기화
+
+# --- CSS + JS 삽입
+chat_html = """
+<style>
+  .chat-container { padding:10px; }
+  .message { display: block; margin: 8px 0; padding: 10px; border-radius: 8px; position: relative; max-width: 60%; word-wrap: break-word; }
+  .user { text-align: right; }
+  .user .message { background: #DCF8C6; margin-left: 40%; }
+  .assistant { text-align: left; }
+  .assistant .message { background: #F1F0F0; margin-right: 40%; }
+  .copy-btn { position: absolute; top: 4px; right: 8px; border:none; background:none; cursor:pointer; font-size:0.8em; color:#666; }
+  .copy-all { position: fixed; bottom: 20px; right: 20px; padding:8px 12px; border-radius:4px; background:#4CAF50; color:white; border:none; cursor:pointer; }
+</style>
+
+<script>
+  function copyText(id){
+    const txt = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(txt);
+  }
+  function copyAll(){
+    const msgs = document.querySelectorAll('.message');
+    let all = '';
+    msgs.forEach((m,i) => {
+      all += m.innerText + '\\n\\n';
+    });
+    navigator.clipboard.writeText(all);
+  }
+</script>
+
+<div class="chat-container">
+"""
+
+# 각 메시지 블럭 생성
+for i, msg in enumerate(st.session_state.messages[1:], start=1):
+    cls = "user" if msg["role"]=="user" else "assistant"
+    safe_id = f"msg_{i}"
+    text = msg["content"].replace("\n", "<br>")  # 줄바꿈 유지
+    chat_html += f'''
+      <div class="{cls}">
+        <div id="{safe_id}" class="message">{text}</div>
+        <button class="copy-btn" onclick="copyText('{safe_id}')">📋</button>
+      </div>
+    '''
+
+# 전체 복사 버튼
+chat_html += '''
+  <button class="copy-all" onclick="copyAll()">Copy All</button>
+</div>
+'''
+
+html(chat_html, height=600)
+

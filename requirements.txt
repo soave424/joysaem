@@ -1,4 +1,4 @@
-streamlit
+streamlit>=1.18
 pandas
 altair
 gspread
@@ -11,3 +11,5 @@ numpy
 deepl
 streamlit-javascript
 geopy
+openai
+streamlit-chat

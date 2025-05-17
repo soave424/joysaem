@@ -38,15 +38,15 @@ def query_gpt(user_text: str):
 
 # ─── 숨겨진 Streamlit 입력 필드 ────────────────────────
 # HTML 쪽 입력창에서 JS가 이 값을 갱신하면 query_gpt가 호출됩니다.
-hidden_input = st.text_input(
-    label="",
-    key="in",
-    placeholder="",
-    label_visibility="collapsed"
-)
-if hidden_input:
-    query_gpt(hidden_input)
-    st.session_state["in"] = ""  # 입력 초기화
+# hidden_input = st.text_input(
+#     label="",
+#     key="in",
+#     placeholder="",
+#     label_visibility="collapsed"
+# )
+# if hidden_input:
+#     query_gpt(hidden_input)
+#     st.session_state["in"] = ""  # 입력 초기화
 
 # ─── 대화 + 메모 데이터를 JSON 으로 직렬화 ───────────────
 data = {

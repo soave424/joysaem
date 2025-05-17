@@ -23,16 +23,22 @@ with col1:
     # 커스텀 GPT ID 또는 링크 입력
     st.subheader("🔧 사용할 모델 입력 또는 링크")
     model_input = st.text_input(
-        "모델 ID 또는 공유 링크 (예: g-abcd1234 또는 https://chat.openai.com/g/abcd1234)",
+        "모델 ID 또는 공유 링크 (예: g-abcdef1234567890-ghijkl123 또는 https://chat.openai.com/g/g-abcdef1234567890-ghijkl123)",
         value=st.session_state.model_id
     )
     if model_input:
+        # 링크에서 ID 추출 및 정제
         m = re.search(r"/g/([\w-]+)", model_input)
-        if m:
-            st.session_state.model_id = m.group(1)
-        elif model_input.startswith("g-") or model_input in ["gpt-3.5-turbo", "gpt-4"]:
-            st.session_state.model_id = model_input
+        id_str = m.group(1) if m else model_input
+        # 만약 하이픈이 여러개라면 첫 두 파트만 사용 (g-xxxxxx)
+        parts = id_str.split('-')
+        if len(parts) >= 2:
+            st.session_state.model_id = parts[0] + '-' + parts[1]
         else:
+            st.session_state.model_id = id_str
+
+        # 기본 모델도 허용
+        if st.session_state.model_id not in ["gpt-3.5-turbo", "gpt-4"] and not st.session_state.model_id.startswith('g-'):
             st.error("유효한 모델 ID나 링크를 입력해주세요.")
     if st.session_state.model_id:
         st.markdown(f"**선택된 모델 ID:** `{st.session_state.model_id}`")
@@ -45,7 +51,6 @@ with col1:
         st.header(f"💬 Chat ({st.session_state.model_id or '모델 미지정'})")
     with dl_col:
         if st.session_state.messages and st.session_state.model_id:
-            # 전체 대화 + 메모 텍스트 생성
             lines = []
             for i, m in enumerate(st.session_state.messages):
                 prefix = 'User:' if m['role']=='user' else 'AI:'
@@ -88,7 +93,7 @@ with col2:
     if not st.session_state.messages:
         st.info("왼쪽에서 대화를 시작하세요.")
     else:
-        # AI 메시지(assistant) 인덱스만 선택지로 제공
+        # AI 메시지(assistant) 인덱스만 선택지 제공
         assistant_indices = [i for i, m in enumerate(st.session_state.messages) if m['role']=='assistant']
         options = [
             f"{i+1}. {st.session_state.messages[i]['content'][:30]}{'…' if len(st.session_state.messages[i]['content'])>30 else ''}"  
@@ -97,14 +102,12 @@ with col2:
         choice = st.selectbox("메모할 메시지를 선택하세요", options)
         selected_idx = assistant_indices[options.index(choice)]
 
-        # 메모 입력 및 저장
         existing = st.session_state.notes.get(selected_idx, "")
         note_text = st.text_area("메모 입력", value=existing, height=150)
         if st.button("저장 메모", key=f"save_{selected_idx}"):
             st.session_state.notes[selected_idx] = note_text
             st.experimental_rerun()
 
-        # 저장된 메모 요약
         if st.session_state.notes:
             st.markdown("---")
             st.subheader("💾 저장된 메모들")

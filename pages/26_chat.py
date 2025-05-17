@@ -35,13 +35,16 @@ sel = st.text_input("", key="sel", placeholder="__SEL__", label_visibility="coll
 
 if inp:
     query_gpt(inp)
-    st.session_state["in"] = ""
+    # 이전 방식(st.session_state["in"] = "") 대신 pop으로 제거
+    st.session_state.pop("in", None)
+
 if sel:
     try:
         st.session_state["selected"] = int(sel)
     except:
         st.session_state["selected"] = None
-    st.session_state["sel"] = ""
+    # 이전 방식(st.session_state["sel"] = "") 대신 pop으로 제거
+    st.session_state.pop("sel", None)
 
 # 대화+노트를 JSON에 담기
 data = {
@@ -52,7 +55,7 @@ data = {
             "content": m["content"],
             "notes": st.session_state["notes"].get(i+1, "")
         }
-        for i,m in enumerate(st.session_state["messages"])
+        for i, m in enumerate(st.session_state["messages"])
     ]
 }
 data_json = json.dumps(data)
@@ -94,12 +97,10 @@ with col1:
           div.className = "chat-block " + c.role;
           div.id = "msg"+c.id;
           div.innerText = c.content;
-          // 개별 복사 버튼
           const btn = document.createElement("button");
           btn.className="copy-btn"; btn.innerText="📋";
           btn.onclick = e => { e.stopPropagation(); navigator.clipboard.writeText(c.content); };
           div.append(btn);
-          // 클릭 시 선택 ID 전달
           div.onclick = ()=>{
             const sel = document.querySelector('input[placeholder="__SEL__"]');
             sel.value = c.id;

@@ -16,26 +16,26 @@ if "notes" not in st.session_state:
 def query_gpt(user_text):
     msgs = [{"role": "system", "content": "You are a helpful assistant."}]
     for m in st.session_state["messages"]:
-        msgs.append({"role": "user", "content": m["user"]})
-        msgs.append({"role": "assistant", "content": m["ai"]})
-    msgs.append({"role": "user", "content": user_text})
+        msgs.append({"role":"user","content":m["user"]})
+        msgs.append({"role":"assistant","content":m["ai"]})
+    msgs.append({"role":"user","content":user_text})
     resp = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=msgs
+        model="gpt-3.5-turbo", messages=msgs
     )
     st.session_state["messages"].append({
         "user": user_text,
         "ai": resp.choices[0].message.content
     })
 
-# 입력 처리
-user_input = st.text_input("메시지를 입력하세요…", key="in")
-if user_input:
-    query_gpt(user_input)
-    # 입력 초기화
-    st.session_state["in"] = ""
+# ▶ 숨겨진 Streamlit 입력: 보이지 않지만 JS에서 이 key="in" 을 갱신
+hidden_input = st.text_input(
+    label="", key="in", placeholder="", label_visibility="collapsed"
+)
+if hidden_input:
+    query_gpt(hidden_input)
+    st.session_state["in"] = ""  # 초기화
 
-# JSON 직렬화
+# 대화+메모 데이터를 JSON 으로
 data = {
     "conversations": [
         {
@@ -49,7 +49,7 @@ data = {
 }
 data_json = json.dumps(data)
 
-# HTML 콘텐츠를 일반 문자열 + JSON 문자열 결합으로 생성
+# ▶ HTML/Tailwind 부분 (입력창은 여기만 보입니다)
 html_content = '''
 <!DOCTYPE html>
 <html lang="ko">
@@ -75,6 +75,7 @@ html_content = '''
     <div class="chat-pane w-full md:w-2/3 bg-white shadow-lg rounded-lg p-4 flex flex-col">
       <h1 class="text-2xl font-bold mb-4 text-center text-blue-600">대화 기록</h1>
       <div id="chatHistory" class="chat-history flex-grow overflow-y-auto custom-scrollbar mb-4 p-2 border rounded-md bg-gray-50"></div>
+      <!-- ▶ 여기는 HTML 입력창만 남깁니다 -->
       <div class="chat-input flex gap-2">
         <input type="text" id="userInput" class="flex-grow border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="메시지를 입력하세요...">
         <button id="sendButton" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold p-3 rounded-lg transition-colors">전송</button>
@@ -95,7 +96,6 @@ html_content = '''
   </div>
 
   <script>
-    // 파이썬에서 직렬화된 데이터를 JS 객체로 변환
     const data = JSON.parse(''' + repr(data_json) + ''');
     let selectedConversationId = null;
 
@@ -111,7 +111,7 @@ html_content = '''
 
     function renderChatHistory() {
       chatHistory.innerHTML = '';
-      if (data.conversations.length === 0) {
+      if (!data.conversations.length) {
         chatHistory.innerHTML = '<p class="text-gray-400 text-center p-4">아직 대화 내용이 없습니다.</p>';
         return;
       }
@@ -120,14 +120,12 @@ html_content = '''
         block.className = 'chat-block p-3 mb-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition ' +
                           (conv.id === selectedConversationId ? 'selected' : '');
         block.dataset.id = conv.id;
-
         const p1 = document.createElement('p');
         p1.className = 'font-semibold text-blue-700';
         p1.textContent = '나: ' + conv.user;
         const p2 = document.createElement('p');
         p2.className = 'text-green-700 mt-1';
         p2.textContent = 'AI: ' + conv.ai;
-
         block.append(p1, p2);
         block.addEventListener('click', () => {
           selectedConversationId = conv.id;
@@ -142,7 +140,7 @@ html_content = '''
     function showNotes(conv) {
       notesPlaceholder.classList.add('hidden');
       notesEditor.classList.remove('hidden');
-      notesTitle.textContent = `대화 #${conv.id} (${conv.user.substring(0,15)}…)에 대한 생각`;
+      notesTitle.textContent = `대화 #${conv.id} (${conv.user.slice(0,15)}…)에 대한 생각`;
       notesTextarea.value = conv.notes;
       saveStatus.textContent = '';
     }
@@ -150,27 +148,23 @@ html_content = '''
     function handleSend() {
       const text = userInput.value.trim();
       if (!text) return;
-      // Streamlit의 text_input 과 연결
-      // 여기에 아무 동작 없이 아래 코드로 대체합니다
-      // 페이지 전체가 reload 되어 Python 코드가 실행됩니다
-      document.querySelector('input[data-key="in"]').value = text;
-      document.querySelector('input[data-key="in"]').dispatchEvent(new Event('change'));
+      // ▶ Streamlit hidden input에 값 할당 후 change 이벤트 발생
+      const hidden = document.querySelector('input[data-key="in"]');
+      hidden.value = text;
+      hidden.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     function handleSaveNote() {
       if (!selectedConversationId) return;
       const idx = data.conversations.findIndex(c => c.id === selectedConversationId);
-      if (idx < 0) return;
       data.conversations[idx].notes = notesTextarea.value;
       saveStatus.textContent = '메모가 저장되었습니다!';
       setTimeout(() => saveStatus.textContent = '', 2000);
-
-      // 실제 저장은 Python 쪽에 요청을 보내거나
-      // localStorage 등에 직접 저장하는 로직을 추가하세요.
+      // ▶ 실제 저장 로직은 Python 쪽에서 처리하거나 localStorage로
     }
 
     sendButton.addEventListener('click', handleSend);
-    userInput.addEventListener('keypress', e => { if(e.key==='Enter') handleSend(); });
+    userInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSend(); });
     saveNoteButton.addEventListener('click', handleSaveNote);
 
     document.addEventListener('DOMContentLoaded', renderChatHistory);
@@ -179,5 +173,4 @@ html_content = '''
 </html>
 '''
 
-# 스트림릿에 렌더링
 html(html_content, height=800)

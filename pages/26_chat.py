@@ -1,41 +1,54 @@
+# app.py
 import streamlit as st
 from openai import OpenAI
 from streamlit.components.v1 import html
 import json
 
+# ─── 페이지 설정 ───────────────────────────────────────
 st.set_page_config(layout="wide", page_title="대화 및 메모 앱")
+
+# ─── OpenAI 클라이언트 초기화 ─────────────────────────
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# 세션 스테이트 초기화
+# ─── 세션 상태 초기화 ─────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 if "notes" not in st.session_state:
     st.session_state["notes"] = {}
 
-# GPT 호출 함수
-def query_gpt(user_text):
+# ─── GPT 호출 함수 ─────────────────────────────────────
+def query_gpt(user_text: str):
+    # system + 기존 대화 내역 + 사용자 메시지
     msgs = [{"role": "system", "content": "You are a helpful assistant."}]
     for m in st.session_state["messages"]:
-        msgs.append({"role":"user","content":m["user"]})
-        msgs.append({"role":"assistant","content":m["ai"]})
-    msgs.append({"role":"user","content":user_text})
+        msgs.append({"role": "user", "content": m["user"]})
+        msgs.append({"role": "assistant", "content": m["ai"]})
+    msgs.append({"role": "user", "content": user_text})
+
+    # OpenAI ChatCompletion 호출
     resp = client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=msgs
+        model="gpt-3.5-turbo",
+        messages=msgs
     )
+    # 응답 저장
     st.session_state["messages"].append({
         "user": user_text,
         "ai": resp.choices[0].message.content
     })
 
-# ▶ 숨겨진 Streamlit 입력: 보이지 않지만 JS에서 이 key="in" 을 갱신
+# ─── 숨겨진 Streamlit 입력 필드 ────────────────────────
+# HTML 쪽 입력창에서 JS가 이 값을 갱신하면 query_gpt가 호출됩니다.
 hidden_input = st.text_input(
-    label="", key="in", placeholder="", label_visibility="collapsed"
+    label="",
+    key="in",
+    placeholder="",
+    label_visibility="collapsed"
 )
 if hidden_input:
     query_gpt(hidden_input)
-    st.session_state["in"] = ""  # 초기화
+    st.session_state["in"] = ""  # 입력 초기화
 
-# 대화+메모 데이터를 JSON 으로
+# ─── 대화 + 메모 데이터를 JSON 으로 직렬화 ───────────────
 data = {
     "conversations": [
         {
@@ -49,7 +62,7 @@ data = {
 }
 data_json = json.dumps(data)
 
-# ▶ HTML/Tailwind 부분 (입력창은 여기만 보입니다)
+# ─── HTML + Tailwind 기반 UI 삽입 ───────────────────────
 html_content = '''
 <!DOCTYPE html>
 <html lang="ko">
@@ -59,10 +72,12 @@ html_content = '''
   <title>대화 및 메모 앱</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* 커스텀 스크롤바 */
     .custom-scrollbar::-webkit-scrollbar { width: 8px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius:10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius:10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+    /* 선택된 대화 하이라이트 */
     .chat-block.selected {
       background-color: #e0f2fe;
       border-left-width: 4px;
@@ -72,33 +87,57 @@ html_content = '''
 </head>
 <body class="bg-gray-50">
   <div class="container mx-auto max-w-6xl p-4 h-screen flex flex-col md:flex-row gap-4">
-    <div class="chat-pane w-full md:w-2/3 bg-white shadow-lg rounded-lg p-4 flex flex-col">
+    <!-- 좌측: Chat Pane -->
+    <div class="chat-pane w-full md:w-2/3 bg-white shadow-lg rounded-lg p-4 flex flex-col h-full">
       <h1 class="text-2xl font-bold mb-4 text-center text-blue-600">대화 기록</h1>
-      <div id="chatHistory" class="chat-history flex-grow overflow-y-auto custom-scrollbar mb-4 p-2 border rounded-md bg-gray-50"></div>
-      <!-- ▶ 여기는 HTML 입력창만 남깁니다 -->
-      <div class="chat-input flex gap-2">
-        <input type="text" id="userInput" class="flex-grow border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="메시지를 입력하세요...">
-        <button id="sendButton" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold p-3 rounded-lg transition-colors">전송</button>
+      <div id="chatHistory"
+           class="chat-history flex-grow overflow-y-auto custom-scrollbar mb-4 p-2 border rounded-md bg-gray-50">
+      </div>
+      <div class="chat-input mt-auto flex gap-2">
+        <input
+          type="text"
+          id="userInput"
+          class="flex-grow border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+          placeholder="메시지를 입력하세요..."
+        >
+        <button
+          id="sendButton"
+          class="bg-blue-500 hover:bg-blue-600 text-white font-semibold p-3 rounded-lg transition-colors"
+        >
+          전송
+        </button>
       </div>
     </div>
 
+    <!-- 우측: Notes Pane -->
     <div class="notes-pane w-full md:w-1/3 bg-white shadow-lg rounded-lg p-6 flex flex-col">
       <h2 id="notesTitle" class="text-2xl font-bold mb-4 text-center text-green-600">나의 생각</h2>
       <div id="notesPlaceholder" class="text-gray-500 text-center flex-grow flex items-center justify-center">
         <p>왼쪽 대화 블록을 클릭하여<br>이곳에 생각을 작성해보세요.</p>
       </div>
       <div id="notesEditor" class="hidden flex-grow flex flex-col">
-        <textarea id="notesTextarea" class="w-full flex-grow p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-green-500 outline-none resize-none custom-scrollbar" placeholder="여기에 대화에 대한 생각, 비판, 분석 등을 자유롭게 작성하세요..."></textarea>
-        <button id="saveNoteButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold p-3 rounded-lg transition-colors self-end">메모 저장</button>
+        <textarea
+          id="notesTextarea"
+          class="w-full flex-grow p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-green-500 outline-none resize-none custom-scrollbar"
+          placeholder="여기에 대화에 대한 생각, 비판, 분석 등을 자유롭게 작성하세요..."
+        ></textarea>
+        <button
+          id="saveNoteButton"
+          class="bg-green-500 hover:bg-green-600 text-white font-semibold p-3 rounded-lg transition-colors self-end"
+        >
+          메모 저장
+        </button>
         <p id="saveStatus" class="text-sm text-green-700 mt-2 h-5 text-right"></p>
       </div>
     </div>
   </div>
 
   <script>
+    // Python에서 직렬화한 JSON 파싱
     const data = JSON.parse(''' + repr(data_json) + ''');
     let selectedConversationId = null;
 
+    // 요소 참조
     const chatHistory = document.getElementById('chatHistory');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
@@ -109,6 +148,7 @@ html_content = '''
     const saveNoteButton = document.getElementById('saveNoteButton');
     const saveStatus = document.getElementById('saveStatus');
 
+    // 대화 기록 렌더링
     function renderChatHistory() {
       chatHistory.innerHTML = '';
       if (!data.conversations.length) {
@@ -120,12 +160,14 @@ html_content = '''
         block.className = 'chat-block p-3 mb-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition ' +
                           (conv.id === selectedConversationId ? 'selected' : '');
         block.dataset.id = conv.id;
+
         const p1 = document.createElement('p');
         p1.className = 'font-semibold text-blue-700';
         p1.textContent = '나: ' + conv.user;
         const p2 = document.createElement('p');
         p2.className = 'text-green-700 mt-1';
         p2.textContent = 'AI: ' + conv.ai;
+
         block.append(p1, p2);
         block.addEventListener('click', () => {
           selectedConversationId = conv.id;
@@ -137,6 +179,7 @@ html_content = '''
       chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
+    // 메모 패널 업데이트
     function showNotes(conv) {
       notesPlaceholder.classList.add('hidden');
       notesEditor.classList.remove('hidden');
@@ -145,22 +188,24 @@ html_content = '''
       saveStatus.textContent = '';
     }
 
+    // 전송 처리: HTML 입력 → 숨은 Streamlit input으로
     function handleSend() {
       const text = userInput.value.trim();
       if (!text) return;
-      // ▶ Streamlit hidden input에 값 할당 후 change 이벤트 발생
       const hidden = document.querySelector('input[data-key="in"]');
       hidden.value = text;
       hidden.dispatchEvent(new Event('input', { bubbles: true }));
+      userInput.value = '';
     }
 
+    // 메모 저장 처리 (JS 쪽 저장 예시)
     function handleSaveNote() {
       if (!selectedConversationId) return;
       const idx = data.conversations.findIndex(c => c.id === selectedConversationId);
       data.conversations[idx].notes = notesTextarea.value;
       saveStatus.textContent = '메모가 저장되었습니다!';
       setTimeout(() => saveStatus.textContent = '', 2000);
-      // ▶ 실제 저장 로직은 Python 쪽에서 처리하거나 localStorage로
+      // 실제로 Python 쪽에 전달하거나 localStorage에 저장할 로직을 추가하세요.
     }
 
     sendButton.addEventListener('click', handleSend);

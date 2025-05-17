@@ -1,76 +1,57 @@
 import streamlit as st
 from openai import OpenAI
+from streamlit.components.v1 import html
+import json
 
-# ─── 페이지 설정 ───────────────────────────────────────
 st.set_page_config(layout="wide", page_title="Chat & Notes")
 
-# ─── OpenAI 클라이언트 초기화 ─────────────────────────
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ─── 세션 상태 초기화 ─────────────────────────────────
+# ─── 세션 스테이트 초기화 & 마이그레이션 ─────────────────
 if "messages" not in st.session_state:
-    # messages: list of dicts {"role": "user"/"assistant", "content": "..."}
-    st.session_state.messages = []
+    st.session_state["messages"] = []
+else:
+    # ✂️ migrate old-format messages (user/ai) → new-format (role/content)
+    migrated = []
+    for msg in st.session_state["messages"]:
+        if "role" in msg and "content" in msg:
+            # 이미 올바른 구조
+            migrated.append(msg)
+        elif "user" in msg and "ai" in msg:
+            # 이전 구조라면 두 개의 메시지로 분리
+            migrated.append({"role": "user",      "content": msg["user"]})
+            migrated.append({"role": "assistant", "content": msg["ai"]})
+        # else: 알 수 없는 포맷은 무시
+    st.session_state["messages"] = migrated
+
 if "notes" not in st.session_state:
-    # notes: dict mapping message index (int) → str
-    st.session_state.notes = {}
+    st.session_state["notes"] = {}
 
 # ─── GPT 호출 함수 ─────────────────────────────────────
 def query_gpt(user_text: str):
-    # system + 기존 대화 + 새로운 user 메시지
     convo = [{"role":"system","content":"You are a helpful assistant."}]
-    convo += [{"role":m["role"], "content":m["content"]} for m in st.session_state.messages]
+    convo += [{"role":m["role"], "content":m["content"]} 
+              for m in st.session_state["messages"]]
     convo.append({"role":"user","content":user_text})
-    res = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=convo
-    )
-    return res.choices[0].message.content
+    res = client.chat.completions.create(model="gpt-3.5-turbo", messages=convo)
+    st.session_state["messages"].append({"role":"user",      "content":user_text})
+    st.session_state["messages"].append({"role":"assistant", "content":res.choices[0].message.content})
 
-# ─── 레이아웃: 좌측(2) / 우측(1) ────────────────────────
-col1, col2 = st.columns([2,1])
+# ─── 숨은 입력 필드 & 처리 ───────────────────────────────
+hidden = st.text_input("", key="in", placeholder="__HIDDEN__", label_visibility="collapsed")
+if hidden:
+    query_gpt(hidden)
+    st.session_state["in"] = ""
 
-with col1:
-    st.header("💬 Chat")
-    # 이전 대화 모두 렌더
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+# ─── JSON 직렬화 ───────────────────────────────────────
+data = {"conversations": [
+    {"id": idx, "user": m["content"]}  # 메모 기능만 남겨두고...
+    for idx, m in enumerate(st.session_state["messages"], start=1)
+]}
+data_json = json.dumps(data)
 
-    # 입력창
-    prompt = st.chat_input("메시지를 입력하세요…")
-    if prompt:
-        # 사용자 메시지 저장
-        st.session_state.messages.append({"role":"user","content":prompt})
-        # GPT 응답
-        with st.spinner("GPT가 응답 중…"):
-            answer = query_gpt(prompt)
-        st.session_state.messages.append({"role":"assistant","content":answer})
-        # 페이지 새로고침 대신 rerun
-        st.experimental_rerun()
-
-with col2:
-    st.header("📝 Notes")
-    if not st.session_state.messages:
-        st.info("왼쪽에서 대화를 시작해보세요.")
-    else:
-        # 메시지 선택용 드롭다운
-        opts = [
-            f"{i+1}. [{m['role']}] {m['content'][:30]}{'…' if len(m['content'])>30 else ''}"
-            for i,m in enumerate(st.session_state.messages)
-        ]
-        sel = st.selectbox("메시지 선택", opts, index=0)
-        idx = opts.index(sel)
-        # 현재 선택된 메시지에 대한 메모 로드
-        initial = st.session_state.notes.get(idx, "")
-        note = st.text_area("메모 작성", value=initial, height=200)
-        if st.button("메모 저장"):
-            st.session_state.notes[idx] = note
-            st.success("저장되었습니다!")
-
-    st.markdown("---")
-    # 모든 메모 보기
-    if st.session_state.notes:
-        st.subheader("저장된 메모들")
-        for i, txt in st.session_state.notes.items():
-            msg = st.session_state.messages[i]["content"]
-            st.markdown(f"**{i+1}. {msg[:40]}…**  \n{txt}")
+# ─── (이하 HTML/Tailwind 로 채팅+메모 UI 삽입) ─────────
+html_content = '''
+<!-- ... (생략: 이전에 사용하셨던 HTML/JS 템플릿) ... -->
+'''
+html(html_content, height=800)

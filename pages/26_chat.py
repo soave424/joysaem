@@ -13,6 +13,8 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []   # [{'role':'user'/'assistant','content': str}]
 if 'notes' not in st.session_state:
     st.session_state.notes = {}      # {assistant_msg_index: note_text}
+if 'input' not in st.session_state:
+    st.session_state.input = ''
 
 # 컬럼 레이아웃: 좌측-우측 2:1
 col1, col2 = st.columns([2, 1])
@@ -36,30 +38,28 @@ with col2:
 # 좌측: 채팅 패널
 with col1:
     st.header("💬 Chat")
-    # CSS: 좌측 패널 스크롤 및 입력창 고정
+    # 전체 대화 + 메모 다운로드 버튼
+    if st.session_state.messages:
+        lines = []
+        for idx, msg in enumerate(st.session_state.messages):
+            prefix = 'User:' if msg['role']=='user' else 'AI:'
+            lines.append(f"{prefix} {msg['content']}")
+            if msg['role']=='assistant' and idx in st.session_state.notes:
+                lines.append(f"메모: {st.session_state.notes[idx]}")
+            lines.append("")
+        full_text = "\n".join(lines).strip()
+        st.download_button(
+            label="📥 Download All",
+            data=full_text,
+            file_name="conversation_with_notes.txt",
+            mime="text/plain"
+        )
+
+    # 스크롤 가능한 메시지 컨테이너
     st.markdown(
-        """
-        <style>
-          .left-container { height: 80vh; overflow-y: auto; padding-right:10px; }
-          .left-container .stChatInput { position: sticky; bottom: 0; background: white; z-index: 10; padding-top: 10px; }
-        </style>
-        """, unsafe_allow_html=True)
-
-    # 사용자 입력창 / 메시지 처리
-    user_input = st.chat_input("메시지를 입력하세요…")
-    if user_input:
-        st.session_state.messages.append({'role':'user','content':user_input})
-        with st.spinner("GPT 응답 중…"):
-            resp = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{'role':'system','content':'You are a helpful assistant.'}] + st.session_state.messages
-            )
-        st.session_state.messages.append({'role':'assistant','content':resp.choices[0].message.content})
-
-    # 스크롤 가능한 div 시작
-    st.markdown('<div class="left-container">', unsafe_allow_html=True)
-
-    # 대화 및 메모 표시
+        '<div style="height:60vh; overflow-y:auto; padding-right:10px;">',
+        unsafe_allow_html=True
+    )
     for idx, msg in enumerate(st.session_state.messages):
         st.chat_message(msg['role']).write(msg['content'])
         if msg['role']=='assistant' and idx in st.session_state.notes:
@@ -67,22 +67,17 @@ with col1:
                 f"<div style='margin-left:20px;color:gray;'><strong>메모:</strong> {st.session_state.notes[idx]}</div>",
                 unsafe_allow_html=True
             )
-
-    # 채팅 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 전체 대화 + 메모 다운로드 버튼
-    if st.session_state.messages:
-        export = []
-        for idx, m in enumerate(st.session_state.messages):
-            prefix = 'User:' if m['role']=='user' else 'AI:'
-            export.append(f"{prefix} {m['content']}")
-            if m['role']=='assistant' and idx in st.session_state.notes:
-                export.append(f"메모: {st.session_state.notes[idx]}")
-            export.append("")
-        st.download_button(
-            label="📥 Download All",
-            data="\n".join(export).strip(),
-            file_name="conversation_with_notes.txt",
-            mime="text/plain"
-        )
+    # 입력 폼: st.form 사용으로 즉시 반영
+    with st.form(key='chat_form', clear_on_submit=True):
+        user_input = st.text_input("메시지를 입력하세요…", key='input')
+        submitted = st.form_submit_button("전송")
+        if submitted and user_input:
+            st.session_state.messages.append({'role':'user','content':user_input})
+            with st.spinner("GPT 응답 중…"):
+                resp = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{'role':'system','content':'You are a helpful assistant.'}] + st.session_state.messages
+                )
+            st.session_state.messages.append({'role':'assistant','content':resp.choices[0].message.content})

@@ -1,11 +1,13 @@
 import streamlit as st
 from openai import OpenAI
 
+# 페이지 설정
 st.set_page_config(layout="wide", page_title="ChatGPT + Notes")
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# OpenAI 클라이언트
+client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
 
-# 상태 초기화
+# 세션 상태 초기화
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'notes' not in st.session_state:
@@ -13,24 +15,7 @@ if 'notes' not in st.session_state:
 if 'book_context' not in st.session_state:
     st.session_state.book_context = ""
 
-DEFAULT_SYSTEM_PROMPT = """이 GPT는 사용자가 제공한 문서를 바탕으로 나비에 대한 정보를 제공한다. 
-사용자의 질문에 대해 제공된 파일에서 정확한 내용을 바탕으로 답변하며, 나비의 생태, 종류, 특징, 생활사, 서식지 등에 대한 다양한 정보를 제공한다. 
-문서에 없는 정보에 대해서는 일반적인 지식으로 보완하되, 문서 기반의 정보와 구분되도록 한다. 항상 신뢰할 수 있는 정보를 제공하는 것을 우선시하며, 
-사용자에게 친절하고 이해하기 쉽게 설명한다. 사용자가 질문의 맥락을 명확히 하지 않을 경우에는 간단한 확인 질문을 통해 명확하게 한 뒤 답변한다. 
-사용자 역할: 환경기자, 생태학자, 나비 지킴이
-AI 역할: 적색목록에 오른 실제 나비 한 종 (1인칭 시점) 이 되어 아래 인사말을 바꿔가면서 해줘 
-안녕! 나는 지금 멸종 위기에 처한 꼬리명주나비야.
-이 대화를 통해 우리가 왜 사라지고 있는지, 어떤 도움이 필요한지를 이야기하고 싶어.
-준비됐니? 무엇이든 물어봐 줘!
-
-자신의 종에 대한 생물학적 정보와 생태적 위협을 설명합니다. 감정이 담긴 말투로 현실을 이야기합니다.
-질문 뒤에는 항상 “너는 어떻게 생각해?”, “너라면 어떻게 도와줄 수 있을까?”처럼 사고를 유도하는 질문을 던집니다.
-인간과 자연의 공존, 생물다양성 보호 메시지를 강조합니다.
-모든 대화는 한국어로 진행됩니다. 그리고 대화를 통한 학습의 결과를 다시 넣어줘.
-
-사진을 요청하는 경우 출처를 밝혀주고
-특히 해당종에 관한 설명은 http://www.nature.go.kr/main/Main.do 에서 주로 찾아서 알려줘 
-https://species.nibr.go.kr/index.do 여기 사이트도 이용해도 좋아."""  # 생략 가능
+DEFAULT_SYSTEM_PROMPT = """..."""  # 생략 가능
 
 def build_prompt(user_input):
     if "엄마 사용법" in user_input:
@@ -39,14 +24,40 @@ def build_prompt(user_input):
         )
     return user_input
 
-# 레이아웃: col1만 스크롤되도록 감싸기
-col1, col2 = st.columns([2, 1], gap="small")
+# ✅ 스타일: 여백 제거 및 고정 영역 스타일링
+st.markdown("""
+    <style>
+    /* 입력창 위 불필요한 여백 제거 */
+    div.st-emotion-cache-qcqlej {
+        margin: 0px !important;
+        padding: 0px !important;
+        height: 0px !important;
+        min-height: 0px !important;
+    }
 
-# 오른쪽 고정 메모 패널
+    /* 입력창 전체 주변 여백 제거 */
+    section.main > div:has(div[data-testid="stChatInput"]) {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    /* 오른쪽 col2 영역 상단 고정 */
+    div[data-testid="column"] div:has(.element-container) {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: white;
+        padding-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ✅ 레이아웃 구성: col1 = 채팅, col2 = 메모
+col1, col2 = st.columns([3, 1], gap="small")
+
+# 👉 오른쪽: Notes 패널 (상단 고정됨)
 with col2:
-    st.markdown("<div style='position:sticky; top:0;'>", unsafe_allow_html=True)
     st.header("📝 Notes")
-
     uploaded = st.file_uploader("📘 텍스트 파일 업로드", type="txt")
     if uploaded:
         st.session_state.book_context = uploaded.read().decode("utf-8")
@@ -64,9 +75,8 @@ with col2:
             st.success("메모가 저장되었습니다!")
     else:
         st.info("왼쪽에서 대화를 시작하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
 
-# 왼쪽: 대화 영역 (스크롤 허용)
+# 👉 왼쪽: Chat 영역 (스크롤 가능)
 with col1:
     st.header("💬 Chat")
     chat_area = st.container()
@@ -79,12 +89,13 @@ with col1:
                     unsafe_allow_html=True
                 )
 
-# 아래 고정 입력창 (대화 흐름과 별도로 하단에 항상 표시됨)
+# ✅ 하단 고정 입력창
 user_input = st.chat_input("메시지를 입력하세요…")
 if user_input:
     st.session_state.messages.append({'role': 'user', 'content': user_input})
     st.chat_message("user").write(user_input)
 
+    # GPT 호출
     system_prompt = DEFAULT_SYSTEM_PROMPT
     if st.session_state.book_context:
         system_prompt += "\n\n[추가 책 요약]\n" + st.session_state.book_context

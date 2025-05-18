@@ -25,24 +25,27 @@ def build_prompt(user_input):
 # ✅ CSS로 여백 및 Notes 고정 처리
 st.markdown("""
     <style>
-    /* 입력창 위 불필요한 빈 div 제거 */
+    /* Chat 영역 header와 메시지 간격 제거 */
+    h1, h2, h3, h4, h5, h6 {
+        margin-bottom: 0.2rem !important;
+    }
+
+    /* Chat 메시지 container 여백 줄이기 */
+    .stChatMessage {
+        margin-top: 0.3rem !important;
+        margin-bottom: 0.3rem !important;
+        padding-top: 0.2rem !important;
+        padding-bottom: 0.2rem !important;
+    }
+
+    /* 입력창 위 여백 제거 */
     div[data-testid="chat-input"] > div:first-child {
         display: none !important;
     }
 
-    /* 오른쪽 Notes 패널 상단 고정 */
-    div[data-testid="column"] div:has(.element-container) {
-        position: sticky;
-        top: 0;
-        background-color: white;
-        z-index: 1;
-        padding-bottom: 1rem;
-    }
-
-    /* 입력창 주변 여백 제거 */
-    section.main > div:has(div[data-testid="chat-input"]) {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
+    /* 전체 섹션 패딩 조정 */
+    section.main > div {
+        padding-top: 0.5rem !important;
     }
     </style>
 """, unsafe_allow_html=True)

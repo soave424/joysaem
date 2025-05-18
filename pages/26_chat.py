@@ -21,7 +21,7 @@ col1, col2 = st.columns([2, 1])
 with col1:
     st.header("💬 Chat")
 
-        # 6) 대화 전체 다운로드 버튼
+    # 6) 대화 전체 다운로드 버튼
     if st.session_state.messages:
         full_text = "\n\n".join(
             f"{'User:' if m['role']=='user' else 'AI:'} {m['content']}"
@@ -52,9 +52,7 @@ with col1:
             )
         answer = res.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": answer})
-        # 다시 렌더링
-        st.experimental_rerun()
-
+        # st.chat_input이 자동으로 rerun을 트리거합니다
 
 with col2:
     st.header("📝 Notes")

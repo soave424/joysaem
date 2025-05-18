@@ -1,8 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 
-# ──────────────────────────────────────────────────
-# 1) 페이지 전체 폭, 타이틀 설정
+# 1) 페이지 설정
 st.set_page_config(layout="wide", page_title="ChatGPT + Notes")
 
 # 2) OpenAI 클라이언트 초기화
@@ -10,7 +9,7 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # 3) 세션 상태 초기화
 if "messages" not in st.session_state:
-    st.session_state.messages = []   # [{"role": "user"/"assistant", "content": "..."}]
+    st.session_state.messages = []   # [{'role': 'user'/'assistant', 'content': str}]
 if "notes" not in st.session_state:
     st.session_state.notes = {}      # {msg_index: note_text}
 
@@ -21,7 +20,7 @@ col1, col2 = st.columns([2, 1])
 with col1:
     st.header("💬 Chat")
 
-    # 6) 대화 전체 다운로드 버튼
+    # 4) 대화 전체 다운로드 버튼
     if st.session_state.messages:
         full_text = "\n\n".join(
             f"{'User:' if m['role']=='user' else 'AI:'} {m['content']}"
@@ -34,11 +33,11 @@ with col1:
             mime="text/plain"
         )
 
-    # 4) 이전 대화 출력
+    # 5) 이전 대화 출력
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
 
-    # 5) 사용자 입력
+    # 6) 사용자 입력
     prompt = st.chat_input("메시지를 입력하세요…")
     if prompt:
         # 사용자 메시지 저장
@@ -52,7 +51,6 @@ with col1:
             )
         answer = res.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": answer})
-        # st.chat_input이 자동으로 rerun을 트리거합니다
 
 with col2:
     st.header("📝 Notes")
@@ -68,15 +66,16 @@ with col2:
         idx = st.selectbox("메시지 선택", options, index=0)
         msg_i = options.index(idx)  # 실제 인덱스
 
-        # 8) 선택 메시지에 대한 메모 불러오기
+        # 8) 선택 메시지 메모 입력
         existing_note = st.session_state.notes.get(msg_i, "")
         note = st.text_area("메모 입력", value=existing_note, height=200)
 
+        # 9) 메모 저장
         if st.button("저장", key=f"save_{msg_i}"):
             st.session_state.notes[msg_i] = note
             st.success("메모가 저장되었습니다!")
 
-        # 9) 저장된 메모 요약
+        # 10) 저장된 메모 요약
         st.markdown("---")
         st.subheader("💾 모든 메모")
         for i, txt in st.session_state.notes.items():

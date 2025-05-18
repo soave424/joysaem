@@ -36,9 +36,12 @@ with col1:
     # 채팅 표시 및 메모 반영
     for idx, msg in enumerate(st.session_state.messages):
         st.chat_message(msg['role']).write(msg['content'])
-        # 어시스턴트 메시지(짝수번째: index1,3,5..)만 메모 표시
+        # 어시스턴트 메시지만 메모 표시
         if msg['role']=='assistant' and idx in st.session_state.notes:
-            st.markdown(f"<div style='margin-left:20px;color:gray;'><strong>메모:</strong> {st.session_state.notes[idx]}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div style='margin-left:20px;color:gray;'><strong>메모:</strong> {st.session_state.notes[idx]}</div>",
+                unsafe_allow_html=True
+            )
 
     # 입력창
     prompt = st.chat_input("메시지를 입력하세요…")
@@ -50,8 +53,7 @@ with col1:
                 messages=[{'role':'system','content':'You are a helpful assistant.'}] + st.session_state.messages
             )
         st.session_state.messages.append({'role':'assistant','content':res.choices[0].message.content})
-        # 자동 rerun
-        st.experimental_rerun()
+        # Streamlit이 자동으로 다시 렌더링합니다
 
 with col2:
     st.subheader("📝 Notes")
@@ -69,8 +71,7 @@ with col2:
         note = st.text_area("메모 입력", value=existing, height=150)
         if st.button("저장 메모", key=f"save_{selected}"):
             st.session_state.notes[selected] = note
-            # 저장 후 즉시 반영
-            st.experimental_rerun()
+            st.success("메모가 저장되었습니다!")
 
         # 저장된 메모 리스트
         if st.session_state.notes:

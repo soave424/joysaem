@@ -1,9 +1,8 @@
 import streamlit as st
 from openai import OpenAI
-import re
 
 # 페이지 설정
-st.set_page_config(layout="wide", page_title="ChatGPT + Custom GPT + Notes")
+st.set_page_config(layout="wide", page_title="ChatGPT + Notes")
 
 # OpenAI 클라이언트 초기화
 client = OpenAI(api_key=st.secrets['OPENAI_API_KEY'])
@@ -13,101 +12,80 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []  # List[{'role': str, 'content': str}]
 if 'notes' not in st.session_state:
     st.session_state.notes = {}     # Dict[int, str]
-if 'model_id' not in st.session_state:
-    st.session_state.model_id = ''  # 선택된 모델 ID 또는 링크 입력값
 
 # 2:1 레이아웃 구성
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    # 커스텀 GPT ID 또는 링크 입력
-    st.subheader("🔧 사용할 모델 입력 또는 링크")
-    model_input = st.text_input(
-        "모델 ID 또는 공유 링크 (예: g-abcdef1234567890-ghijkl123 또는 https://chat.openai.com/g/g-abcdef1234567890-ghijkl123)",
-        value=st.session_state.model_id
-    )
-    if model_input:
-        # 링크에서 ID 추출 및 정제
-        m = re.search(r"/g/([\w-]+)", model_input)
-        id_str = m.group(1) if m else model_input
-        # 만약 하이픈이 여러개라면 첫 두 파트만 사용 (g-xxxxxx)
-        parts = id_str.split('-')
-        if len(parts) >= 2:
-            st.session_state.model_id = parts[0] + '-' + parts[1]
-        else:
-            st.session_state.model_id = id_str
-
-        # 기본 모델도 허용
-        if st.session_state.model_id not in ["gpt-3.5-turbo", "gpt-4"] and not st.session_state.model_id.startswith('g-'):
-            st.error("유효한 모델 ID나 링크를 입력해주세요.")
-    if st.session_state.model_id:
-        st.markdown(f"**선택된 모델 ID:** `{st.session_state.model_id}`")
-    else:
-        st.info("모델 ID를 입력해야 채팅을 시작할 수 있습니다.")
-
-    # 헤더 및 다운로드 버튼
+    # 헤더 및 다운로드 버튼 배치
     hdr_col, dl_col = st.columns([8, 2])
     with hdr_col:
-        st.header(f"💬 Chat ({st.session_state.model_id or '모델 미지정'})")
+        st.header("💬 Chat")
     with dl_col:
-        if st.session_state.messages and st.session_state.model_id:
+        if st.session_state.messages:
+            # 대화 + 메모 합쳐서 텍스트 생성
             lines = []
-            for i, m in enumerate(st.session_state.messages):
-                prefix = 'User:' if m['role']=='user' else 'AI:'
+            for idx, m in enumerate(st.session_state.messages):
+                prefix = 'User:' if m['role'] == 'user' else 'AI:'
                 lines.append(f"{prefix} {m['content']}")
-                if m['role']=='assistant' and i in st.session_state.notes:
-                    lines.append(f"메모: {st.session_state.notes[i]}")
+                if m['role'] == 'assistant' and idx in st.session_state.notes:
+                    lines.append(f"메모: {st.session_state.notes[idx]}")
                 lines.append("")
-            full_text = "\n".join(lines).strip()
+            output = "\n".join(lines).strip()
             st.download_button(
                 label="📥 Download All",
-                data=full_text,
-                file_name="chat_with_notes.txt",
+                data=output,
+                file_name="conversation_with_notes.txt",
                 mime="text/plain"
             )
 
-    # 대화 출력 및 메모 표시
+    # 사용자 입력 처리 (먼저 처리해야 즉시 반영)
+    prompt = st.chat_input("메시지를 입력하세요…")
+    if prompt:
+        # 사용자 메시지 저장 및 GPT 호출
+        st.session_state.messages.append({'role': 'user', 'content': prompt})
+        with st.spinner("GPT 응답 중…"):
+            resp = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{'role': 'system', 'content': 'You are a helpful assistant.'}] + st.session_state.messages
+            )
+        st.session_state.messages.append({'role': 'assistant', 'content': resp.choices[0].message.content})
+        # Streamlit이 자동으로 다시 렌더링합니다
+
+    # 대화 및 메모 표시
     for idx, msg in enumerate(st.session_state.messages):
         st.chat_message(msg['role']).write(msg['content'])
-        if msg['role']=='assistant' and idx in st.session_state.notes:
+        # 어시스턴트 메시지에 메모가 있으면 바로 아래에 표시
+        if msg['role'] == 'assistant' and idx in st.session_state.notes:
             note = st.session_state.notes[idx]
             st.markdown(
                 f"<div style='margin-left:20px; color:gray;'><strong>메모:</strong> {note}</div>",
                 unsafe_allow_html=True
             )
 
-    # 사용자 입력 및 API 호출
-    if st.session_state.model_id:
-        prompt = st.chat_input("메시지를 입력하세요…")
-        if prompt:
-            st.session_state.messages.append({'role':'user','content':prompt})
-            with st.spinner("응답 생성 중…"):
-                resp = client.chat.completions.create(
-                    model=st.session_state.model_id,
-                    messages=[{'role':'system','content':'You are a helpful assistant.'}] + st.session_state.messages
-                )
-            st.session_state.messages.append({'role':'assistant','content':resp.choices[0].message.content})
-
 with col2:
     st.header("📝 Notes")
+
     if not st.session_state.messages:
-        st.info("왼쪽에서 대화를 시작하세요.")
+        st.info("왼쪽에서 대화를 시작해보세요.")
     else:
-        # AI 메시지(assistant) 인덱스만 선택지 제공
-        assistant_indices = [i for i, m in enumerate(st.session_state.messages) if m['role']=='assistant']
+        # AI 메시지(assistant) 인덱스만 선택지로 제공
+        assistant_indices = [i for i, m in enumerate(st.session_state.messages) if m['role'] == 'assistant']
         options = [
-            f"{i+1}. {st.session_state.messages[i]['content'][:30]}{'…' if len(st.session_state.messages[i]['content'])>30 else ''}"  
+            f"{i+1}. {st.session_state.messages[i]['content'][:30]}{'…' if len(st.session_state.messages[i]['content'])>30 else ''}"
             for i in assistant_indices
         ]
         choice = st.selectbox("메모할 메시지를 선택하세요", options)
         selected_idx = assistant_indices[options.index(choice)]
 
+        # 메모 입력 및 저장
         existing = st.session_state.notes.get(selected_idx, "")
         note_text = st.text_area("메모 입력", value=existing, height=150)
         if st.button("저장 메모", key=f"save_{selected_idx}"):
             st.session_state.notes[selected_idx] = note_text
-            st.experimental_rerun()
-
+            st.success("메모가 저장되었습니다!")
+        
+        # 저장된 메모 요약
         if st.session_state.notes:
             st.markdown("---")
             st.subheader("💾 저장된 메모들")

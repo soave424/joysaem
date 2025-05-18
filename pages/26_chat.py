@@ -93,4 +93,4 @@ with col1:
             )
         assistant_reply = resp.choices[0].message.content
         st.session_state.messages.append({'role': 'assistant', 'content': assistant_reply})
-        st.experimental_rerun()  # 바로 반영
+        st.rerun()  # 바로 반영

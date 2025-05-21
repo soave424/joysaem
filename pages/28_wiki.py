@@ -8,7 +8,7 @@ import os
 st.set_page_config(page_title="공동 문서 빌더 MVP", layout="wide")
 st.title("📝 공동 위키 빌더 MVP")
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # 기준 문서 로드
 navi_path = os.path.join("txt", "navi.txt")
@@ -56,11 +56,11 @@ def evaluate_accuracy(content):
 {{"accuracy_score": 정수, "reasoning": "설명"}}
 """
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        text = response.choices[0].message['content']
+        text = response.choices[0].message.content
         result = eval(text)
         return result.get("accuracy_score"), result.get("reasoning")
     except Exception as e:
@@ -98,14 +98,16 @@ if "blocks" in st.session_state and st.session_state.blocks:
     def build_txt(dataframe):
         lines = []
         for _, row in dataframe.iterrows():
+            lines.append("##### BLOCK START #####")
             lines.append(f"제목: {row['제목']}")
-            lines.append(f"작성자: {row['작성자']} | 날짜: {row['날짜']}")
+            lines.append(f"작성자: {row['작성자']}")
+            lines.append(f"날짜: {row['날짜']}")
             lines.append(f"출처: {row['출처']}")
+            lines.append(f"정확도(5점): {row['정확도(5점)']}")
+            lines.append(f"평가 사유: {row['평가 사유']}")
             lines.append("내용:")
             lines.append(row['내용'])
-            lines.append("정확도(5점): " + str(row['정확도(5점)']))
-            lines.append("평가 사유: " + str(row['평가 사유']))
-            lines.append("\n---\n")
+            lines.append("##### BLOCK END #####\n")
         return "\n".join(lines)
 
     if selected_indices:

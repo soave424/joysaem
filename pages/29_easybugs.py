@@ -121,7 +121,13 @@ if st.session_state.ilstr_items:
                 item = items2[0]
                 img_url = item.findtext("imgUrl") or ""
                 if img_url.strip():
-                    st.image(img_url, use_container_width=True)
+                    st.subheader("🖼 이미지")
+                    resp_img = requests.get(img_url)
+                    if resp_img.status_code == 200:
+                        st.image(resp_img.content, use_container_width=True)
+                    else:
+                        st.error(f"이미지 로드 실패 (HTTP {resp_img.status_code})")
+    
 
                 st.subheader("📋 곤충 정보")
                 st.write("• 학명:", item.findtext("btnc"))

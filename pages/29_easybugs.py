@@ -171,10 +171,10 @@ def show(label, tag, format_func=None):
                 st.write(txt)
 
 
-                show("일반특징", "cont1")
-                show("유충", "cont5")
-                show("생태", "cont7")
-                show("습성", "cont8")
-                show("월동", "cont9")
-                show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
-                show("참고사항", "cont6")
+        show("일반특징", "cont1")
+        show("유충", "cont5")
+        show("생태", "cont7")
+        show("습성", "cont8")
+        show("월동", "cont9")
+        show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
+        show("참고사항", "cont6")

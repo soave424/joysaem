@@ -61,7 +61,7 @@ def simplify_for_students(text):
     if not text.strip():
         return ""
     prompt = f"""
-다음 설명은 곤충에 대한 설명이야. 원래 문장의 구조나 표현을 최대한 유지하되, 진짜 어려운 단어만 중학생이 이해할 수 있도록 풀어서 말해줘. 너무 많이 바꾸지 말고 꼭 필요한 단어만 쉬운 단어로 바꿔줘.
+다음 설명은 곤충에 대한 설명이야. 원래 문장의 구조나 표현을 최대한 유지하되, 진짜 어려운 단어만 중학생이 이해할 수 있도록 풀어서 말해줘. 너무 많이 바꾸지 말고 꼭 필요한 단어만 쉬운 단어로 바꿔줘. 번데기, 애벌레 등은 그대로 남겨줘.
 
 원문: {text}
 
@@ -80,10 +80,10 @@ def format_emergence(text):
     if not text:
         return ""
     matches = re.findall(r"\d+", text)
-    if matches:
-        months = [f"{m}월" for m in matches]
-        return f"{text} ({', '.join(months)})"
+    if display_mode == "쉬운 말로 보기" and matches:
+        return ", ".join([f"{m}월" for m in matches])
     return text
+
 
 current_q = (st.session_state.query_name, st.session_state.page_no)
 if st.session_state.query_name and st.session_state.last_q != current_q:

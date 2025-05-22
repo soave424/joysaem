@@ -149,16 +149,26 @@ if st.session_state.ilstr_items:
                 st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
                 def show(label, tag, format_func=None):
-                    txt = item.findtext(tag) or ""
-                    if format_func:
-                        txt = format_func(txt)
-                    if txt.strip():
-                        if display_mode == "원문 보기":
-                            st.markdown(f"**{label}**")
-                            st.write(txt)
-                        else:
-                            st.markdown(f"**{label} (쉬운 말)**")
-                            st.info(simplify_for_students(txt))
+    txt = item.findtext(tag) or ""
+    if format_func:
+        txt = format_func(txt)
+    if txt.strip():
+        if display_mode == "원문 보기":
+            st.markdown(f"**{label}**")
+            st.write(txt)
+        else:
+            if label == "월동":
+                st.markdown("**겨울을 나는 모습**")
+                st.write(txt)
+            elif label == "출현시기":
+                st.markdown("**출현시기(월)**")
+                st.write(txt)
+            elif label in ["일반특징", "생태", "습성"]:
+                st.markdown(f"**{label} (쉬운 말)**")
+                st.info(simplify_for_students(txt))
+            else:
+                st.markdown(f"**{label}**")
+                st.write(txt)
 
                 show("일반특징", "cont1")
                 show("유충", "cont5")

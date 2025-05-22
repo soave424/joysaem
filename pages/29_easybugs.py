@@ -148,7 +148,7 @@ if st.session_state.ilstr_items:
                 st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
                 st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-   def show(label, tag, format_func=None):
+def show(label, tag, format_func=None):
     txt = item.findtext(tag) or ""
     if format_func:
         txt = format_func(txt)

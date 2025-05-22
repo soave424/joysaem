@@ -7,6 +7,7 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 import math
+import re
 
 st.set_page_config(page_title="쉬운 곤충 도감", layout="wide")
 st.title("🦋 쉬운 곤충 도감")
@@ -32,6 +33,9 @@ if st.button("검색"):
     st.session_state.page_no = 1
     st.session_state.query_name = insect_name
 
+# 보기 옵션 추가
+display_mode = st.radio("정보 보기 방식 선택", ["원문 보기", "쉬운 말로 보기"], horizontal=True)
+
 if "page_no" not in st.session_state: st.session_state.page_no = 1
 if "query_name" not in st.session_state: st.session_state.query_name = ""
 if "total_ct" not in st.session_state: st.session_state.total_ct = 0
@@ -53,15 +57,15 @@ def fetch_page(name, page_no):
     items = root.findall(".//item")
     return total, items
 
-def simplify_for_kids(text):
+def simplify_for_students(text):
     if not text.strip():
         return ""
     prompt = f"""
-다음 설명을 초등학생도 이해할 수 있도록 쉬운 말로 바꿔줘. 너무 어렵거나 학술적인 단어는 풀어서 설명해줘.
+다음 설명은 곤충에 대한 설명이야. 원래 문장의 구조나 표현을 최대한 유지하되, 진짜 어려운 단어만 중학생이 이해할 수 있도록 풀어서 말해줘. 너무 많이 바꾸지 말고 꼭 필요한 단어만 쉬운 단어로 바꿔줘.
 
 원문: {text}
 
-쉬운 설명:
+쉬운 말로 바꾼 문장:
 """
     try:
         response = client.chat.completions.create(
@@ -71,6 +75,15 @@ def simplify_for_kids(text):
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"⚠️ 변환 실패: {e}"
+
+def format_emergence(text):
+    if not text:
+        return ""
+    matches = re.findall(r"\d+", text)
+    if matches:
+        months = [f"{m}월" for m in matches]
+        return f"{text} ({', '.join(months)})"
+    return text
 
 current_q = (st.session_state.query_name, st.session_state.page_no)
 if st.session_state.query_name and st.session_state.last_q != current_q:
@@ -127,7 +140,6 @@ if st.session_state.ilstr_items:
                         st.image(resp_img.content, use_container_width=True)
                     else:
                         st.error(f"이미지 로드 실패 (HTTP {resp_img.status_code})")
-    
 
                 st.subheader("📋 곤충 정보")
                 st.write("• 학명:", item.findtext("btnc"))
@@ -136,18 +148,22 @@ if st.session_state.ilstr_items:
                 st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
                 st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-                def show(label, tag):
+                def show(label, tag, format_func=None):
                     txt = item.findtext(tag) or ""
+                    if format_func:
+                        txt = format_func(txt)
                     if txt.strip():
-                        st.markdown(f"**{label} (원문)**")
-                        st.write(txt)
-                        st.markdown(f"**{label} (쉬운 말)**")
-                        st.info(simplify_for_kids(txt))
+                        if display_mode == "원문 보기":
+                            st.markdown(f"**{label}**")
+                            st.write(txt)
+                        else:
+                            st.markdown(f"**{label} (쉬운 말)**")
+                            st.info(simplify_for_students(txt))
 
                 show("일반특징", "cont1")
                 show("유충", "cont5")
                 show("생태", "cont7")
                 show("습성", "cont8")
                 show("월동", "cont9")
-                show("출현시기", "emrgcEraDscrt")
+                show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
                 show("참고사항", "cont6")

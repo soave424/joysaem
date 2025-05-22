@@ -148,7 +148,7 @@ if st.session_state.ilstr_items:
                 st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
                 st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-def show(label, tag, format_func=None):
+   def show(label, tag, format_func=None):
     txt = item.findtext(tag) or ""
     if format_func:
         txt = format_func(txt)
@@ -170,11 +170,10 @@ def show(label, tag, format_func=None):
                 st.markdown(f"**{label}**")
                 st.write(txt)
 
-
-        show("일반특징", "cont1")
-        show("유충", "cont5")
-        show("생태", "cont7")
-        show("습성", "cont8")
-        show("월동", "cont9")
-        show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
-        show("참고사항", "cont6")
+                show("일반특징", "cont1")
+                show("유충", "cont5")
+                show("생태", "cont7")
+                show("습성", "cont8")
+                show("월동", "cont9")
+                show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
+                show("참고사항", "cont6")

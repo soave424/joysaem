@@ -89,7 +89,7 @@ with col1:
             with st.spinner("GPT 응답 중…"):
                 try:
                     resp = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-4.1-mini-2025-04-14",
                         messages=[
                             {'role': 'system', 'content': system_prompt},
                             *st.session_state.messages

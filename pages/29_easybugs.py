@@ -24,7 +24,7 @@ else:
 
 # ── 곤충도감 API 설정 ──
 api_key = st.secrets["Bugs_API_Key"]
-BASE_URL      = "http://openapi.nature.go.kr/openapi/service/rest/InsectService"
+BASE_URL = "http://openapi.nature.go.kr/openapi/service/rest/InsectService"
 ROWS_PER_PAGE = 10
 
 st.subheader("🔎 EasyBugs 곤충 도감 검색")
@@ -33,9 +33,9 @@ if st.button("검색"):
     st.session_state.page_no = 1
     st.session_state.query_name = insect_name
 
-# 보기 옵션 추가
 display_mode = st.radio("정보 보기 방식 선택", ["원문 보기", "쉬운 말로 보기"], horizontal=True)
 
+# 세션 상태 초기화
 if "page_no" not in st.session_state: st.session_state.page_no = 1
 if "query_name" not in st.session_state: st.session_state.query_name = ""
 if "total_ct" not in st.session_state: st.session_state.total_ct = 0
@@ -43,6 +43,7 @@ if "ilstr_items" not in st.session_state: st.session_state.ilstr_items = []
 if "chosen" not in st.session_state: st.session_state.chosen = None
 if "last_q" not in st.session_state: st.session_state.last_q = ("", 0)
 
+# ── 데이터 요청 함수 ──
 def fetch_page(name, page_no):
     params = {
         "serviceKey": api_key,
@@ -57,6 +58,7 @@ def fetch_page(name, page_no):
     items = root.findall(".//item")
     return total, items
 
+# ── 설명을 학생 수준으로 바꾸기 ──
 def simplify_for_students(text):
     if not text.strip():
         return ""
@@ -76,6 +78,7 @@ def simplify_for_students(text):
     except Exception as e:
         return f"⚠️ 변환 실패: {e}"
 
+# ── 출현 시기 표현 다듬기 ──
 def format_emergence(text):
     if not text:
         return ""
@@ -84,7 +87,30 @@ def format_emergence(text):
         return ", ".join([f"{m}월" for m in matches])
     return text
 
+# ── 정보 표시 함수 ──
+def show(item, label, tag, format_func=None):
+    txt = item.findtext(tag) or ""
+    if format_func:
+        txt = format_func(txt)
+    if txt.strip():
+        if display_mode == "원문 보기":
+            st.markdown(f"**{label}**")
+            st.write(txt)
+        else:
+            if label == "월동":
+                st.markdown("**겨울을 나는 모습**")
+                st.write(txt)
+            elif label == "출현시기":
+                st.markdown("**출현시기(월)**")
+                st.write(txt)
+            elif label in ["일반특징", "생태", "습성"]:
+                st.markdown(f"**{label} (쉬운 말)**")
+                st.info(simplify_for_students(txt))
+            else:
+                st.markdown(f"**{label}**")
+                st.write(txt)
 
+# ── 페이지별 결과 가져오기 ──
 current_q = (st.session_state.query_name, st.session_state.page_no)
 if st.session_state.query_name and st.session_state.last_q != current_q:
     total, items = fetch_page(*current_q)
@@ -97,6 +123,7 @@ if st.session_state.query_name:
 
 max_page = max(1, math.ceil(st.session_state.total_ct / ROWS_PER_PAGE))
 
+# ── 곤충 목록 및 상세정보 표시 ──
 if st.session_state.ilstr_items:
     col1, col2 = st.columns([2, 3])
     prev_disabled = st.session_state.page_no <= 1
@@ -148,32 +175,11 @@ if st.session_state.ilstr_items:
                 st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
                 st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-def show(label, tag, format_func=None):
-    txt = item.findtext(tag) or ""
-    if format_func:
-        txt = format_func(txt)
-    if txt.strip():
-        if display_mode == "원문 보기":
-            st.markdown(f"**{label}**")
-            st.write(txt)
-        else:
-            if label == "월동":
-                st.markdown("**겨울을 나는 모습**")
-                st.write(txt)
-            elif label == "출현시기":
-                st.markdown("**출현시기(월)**")
-                st.write(txt)
-            elif label in ["일반특징", "생태", "습성"]:
-                st.markdown(f"**{label} (쉬운 말)**")
-                st.info(simplify_for_students(txt))
-            else:
-                st.markdown(f"**{label}**")
-                st.write(txt)
-
-            show("일반특징", "cont1")
-            show("유충", "cont5")
-            show("생태", "cont7")
-            show("습성", "cont8")
-            show("월동", "cont9")
-            show("출현시기", "emrgcEraDscrt", format_func=format_emergence)
-            show("참고사항", "cont6")
+                # 상세 정보 출력
+                show(item, "일반특징", "cont1")
+                show(item, "유충", "cont5")
+                show(item, "생태", "cont7")
+                show(item, "습성", "cont8")
+                show(item, "월동", "cont9")
+                show(item, "출현시기", "emrgcEraDscrt", format_func=format_emergence)
+                show(item, "참고사항", "cont6")

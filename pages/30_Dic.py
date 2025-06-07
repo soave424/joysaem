@@ -55,3 +55,5 @@ if query:
 st.text(f"응답 상태 코드: {response.status_code}")
 st.text(f"응답 Content-Length: {len(response.content)} bytes")
 st.code(response.text or '<<응답 없음>>')
+st.text(f"✅ API 키 길이: {len(API_KEY)}")
+st.text(f"🔑 실제 API 키: {API_KEY[:4]}****{API_KEY[-4:]}")  # 앞뒤만 확인용

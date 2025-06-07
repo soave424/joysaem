@@ -35,9 +35,11 @@ if query:
                         definition = item["sense"].get("definition", "뜻 없음")
                         link = item["sense"].get("link", "#")
 
-                        st.markdown(f"### {idx}. [{word} ({pos})]({link})")
-                        st.markdown(f"- {definition}")
-                        st.markdown("---")
+                        st.markdown(f"""
+                        <h4>{idx}. <a href='{link}' target='_blank'>{word} ({pos})</a></h4>
+                        <p>- {definition}</p>
+                        <hr>
+                        """, unsafe_allow_html=True)
                 else:
                     st.warning("검색 결과가 없습니다.")
             except Exception as json_error:

@@ -13,3 +13,5 @@ streamlit-javascript
 geopy
 openai
 streamlit-chat
+requests
+gtts

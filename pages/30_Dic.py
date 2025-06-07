@@ -11,7 +11,6 @@ API_URL = "https://stdict.korean.go.kr/api/search.do"
 
 query = st.text_input("검색어를 입력하세요:", "")
 
-
 if query:
     with st.spinner("검색 중..."):
         params = {
@@ -21,21 +20,20 @@ if query:
             "num": 5
         }
 
-        response = requests.get(API_URL, params=params)
+        try:
+            response = requests.get(API_URL, params=params)
+            st.text(f"응답 상태 코드: {response.status_code}")
+            st.text(f"응답 Content-Length: {len(response.content)} bytes")
+            st.text(f"🔑 실제 사용 중인 API Key: {API_KEY[:4]}****{API_KEY[-4:]}")
+            st.subheader("🔍 응답 원문 출력")
+            st.code(response.text or "<<응답 없음>>")
 
-        # 응답 원문 먼저 확인
-        st.subheader("🔍 응답 원문 출력")
-        st.code(response.text[:1000])  # 너무 길 경우 대비 1000자 제한
-
-        if response.status_code != 200:
-            st.error(f"❌ API 요청 실패: 상태 코드 {response.status_code}")
-        else:
             try:
                 data = response.json()
                 st.success("✅ JSON 파싱 성공")
                 st.write(data)
-            except Exception as e:
-                st.warning(f"⚠️ JSON 파싱 실패: {e}")
+            except Exception as json_error:
+                st.warning(f"⚠️ JSON 파싱 실패: {json_error}")
                 try:
                     root = ET.fromstring(response.text)
                     st.success("✅ XML 파싱 성공")
@@ -48,12 +46,7 @@ if query:
                         st.markdown(f"- **뜻풀이:** {definition}")
                         st.markdown(f"- [사전 보기]({link})")
                         st.markdown("---")
-                except Exception as ex:
-                    st.error("❌ XML 파싱도 실패했습니다.")
-                    st.code(response.text, language='html')
-          
-st.text(f"응답 상태 코드: {response.status_code}")
-st.text(f"응답 Content-Length: {len(response.content)} bytes")
-st.code(response.text or '<<응답 없음>>')
-st.text(f"✅ API 키 길이: {len(API_KEY)}")
-st.text(f"🔑 실제 API 키: {API_KEY[:4]}****{API_KEY[-4:]}")  # 앞뒤만 확인용
+                except Exception as xml_error:
+                    st.error(f"❌ XML 파싱도 실패했습니다: {xml_error}")
+        except Exception as req_error:
+            st.error(f"❌ 요청 중 오류 발생: {req_error}")

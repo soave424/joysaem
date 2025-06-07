@@ -24,8 +24,6 @@ if query:
 
         try:
             response = requests.get(API_URL, params=params)
-            st.text(f"응답 상태 코드: {response.status_code}")
-            st.text(f"응답 Content-Length: {len(response.content)} bytes")
 
             try:
                 data = response.json()
@@ -36,7 +34,7 @@ if query:
                         pos = item.get("pos", "품사 없음")
                         definition = item["sense"].get("definition", "뜻 없음")
 
-                        st.markdown(f"### {idx}. {word} ({pos})")
+                        st.markdown(f"### {idx}. [{word} ({pos})]({link})")
                         st.markdown(f"- {definition}")
                         st.markdown("---")
                 else:

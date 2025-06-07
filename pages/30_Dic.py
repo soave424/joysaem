@@ -11,6 +11,7 @@ API_URL = "https://stdict.korean.go.kr/api/search.do"
 
 query = st.text_input("검색어를 입력하세요:", "")
 
+
 if query:
     with st.spinner("검색 중..."):
         params = {
@@ -50,3 +51,7 @@ if query:
                 except Exception as ex:
                     st.error("❌ XML 파싱도 실패했습니다.")
                     st.code(response.text, language='html')
+          
+st.text(f"응답 상태 코드: {response.status_code}")
+st.text(f"응답 Content-Length: {len(response.content)} bytes")
+st.code(response.text or '<<응답 없음>>')

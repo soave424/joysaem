@@ -34,7 +34,7 @@ if query:
                         pos = item.get("pos", "품사 없음")
                         definition = item["sense"].get("definition", "뜻 없음")
 
-                        st.markdown(f"### {idx}. [{word} ({pos})]({link})")
+                        st.markdown(f"### {idx}. [{word} ({pos})]")
                         st.markdown(f"- {definition}")
                         st.markdown("---")
                 else:

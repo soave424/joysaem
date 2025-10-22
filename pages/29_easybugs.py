@@ -12,7 +12,54 @@ import re
 st.set_page_config(page_title="쉬운 곤충 도감", layout="wide")
 st.title("🦋 쉬운 곤충 도감")
 
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# API 키 설정 (환경변수 또는 직접 설정)
+try:
+    # Streamlit secrets에서 가져오기 시도
+    try:
+        openai_api_key = st.secrets["OPENAI_API_KEY"]
+        bugs_api_key = st.secrets["Bugs_API_Key"]
+    except:
+        # secrets가 없으면 환경변수에서 가져오기
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        bugs_api_key = os.getenv("Bugs_API_Key")
+    
+    if not openai_api_key:
+        st.error("⚠️ OpenAI API 키가 설정되지 않았습니다.")
+        st.info("다음 중 하나의 방법으로 API 키를 설정해주세요:")
+        st.code("""
+# 방법 1: 환경변수 설정
+export OPENAI_API_KEY="your_api_key_here"
+
+# 방법 2: .streamlit/secrets.toml 파일에 추가
+OPENAI_API_KEY = "your_api_key_here"
+        """)
+        st.stop()
+    
+    if not bugs_api_key or bugs_api_key == "your_bugs_api_key_here":
+        st.warning("⚠️ 곤충도감 API 키가 설정되지 않았습니다.")
+        st.info("""
+        **곤충도감 API 키 발급 방법:**
+        1. [국립생물자원관 공공데이터포털](https://www.data.go.kr/) 방문
+        2. "곤충도감" 검색
+        3. API 신청 후 키 발급받기
+        4. 발급받은 키를 아래 방법으로 설정:
+        """)
+        st.code("""
+# 방법 1: 환경변수 설정
+export Bugs_API_Key="실제_발급받은_API_키"
+
+# 방법 2: .streamlit/secrets.toml 파일에 추가
+Bugs_API_Key = "실제_발급받은_API_키"
+        """)
+        
+        # API 키가 없어도 앱은 계속 실행 (데모 모드)
+        st.info("🔧 **데모 모드**: API 키 없이도 앱 구조를 확인할 수 있습니다.")
+        bugs_api_key = None
+        
+    client = openai.OpenAI(api_key=openai_api_key)
+except Exception as e:
+    st.error(f"⚠️ API 키 설정 오류: {e}")
+    st.stop()
 
 # 기준 문서 로드
 txt_path = os.path.join("txt", "navi.txt")
@@ -21,13 +68,23 @@ if os.path.exists(txt_path):
         reference_doc = f.read()
 else:
     reference_doc = ""
+    st.warning("⚠️ navi.txt 파일을 찾을 수 없습니다.")
 
 # ── 곤충도감 API 설정 ──
-api_key = st.secrets["Bugs_API_Key"]
+api_key = bugs_api_key
 BASE_URL = "http://openapi.nature.go.kr/openapi/service/rest/InsectService"
 ROWS_PER_PAGE = 10
 
 st.subheader("🔎 EasyBugs 곤충 도감 검색")
+
+# 디버깅 정보 표시
+with st.expander("🔧 디버깅 정보"):
+    st.write(f"OpenAI API 키 설정됨: {'✅' if openai_api_key else '❌'}")
+    st.write(f"곤충도감 API 키 설정됨: {'✅' if bugs_api_key and bugs_api_key != 'your_bugs_api_key_here' else '❌'}")
+    st.write(f"navi.txt 파일 존재: {'✅' if os.path.exists(txt_path) else '❌'}")
+    if bugs_api_key == "your_bugs_api_key_here":
+        st.warning("⚠️ 곤충도감 API 키가 예시 값으로 설정되어 있습니다. 실제 API 키를 발급받아 설정해주세요.")
+
 insect_name = st.text_input("곤충 국명 또는 학명 입력", "")
 if st.button("검색"):
     st.session_state.page_no = 1
@@ -45,18 +102,34 @@ if "last_q" not in st.session_state: st.session_state.last_q = ("", 0)
 
 # ── 데이터 요청 함수 ──
 def fetch_page(name, page_no):
-    params = {
-        "serviceKey": api_key,
-        "st": "1",
-        "sw": name,
-        "numOfRows": str(ROWS_PER_PAGE),
-        "pageNo": str(page_no)
-    }
-    r = requests.get(f"{BASE_URL}/isctIlstrSearch", params=params)
-    root = ET.fromstring(r.text)
-    total = int(root.findtext(".//totalCount") or "0")
-    items = root.findall(".//item")
-    return total, items
+    if not api_key:
+        st.warning("🔧 데모 모드: 실제 API 키가 필요합니다.")
+        return 0, []
+    
+    try:
+        params = {
+            "serviceKey": api_key,
+            "st": "1",
+            "sw": name,
+            "numOfRows": str(ROWS_PER_PAGE),
+            "pageNo": str(page_no)
+        }
+        r = requests.get(f"{BASE_URL}/isctIlstrSearch", params=params, timeout=10)
+        r.raise_for_status()  # HTTP 오류 확인
+        
+        root = ET.fromstring(r.text)
+        total = int(root.findtext(".//totalCount") or "0")
+        items = root.findall(".//item")
+        return total, items
+    except requests.exceptions.RequestException as e:
+        st.error(f"⚠️ API 요청 실패: {e}")
+        return 0, []
+    except ET.ParseError as e:
+        st.error(f"⚠️ XML 파싱 오류: {e}")
+        return 0, []
+    except Exception as e:
+        st.error(f"⚠️ 예상치 못한 오류: {e}")
+        return 0, []
 
 # ── 설명을 학생 수준으로 바꾸기 ──
 def simplify_for_students(text):
@@ -151,35 +224,47 @@ if st.session_state.ilstr_items:
         if not st.session_state.chosen:
             st.info("왼쪽 목록에서 곤충을 선택하세요.")
         else:
-            r2 = requests.get(f"{BASE_URL}/isctIlstrInfo", params={"serviceKey": api_key, "q1": st.session_state.chosen})
-            root2 = ET.fromstring(r2.text)
-            items2 = root2.findall(".//item")
-
-            if not items2:
-                st.error("상세정보가 없습니다.")
+            if not api_key:
+                st.warning("🔧 데모 모드: 실제 API 키가 필요합니다.")
             else:
-                item = items2[0]
-                img_url = item.findtext("imgUrl") or ""
-                if img_url.strip():
-                    st.subheader("🖼 이미지")
-                    resp_img = requests.get(img_url)
-                    if resp_img.status_code == 200:
-                        st.image(resp_img.content, use_container_width=True)
+                try:
+                    r2 = requests.get(f"{BASE_URL}/isctIlstrInfo", params={"serviceKey": api_key, "q1": st.session_state.chosen}, timeout=10)
+                    r2.raise_for_status()
+                    root2 = ET.fromstring(r2.text)
+                    items2 = root2.findall(".//item")
+
+                    if not items2:
+                        st.error("상세정보가 없습니다.")
                     else:
-                        st.error(f"이미지 로드 실패 (HTTP {resp_img.status_code})")
+                        item = items2[0]
+                        img_url = item.findtext("imgUrl") or ""
+                        if img_url.strip():
+                            st.subheader("🖼 이미지")
+                            try:
+                                resp_img = requests.get(img_url, timeout=10)
+                                resp_img.raise_for_status()
+                                st.image(resp_img.content, use_container_width=True)
+                            except Exception as e:
+                                st.error(f"이미지 로드 실패: {e}")
 
-                st.subheader("📋 곤충 정보")
-                st.write("• 학명:", item.findtext("btnc"))
-                st.write("• 국명:", item.findtext("insctOfnmKrlngNm"))
-                st.write("• 과명:", item.findtext("fmlyKorNm") or item.findtext("fmlyNm"))
-                st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
-                st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
+                        st.subheader("📋 곤충 정보")
+                        st.write("• 학명:", item.findtext("btnc"))
+                        st.write("• 국명:", item.findtext("insctOfnmKrlngNm"))
+                        st.write("• 과명:", item.findtext("fmlyKorNm") or item.findtext("fmlyNm"))
+                        st.write("• 속명:", item.findtext("genusKorNm") or item.findtext("genusNm"))
+                        st.write("• 목명:", item.findtext("ordKorNm") or item.findtext("ordNm"))
 
-                # 상세 정보 출력
-                show(item, "일반특징", "cont1")
-                show(item, "유충", "cont5")
-                show(item, "생태", "cont7")
-                show(item, "습성", "cont8")
-                show(item, "월동", "cont9")
-                show(item, "출현시기", "emrgcEraDscrt", format_func=format_emergence)
-                show(item, "참고사항", "cont6")
+                        # 상세 정보 출력
+                        show(item, "일반특징", "cont1")
+                        show(item, "유충", "cont5")
+                        show(item, "생태", "cont7")
+                        show(item, "습성", "cont8")
+                        show(item, "월동", "cont9")
+                        show(item, "출현시기", "emrgcEraDscrt", format_func=format_emergence)
+                        show(item, "참고사항", "cont6")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"⚠️ 상세정보 API 요청 실패: {e}")
+                except ET.ParseError as e:
+                    st.error(f"⚠️ 상세정보 XML 파싱 오류: {e}")
+                except Exception as e:
+                    st.error(f"⚠️ 상세정보 로드 오류: {e}")

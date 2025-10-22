@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>주식 투자 레이스</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Noto Sans KR", "Inter", sans-serif;
+      }
+      .hidden {
+        display: none;
+      }
+      .rank-item:hover {
+        background-color: #f3f4f6;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen"
+  >
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4">
+      <!-- 로그인 페이지 -->
+      <div
+        id="login-page"
+        class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto text-center"
+      >
+        <h1 class="text-3xl font-bold mb-2">주식 투자 레이스</h1>
+        <p class="text-gray-500 mb-6">참여 코드를 입력하세요.</p>
+        <form id="login-form">
+          <input
+            type="text"
+            id="access-code"
+            placeholder="예: admin 또는 groupA"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled
+          />
+          <button
+            type="submit"
+            id="login-btn"
+            class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 disabled:bg-gray-400"
+            disabled
+          >
+            서버 연결 중...
+          </button>
+        </form>
+        <p id="login-error" class="text-red-500 mt-4 h-5"></p>
+      </div>
+
+      <!-- 관리자 페이지 -->
+      <div id="admin-page" class="hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="text-3xl font-bold">👑 관리자 페이지</h1>
+          <button
+            id="logout-btn-admin"
+            class="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+          >
+            나가기
+          </button>
+        </div>
+
+        <div id="game-board" class="bg-white p-6 rounded-xl shadow-lg mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">라운드 관리</h2>
+            <button
+              id="final-end-game-btn"
+              class="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition duration-300 hidden"
+            >
+              최종 게임 종료
+            </button>
+          </div>
+          <button
+            id="start-game-btn"
+            class="mb-4 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition duration-300 hidden"
+          >
+            게임 시작하기
+          </button>
+          <div id="round-list-container" class="space-y-3"></div>
+        </div>
+
+        <div id="admin-content" class="hidden">
+          <h2 class="text-2xl font-bold mb-4">▶️ 진행 중 라운드 상세</h2>
+          <div class="flex flex-wrap gap-4 mb-4 items-center">
+            <button
+              id="view-news-btn"
+              class="flex-1 bg-white text-blue-600 border border-blue-600 py-2 px-4 rounded-lg font-semibold transition"
+            >
+              기사 보기
+            </button>
+            <button
+              id="view-results-btn"
+              class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold transition"
+            >
+              결과 보기
+            </button>
+          </div>
+          <div
+            id="admin-news-content"
+            class="bg-white p-6 rounded-xl shadow-lg"
+          ></div>
+          <div
+            id="admin-results-content"
+            class="hidden bg-white p-6 rounded-xl shadow-lg"
+          >
+            <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+              <h2 class="text-2xl font-bold">그룹별 투자 현황</h2>
+              <p class="font-semibold text-lg">
+                해당 라운드 수익률:
+                <span
+                  id="round-return-rate-display"
+                  class="font-bold text-blue-600"
+                ></span>
+              </p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                  <tr>
+                    <th class="p-4 font-semibold">그룹</th>
+                    <th class="p-4 font-semibold">시작 자산</th>
+                    <th class="p-4 font-semibold">투자금</th>
+                    <th class="p-4 font-semibold">보유 현금</th>
+                    <th class="p-4 font-semibold">수익률 (%)</th>
+                    <th class="p-4 font-semibold text-center">투자 성과</th>
+                    <th class="p-4 font-semibold text-center">종료 자산</th>
+                  </tr>
+                </thead>
+                <tbody id="results-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="admin-chart-container"
+          class="bg-white p-6 rounded-xl shadow-lg mt-6 hidden"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">그룹별 자산 추이</h2>
+            <select id="group-chart-filter" class="border rounded-lg px-3 py-1">
+              <option value="all">전체 보기</option>
+            </select>
+          </div>
+          <canvas id="admin-asset-chart"></canvas>
+        </div>
+
+        <div id="final-ranking-container" class="hidden">
+          <div class="bg-white p-6 rounded-xl shadow-lg mb-6">
+            <h2 class="text-3xl font-bold text-center mb-6 text-purple-600">
+              🏆 최종 순위 🏆
+            </h2>
+            <div id="ranking-list" class="space-y-4"></div>
+          </div>
+          <div
+            id="team-history-container"
+            class="bg-white p-6 rounded-xl shadow-lg mt-6 hidden"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 참여자 페이지 -->
+      <div id="participant-page" class="hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="text-3xl font-bold">
+            <span id="group-name-display"></span>
+          </h1>
+          <button
+            id="logout-btn-participant"
+            class="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+          >
+            나가기
+          </button>
+        </div>
+
+        <p id="current-round-text" class="text-lg mb-4 font-semibold">
+          현재 라운드:
+          <span id="current-round-display" class="text-blue-600"
+            >대기 중...</span
+          >
+        </p>
+        <div
+          id="game-over-text"
+          class="hidden text-2xl mb-4 font-bold text-center text-purple-600"
+        >
+          🎉 모든 게임이 종료되었습니다! 최종 결과를 확인하세요. 🎉
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div
+            id="news-container"
+            class="bg-white p-6 rounded-xl shadow-lg hidden"
+          >
+            <h2 class="text-2xl font-bold mb-4">📰 이번 라운드 기사</h2>
+            <div id="participant-news-content" class="space-y-4"></div>
+          </div>
+          <div
+            id="investment-container"
+            class="bg-white p-6 rounded-xl shadow-lg hidden"
+          >
+            <h2 class="text-2xl font-bold mb-4">💰 나의 자산 및 투자</h2>
+            <form id="investment-form">
+              <div class="mb-4">
+                <label class="block text-gray-600 mb-2">총 자산</label>
+                <p id="total-assets" class="text-2xl font-bold">0 원</p>
+              </div>
+              <div class="mb-4">
+                <label for="investment-amount" class="block text-gray-600 mb-2"
+                  >투자 금액</label
+                >
+                <input
+                  type="number"
+                  id="investment-amount"
+                  class="w-full px-4 py-2 border rounded-lg"
+                  required
+                />
+              </div>
+              <div class="mb-4">
+                <label class="block text-gray-600 mb-2">보유 현금</label>
+                <p
+                  id="cash-amount"
+                  class="text-xl font-semibold text-green-600"
+                >
+                  0 원
+                </p>
+              </div>
+              <button
+                type="submit"
+                id="submit-investment-btn"
+                class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
+              >
+                투자 결정하기
+              </button>
+              <p id="investment-feedback" class="text-center mt-3 h-5"></p>
+            </form>
+          </div>
+          <div
+            id="all-rounds-results-container"
+            class="lg:col-span-2 space-y-6"
+          >
+            <!-- 모든 라운드 결과가 여기에 표시됩니다. -->
+          </div>
+          <div
+            id="participant-chart-container"
+            class="bg-white p-6 rounded-xl shadow-lg hidden lg:col-span-2"
+          >
+            <h2 class="text-2xl font-bold mb-4">📊 나의 자산 추이</h2>
+            <canvas id="participant-asset-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+      import {
+        getAuth,
+        signInAnonymously,
+        signInWithCustomToken,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        collection,
+        getDocs,
+        onSnapshot,
+        writeBatch,
+        updateDoc,
+      } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+      const loginPage = document.getElementById("login-page");
+      const adminPage = document.getElementById("admin-page");
+      const participantPage = document.getElementById("participant-page");
+
+      const appId =
+        typeof __app_id !== "undefined" ? __app_id : "stock-race-default";
+      const firebaseConfig = JSON.parse(
+        typeof __firebase_config !== "undefined" ? __firebase_config : "{}"
+      );
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      let currentRole = null;
+      let currentGroupId = null;
+      let rounds = [];
+      let groups = [];
+      let unsubscribeListeners = [];
+      let adminAssetChart = null;
+      let participantAssetChart = null;
+
+      const formatCurrency = (value) =>
+        new Intl.NumberFormat("ko-KR", {
+          style: "currency",
+          currency: "KRW",
+        }).format(Math.round(value));
+      const showPage = (pageToShow) => {
+        [loginPage, adminPage, participantPage].forEach((p) =>
+          p.classList.add("hidden")
+        );
+        pageToShow.classList.remove("hidden");
+      };
+      const showLoginError = (message) => {
+        document.getElementById("login-error").textContent = message;
+        setTimeout(
+          () => (document.getElementById("login-error").textContent = ""),
+          3000
+        );
+      };
+      const showInvestmentFeedback = (message, isError = false) => {
+        const el = document.getElementById("investment-feedback");
+        el.textContent = message;
+        el.className = `text-center mt-3 h-5 ${
+          isError ? "text-red-500" : "text-green-500"
+        }`;
+        setTimeout(() => (el.textContent = ""), 3000);
+      };
+
+      async function startGameWithData() {
+        const startGameBtn = document.getElementById("start-game-btn");
+        startGameBtn.disabled = true;
+        startGameBtn.textContent = "생성 중...";
+        const batch = writeBatch(db);
+        const predefinedRounds = [
+          {
+            date: "2019-01-28",
+            rate: 4.7,
+            newsTitle: "2019년 1월 28일 이전 일주일 (1월 21일~27일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>중국 수출 급감, 세계 경기 둔화 우려:</strong> 중국의 12월 수출이 전년 대비 4.4% 감소하며 글로벌 경기 둔화에 대한 우려가 커졌습니다.</li><li class="mb-2"><strong>유로존 산업 생산 감소, 경기 침체 신호:</strong> 유럽의 산업 생산이 3년 만에 최대 폭으로 감소하면서 경기 침체에 대한 경고 신호가 나타났습니다.</li><li class="mb-2"><strong>브렉시트 불확실성, 영국 경제에 부담:</strong> 브렉시트 협상이 지연되면서 영국의 경제 성장 전망이 하향 조정되었습니다.</li><li class="mb-2"><strong>미국 연방정부 셧다운 지속, 경제 영향 우려:</strong> 미국 연방정부의 셧다운이 장기화되면서 경제 성장에 부정적인 영향을 미칠 것으로 예상됩니다.</li><li class="mb-2"><strong>국제 유가 변동성 확대, 시장 불안정성 증가:</strong> 국제 유가의 급격한 변동이 시장의 불안정성을 높이고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-02-25",
+            rate: 7.21,
+            newsTitle: "2019년 2월 25일 이전 일주일 (2월 18일~24일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미국 GDP 성장률 둔화, 2.6% 기록:</strong> 미국의 4분기 GDP 성장률이 2.6%로 둔화되며 경제 성장세에 대한 우려가 제기되었습니다.</li><li class="mb-2"><strong>중국 제조업 지표 하락, 경기 둔화 신호:</strong> 중국의 제조업 지표가 하락하면서 경기 둔화에 대한 우려가 커졌습니다.</li><li class="mb-2"><strong>유럽 경기 침체 우려, 독일 경제 성장 둔화:</strong> 독일의 경제 성장률이 둔화되면서 유럽 전체의 경기 침체 우려가 확산되었습니다.</li><li class="mb-2"><strong>미국 연준, 금리 인상 속도 조절 시사:</strong> 연방준비제도(Fed)가 금리 인상 속도를 조절할 가능성을 시사하며 시장에 안도감을 주었습니다.</li><li class="mb-2"><strong>국제 무역 긴장 지속, 글로벌 경제에 부담:</strong> 미중 무역 갈등이 지속되면서 글로벌 경제 성장에 부정적인 영향을 미치고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-03-25",
+            rate: 0.44,
+            newsTitle: "2019년 3월 25일 이전 일주일 (3월 18일~24일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미국 국채 수익률 역전, 경기 침체 우려 증대:</strong> 미국 국채 수익률이 역전되면서 경기 침체에 대한 우려가 증대되었습니다.</li><li class="mb-2"><strong>연준, 금리 인상 중단 시사:</strong> 연방준비제도(Fed)가 금리 인상을 중단할 가능성을 시사하며 시장에 긍정적인 영향을 주었습니다.</li><li class="mb-2"><strong>유럽 경제 성장 둔화, 독일 제조업 지표 하락:</strong> 독일의 제조업 지표가 하락하면서 유럽 경제 성장 둔화에 대한 우려가 커졌습니다.</li><li class="mb-2"><strong>중국 경기 부양책 발표, 시장 기대감 상승:</strong> 중국 정부가 경기 부양책을 발표하면서 시장의 기대감이 상승했습니다.</li><li class="mb-2"><strong>국제 유가 상승, 공급 우려 지속:</strong> 국제 유가가 상승세를 보이며 공급 우려가 지속되고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-04-29",
+            rate: 6.94,
+            newsTitle: "2019년 4월 29일 이전 일주일 (4월 22일~28일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미국 1분기 GDP 성장률 3.2% 기록, 예상치 상회:</strong> 미국의 1분기 GDP 성장률이 3.2%로 예상치를 상회하며 경제 회복세를 보였습니다.</li><li class="mb-2"><strong>중국 경제 성장률 안정, 경기 부양 효과:</strong> 중국의 경제 성장률이 안정세를 보이며 정부의 경기 부양책 효과가 나타나고 있습니다.</li><li class="mb-2"><strong>유럽 중앙은행, 금리 동결 유지:</strong> 유럽 중앙은행이 금리를 동결하며 경제 성장 둔화에 대응하고 있습니다.</li><li class="mb-2"><strong>국제 무역 긴장 완화, 시장 안정화:</strong> 미중 무역 협상이 진전을 보이며 국제 무역 긴장이 완화되고 있습니다.</li><li class="mb-2"><strong>국제 유가 상승, 수요 증가 기대감:</strong> 국제 유가가 상승세를 보이며 수요 증가에 대한 기대감이 높아지고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-05-28",
+            rate: -6.04,
+            newsTitle: "2019년 5월 28일 이전 일주일 (5월 21일~27일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미중 무역전쟁 격화, 관세 보복 확대:</strong> 미국과 중국 간의 무역전쟁이 격화되며 관세 보복이 확대되고 있습니다.</li><li class="mb-2"><strong>미국 주식시장 변동성 확대, 투자자 불안감 증대:</strong> 미국 주식시장의 변동성이 확대되면서 투자자들의 불안감이 증대되고 있습니다.</li><li class="mb-2"><strong>연준, 금리 인하 가능성 시사:</strong> 연방준비제도(Fed)가 금리 인하 가능성을 시사하며 시장에 긍정적인 영향을 주었습니다.</li><li class="mb-2"><strong>기술주 중심으로 주식시장 하락세:</strong> 기술주를 중심으로 주식시장이 하락세를 보이고 있습니다.</li><li class="mb-2"><strong>국제 유가 하락, 수요 둔화 우려:</strong> 국제 유가가 하락세를 보이며 수요 둔화에 대한 우려가 커지고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-06-24",
+            rate: 5.03,
+            newsTitle: "2019년 6월 24일 이전 일주일 (6월 17일~23일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미국, 중국 기업 추가 제재 발표…무역 긴장 고조:</strong> 미국이 중국 기업에 대한 추가 제재를 발표하면서 무역 긴장이 고조되고 있습니다.</li><li class="mb-2"><strong>연준, 금리 인하 가능성 높아져:</strong> 연방준비제도(Fed)가 금리 인하 가능성을 높이며 시장에 긍정적인 영향을 주었습니다.</li><li class="mb-2"><strong>미국 주식시장, 기술주 중심으로 하락:</strong> 미국 주식시장이 기술주를 중심으로 하락세를 보이고 있습니다.</li><li class="mb-2"><strong>국제 유가 하락, 공급 과잉 우려:</strong> 국제 유가가 하락세를 보이며 공급 과잉에 대한 우려가 커지고 있습니다.</li><li class="mb-2"><strong>미중 정상회담 기대감, 시장 혼조세:</strong> 미중 정상회담에 대한 기대감이 높아지면서 시장이 혼조세를 보이고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-07-22",
+            rate: 1.63,
+            newsTitle: "2019년 7월 22일 이전 일주일 (7월 15일~21일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>중국 경제 성장률, 27년 만에 최저치 기록:</strong> 중국의 2분기 GDP 성장률이 6.2%로 하락하며 27년 만에 최저치를 기록했습니다.</li><li class="mb-2"><strong>연준, 금리 인하 시사:</strong> 연방준비제도(Fed)는 무역 긴장과 글로벌 성장 둔화를 이유로 금리 인하 가능성을 시사했습니다.</li><li class="mb-2"><strong>미국 고용 시장 회복세:</strong> 6월 미국 고용이 224,000개 증가하며 예상치를 상회했습니다. 이는 경제 성장에 대한 우려를 완화시켰습니다.</li><li class="mb-2"><strong>독일 경기 침체 우려:</strong> 독일의 경제 성장률이 둔화되며 유로존 전체의 경기 침체 우려가 커지고 있습니다.</li><li class="mb-2"><strong>IMF, 글로벌 성장률 전망 하향 조정:</strong> 국제통화기금(IMF)은 2019년 글로벌 성장률 전망을 3.2%로 하향 조정</li></ul>',
+          },
+          {
+            date: "2019-08-27",
+            rate: -3.22,
+            newsTitle: "2019년 8월 27일 이전 일주일 (8월 20일~26일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>세계 경제, 정치적 불안정으로 흔들리다:</strong> 독일, 영국, 이탈리아 등 주요 국가들의 경제 성장 정체와 미중 무역 전쟁, 브렉시트 등의 정치적 불안정이 세계 경제에 부정적인 영향을 미치고 있습니다.</li><li class="mb-2"><strong>트럼프, 연준에 금리 인하 압박 강화:</strong> 도널드 트럼프 미국 대통령이 연방준비제도(Fed)에 금리 인하와 양적 완화를 촉구하며 시장에 압박을 가했습니다.</li><li class="mb-2"><strong>독일 경기 침체 우려 증가:</strong> 독일의 경제가 2분기 연속 마이너스 성장을 기록하며 경기 침체에 대한 우려가 커지고 있습니다.</li><li class="mb-2"><strong>G7 정상회의, 아마존 산불 등 글로벌 이슈 논의:</strong> 프랑스 비아리츠에서 열린 G7 정상회의에서 아마존 산불과 같은 글로벌 환경 문제가 주요 의제로 다뤄졌습니다.</li><li class="mb-2"><strong>중국, 기업 대출 금리 인하로 경기 부양 시도:</strong> 중국이 기업 대출 금리를 인하하며 경기 부양을 위한 조치를 취하고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-09-23",
+            rate: 2.5,
+            newsTitle: "2019년 9월 23일 이전 일주일 (9월 16일~22일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>영란은행, 브렉시트 지연 시 경제 성장 저해 경고:</strong> 영란은행이 브렉시트 지연이 영국 경제 성장에 부정적인 영향을 미칠 수 있다고 경고했습니다.</li><li class="mb-2"><strong>OECD, 세계 경제 성장률 전망 하향 조정:</strong> OECD가 2019년 세계 경제 성장률 전망을 2.9%로 하향 조정하며 글로벌 성장 둔화를 우려했습니다.</li><li class="mb-2"><strong>연준, 금리 인하 단행:</strong> 미국 연방준비제도(Fed)가 기준금리를 0.25%p 인하하며 경기 부양에 나섰습니다.</li><li class="mb-2"><strong>노르웨이 중앙은행, 금리 인상 단행:</strong> 노르웨이 중앙은행이 기준금리를 1.50%로 인상하며 다른 중앙은행들과는 다른 행보를 보였습니다.</li><li class="mb-2"><strong>스위스 중앙은행, 금리 동결 유지:</strong> 스위스 중앙은행이 기준금리를 -0.75%로 동결하며 통화 정책을 유지했습니다.</li></ul>',
+          },
+          {
+            date: "2019-10-28",
+            rate: 2.21,
+            newsTitle: "2019년 10월 28일 이전 일주일 (10월 21일~27일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>IMF, 세계 경제 성장률 전망 하향 조정:</strong> 국제통화기금(IMF)이 2019년 세계 경제 성장률 전망을 3.0%로 하향 조정하며 글로벌 성장 둔화를 우려했습니다.</li><li class="mb-2"><strong>중국, 3분기 GDP 성장률 6% 기록:</strong> 중국의 3분기 GDP 성장률이 6%로 1992년 이후 최저치를 기록했습니다.</li><li class="mb-2"><strong>미국 경제, 완만한 성장세 지속:</strong> 미국 연방준비제도(Fed)의 베이지북 보고서에 따르면 미국 경제는 완만한 성장세를 지속하고 있습니다.</li><li class="mb-2"><strong>글로벌 제조업 경기 둔화 지속:</strong> 세계 제조업 경기가 지속적인 둔화세를 보이며 글로벌 경제에 부담을 주고 있습니다.</li><li class="mb-2"><strong>미중 무역 협상, 부분 합의 도달:</strong> 미국과 중국이 무역 협상에서 부분적인 합의에 도달하며 긴장 완화의 조짐을 보였습니다.</li></ul>',
+          },
+          {
+            date: "2019-11-25",
+            rate: 3.31,
+            newsTitle: "2019년 11월 25일 이전 일주일 (11월 18일~24일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미국 GDP 성장률 상향 조정:</strong> 미국의 3분기 GDP 성장률이 2.1%로 상향 조정되며 경제 회복세를 보였습니다.</li><li class="mb-2"><strong>중국 산업 이익 급감:</strong> 중국의 산업 이익이 9.9% 감소하며 8년 만에 최악의 실적을 기록했습니다.</li><li class="mb-2"><strong>미국 주식시장, 사상 최고치 경신:</strong> 미국 주식시장이 사상 최고치를 경신하며 투자자들의 기대감을 반영했습니다.</li><li class="mb-2"><strong>유럽 주식시장, 4년 만에 최고치 기록:</strong> 유럽 주식시장이 4년 만에 최고치를 기록하며 글로벌 시장의 상승세에 동참했습니다.</li><li class="mb-2"><strong>미중 무역 협상, 최종 단계 진입:</strong> 미국과 중국의 무역 협상이 최종 단계에 진입하며 합의 가능성이 높아지고 있습니다.</li></ul>',
+          },
+          {
+            date: "2019-12-23",
+            rate: 4.56,
+            newsTitle: "2019년 12월 23일 이전 일주일 (12월 16일~22일)",
+            newsBody:
+              '<ul><li class="mb-2"><strong>미중, 1단계 무역 합의 도달:</strong> 미국과 중국이 1단계 무역 합의에 도달하며 일부 관세를 철회하고 농산물 구매를 확대하기로 했습니다.</li><li class="mb-2"><strong>사우디 아람코, 세계 최대 IPO 성공:</strong> 사우디 아람코가 세계 최대 규모의 IPO를 성공적으로 마무리하며 시장의 주목을 받았습니다.</li><li class="mb-2"><strong>영국 총선, 보수당 압승으로 브렉시트 가속화:</strong> 영국 총선에서 보수당이 압승을 거두며 브렉시트 추진에 박차를 가하게 되었습니다.</li><li class="mb-2"><strong>글로벌 경제 성장률, 4개월 만에 최고치 기록:</strong> 글로벌 경제 성장률이 4개월 만에 최고치를 기록하며 경기 회복의 조짐을 보였습니다.</li><li class="mb-2"><strong>미국 연준, 금리 동결 유지:</strong> 미국 연방준비제도(Fed)가 기준금리를 동결하며 통화 정책을 유지했습니다.</li></ul>',
+          },
+        ];
+
+        const roundData = predefinedRounds.map((data, i) => ({
+          id: `round-${i + 1}`,
+          name: `${i + 1} 라운드 (${data.date})`,
+          status: "ready",
+          isReturnRevealed: false,
+          returnRate: data.rate,
+          news: `<h3 class="font-bold text-lg mb-4">📅 ${data.newsTitle}</h3>${data.newsBody}`,
+        }));
+
+        roundData.forEach((r) =>
+          batch.set(doc(db, `artifacts/${appId}/public/data/rounds`, r.id), r)
+        );
+
+        const groupData = [
+          {
+            id: "groupA",
+            name: "A 그룹",
+            code: "groupA",
+            initialAsset: 100000000,
+          },
+          {
+            id: "groupB",
+            name: "B 그룹",
+            code: "groupB",
+            initialAsset: 100000000,
+          },
+          {
+            id: "groupC",
+            name: "C 그룹",
+            code: "groupC",
+            initialAsset: 100000000,
+          },
+        ];
+        groupData.forEach((g) => {
+          batch.set(doc(db, `artifacts/${appId}/public/data/groups`, g.id), {
+            name: g.name,
+            code: g.code,
+          });
+          roundData.forEach((r) => {
+            batch.set(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${g.id}/investments`,
+                r.id
+              ),
+              {
+                investmentAmount: 0,
+                totalAsset: r.id === "round-1" ? g.initialAsset : 0,
+              }
+            );
+          });
+        });
+
+        batch.set(
+          doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+          { currentRoundId: null, isGameOver: false }
+        );
+
+        try {
+          await batch.commit();
+        } catch (error) {
+          console.error("Error starting game: ", error);
+          startGameBtn.disabled = false;
+          startGameBtn.textContent = "게임 시작하기";
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        const loginBtn = document.getElementById("login-btn");
+        const accessCodeInput = document.getElementById("access-code");
+        if (user) {
+          loginBtn.disabled = false;
+          accessCodeInput.disabled = false;
+          loginBtn.textContent = "입장하기";
+        } else {
+          try {
+            await (typeof __initial_auth_token !== "undefined" &&
+            __initial_auth_token
+              ? signInWithCustomToken(auth, __initial_auth_token)
+              : signInAnonymously(auth));
+          } catch (error) {
+            console.error("Authentication failed:", error);
+            document.getElementById("login-error").textContent =
+              "인증 서버 연결 실패.";
+          }
+        }
+      });
+
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const codeInput = document.getElementById("access-code").value.trim();
+          if (!codeInput) return;
+
+          if (codeInput.toLowerCase() === "admin") {
+            currentRole = "admin";
+            initAdminPage();
+            showPage(adminPage);
+            return;
+          }
+
+          try {
+            const groupsRef = collection(
+              db,
+              `artifacts/${appId}/public/data/groups`
+            );
+            const querySnapshot = await getDocs(groupsRef);
+
+            if (querySnapshot.empty) {
+              showLoginError(
+                "아직 게임이 시작되지 않았습니다. 관리자에게 문의하세요."
+              );
+              return;
+            }
+            const lowerCaseCodeInput = codeInput.toLowerCase();
+            let groupFound = null;
+            for (const doc of querySnapshot.docs) {
+              const groupData = doc.data();
+              if (
+                groupData.code &&
+                groupData.code.toLowerCase() === lowerCaseCodeInput
+              ) {
+                groupFound = { id: doc.id, ...groupData };
+                break;
+              }
+            }
+
+            if (groupFound) {
+              currentRole = "participant";
+              currentGroupId = groupFound.id;
+              initParticipantPage(groupFound.id, groupFound.name);
+              showPage(participantPage);
+            } else {
+              showLoginError("유효하지 않은 코드입니다.");
+            }
+          } catch (error) {
+            console.error("Error during participant login:", error);
+            showLoginError("로그인 중 오류가 발생했습니다.");
+          }
+        });
+
+      const logout = () => {
+        unsubscribeListeners.forEach((unsub) => unsub());
+        unsubscribeListeners = [];
+        currentRole = null;
+        currentGroupId = null;
+        rounds = [];
+        groups = [];
+        document.getElementById("access-code").value = "";
+        showPage(loginPage);
+      };
+      document
+        .getElementById("logout-btn-admin")
+        .addEventListener("click", logout);
+      document
+        .getElementById("logout-btn-participant")
+        .addEventListener("click", logout);
+
+      function initAdminPage() {
+        document.getElementById("start-game-btn").onclick = startGameWithData;
+        document.getElementById("final-end-game-btn").onclick = finalEndGame;
+
+        document
+          .getElementById("round-list-container")
+          .addEventListener("click", (e) => {
+            const target = e.target;
+            if (target.classList.contains("start-round-btn")) {
+              startRound(target.dataset.roundId);
+            } else if (target.classList.contains("end-round-btn")) {
+              endRound(target.dataset.roundId);
+            }
+          });
+
+        unsubscribeListeners.push(
+          onSnapshot(
+            doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+            (docSnap) => {
+              const isGameOver =
+                docSnap.exists() && docSnap.data().isGameOver === true;
+              if (isGameOver) {
+                showFinalRanking();
+              } else {
+                document
+                  .getElementById("game-board")
+                  .classList.remove("hidden");
+                document
+                  .getElementById("admin-chart-container")
+                  .classList.remove("hidden");
+                document
+                  .getElementById("final-ranking-container")
+                  .classList.add("hidden");
+              }
+            }
+          )
+        );
+
+        unsubscribeListeners.push(
+          onSnapshot(
+            collection(db, `artifacts/${appId}/public/data/rounds`),
+            (snapshot) => {
+              document
+                .getElementById("start-game-btn")
+                .classList.toggle("hidden", !snapshot.empty);
+              document
+                .getElementById("final-end-game-btn")
+                .classList.toggle(
+                  "hidden",
+                  snapshot.docs.filter((d) => d.data().status === "finished")
+                    .length === 0
+                );
+
+              rounds = snapshot.docs
+                .map((doc) => doc.data())
+                .sort(
+                  (a, b) =>
+                    parseInt(a.id.split("-")[1]) - parseInt(b.id.split("-")[1])
+                );
+              renderRoundList();
+              const inProgressRound = rounds.find(
+                (r) => r.status === "in-progress"
+              );
+              displayInProgressRoundContent(inProgressRound);
+              renderAdminAssetChart();
+            }
+          )
+        );
+
+        unsubscribeListeners.push(
+          onSnapshot(
+            collection(db, `artifacts/${appId}/public/data/groups`),
+            (snapshot) => {
+              groups = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              }));
+              updateGroupFilter();
+              const inProgressRound = rounds.find(
+                (r) => r.status === "in-progress"
+              );
+              if (inProgressRound) renderAdminResults(inProgressRound);
+              renderAdminAssetChart();
+            }
+          )
+        );
+
+        document
+          .getElementById("group-chart-filter")
+          .addEventListener("change", renderAdminAssetChart);
+      }
+
+      function renderRoundList() {
+        const listContainer = document.getElementById("round-list-container");
+        listContainer.innerHTML = "";
+        const inProgressExists = rounds.some((r) => r.status === "in-progress");
+
+        rounds.forEach((round) => {
+          const roundDiv = document.createElement("div");
+          roundDiv.className =
+            "p-4 rounded-lg flex justify-between items-center";
+          let buttonHtml = "";
+
+          if (round.status === "ready") {
+            const isNextReady =
+              !inProgressExists &&
+              rounds.filter((r) => r.status === "finished").length ===
+                parseInt(round.id.split("-")[1]) - 1;
+            roundDiv.classList.add("bg-gray-200");
+            if (isNextReady) {
+              buttonHtml = `<button data-round-id="${round.id}" class="start-round-btn bg-blue-500 text-white px-4 py-1 rounded-md hover:bg-blue-600">시작하기</button>`;
+            } else {
+              buttonHtml = `<span class="text-gray-500">대기중</span>`;
+            }
+          } else if (round.status === "in-progress") {
+            roundDiv.classList.add(
+              "bg-green-200",
+              "border-2",
+              "border-green-500"
+            );
+            buttonHtml = `<button data-round-id="${round.id}" class="end-round-btn bg-red-500 text-white px-4 py-1 rounded-md hover:bg-red-600">라운드 종료</button>`;
+          } else if (round.status === "finished") {
+            roundDiv.classList.add("bg-gray-500", "text-white");
+            buttonHtml = `<span>종료됨</span>`;
+          }
+
+          roundDiv.innerHTML = `<span class="font-semibold">${round.name}</span> ${buttonHtml}`;
+          listContainer.appendChild(roundDiv);
+        });
+      }
+
+      async function startRound(roundId) {
+        await updateDoc(
+          doc(db, `artifacts/${appId}/public/data/rounds`, roundId),
+          { status: "in-progress" }
+        );
+        await setDoc(
+          doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+          { currentRoundId: roundId },
+          { merge: true }
+        );
+      }
+
+      async function endRound(roundId) {
+        const round = rounds.find((r) => r.id === roundId);
+        if (!round) return;
+
+        await calculateAndApplyResults(round);
+        await updateDoc(
+          doc(db, `artifacts/${appId}/public/data/rounds`, round.id),
+          { status: "finished", isReturnRevealed: true }
+        );
+        await setDoc(
+          doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+          { currentRoundId: null },
+          { merge: true }
+        );
+      }
+
+      async function finalEndGame() {
+        await setDoc(
+          doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+          { isGameOver: true, currentRoundId: null },
+          { merge: true }
+        );
+      }
+
+      async function showFinalRanking() {
+        document.getElementById("game-board").classList.add("hidden");
+        document.getElementById("admin-content").classList.add("hidden");
+        document
+          .getElementById("admin-chart-container")
+          .classList.add("hidden");
+        const rankingContainer = document.getElementById(
+          "final-ranking-container"
+        );
+        rankingContainer.classList.remove("hidden");
+
+        const rankingList = document.getElementById("ranking-list");
+        rankingList.innerHTML = "<p>순위 집계 중...</p>";
+
+        const finishedRounds = rounds.filter((r) => r.status === "finished");
+        const lastFinishedRound = finishedRounds[finishedRounds.length - 1];
+        if (!lastFinishedRound) {
+          rankingList.innerHTML =
+            "<p>종료된 라운드가 없어 순위를 매길 수 없습니다.</p>";
+          return;
+        }
+
+        const rankings = [];
+        for (const group of groups) {
+          const investDoc = await getDoc(
+            doc(
+              db,
+              `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+              lastFinishedRound.id
+            )
+          );
+          if (investDoc.exists()) {
+            const investData = investDoc.data();
+            const profit =
+              investData.investmentAmount *
+              (lastFinishedRound.returnRate / 100);
+            rankings.push({
+              group,
+              finalAsset: investData.totalAsset + profit,
+            });
+          }
+        }
+
+        rankings.sort((a, b) => b.finalAsset - a.finalAsset);
+
+        rankingList.innerHTML = rankings
+          .map(
+            (item, index) => `
+                <div data-group-id="${
+                  item.group.id
+                }" class="rank-item cursor-pointer p-4 border rounded-lg flex items-center gap-4">
+                    <span class="text-2xl font-bold w-10 text-center">${
+                      index + 1
+                    }</span>
+                    <div class="flex-grow">
+                        <p class="font-bold text-lg">${item.group.name}</p>
+                        <p class="text-gray-600">${formatCurrency(
+                          item.finalAsset
+                        )}</p>
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+
+        rankingList.querySelectorAll(".rank-item").forEach((item) => {
+          item.addEventListener("click", () =>
+            showTeamHistory(item.dataset.groupId)
+          );
+        });
+      }
+
+      async function showTeamHistory(groupId) {
+        const historyContainer = document.getElementById(
+          "team-history-container"
+        );
+        const group = groups.find((g) => g.id === groupId);
+        historyContainer.innerHTML = `<h3 class="text-xl font-bold mb-4">${group.name} 투자 내역</h3><p>불러오는 중...</p>`;
+        historyContainer.classList.remove("hidden");
+
+        const finishedRounds = rounds.filter(
+          (r) => r.status === "finished" || r.status === "in-progress"
+        );
+        let tableHtml = `
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-2">라운드</th>
+                            <th class="p-2">시작 자산</th>
+                            <th class="p-2">투자금</th>
+                            <th class="p-2">수익률</th>
+                            <th class="p-2">종료 자산</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+        for (const round of finishedRounds) {
+          const investDoc = await getDoc(
+            doc(
+              db,
+              `artifacts/${appId}/public/data/groups/${groupId}/investments`,
+              round.id
+            )
+          );
+          if (investDoc.exists()) {
+            const data = investDoc.data();
+            const profit = data.investmentAmount * (round.returnRate / 100);
+            const endAsset = data.totalAsset + profit;
+            tableHtml += `
+                        <tr class="border-b">
+                            <td class="p-2">${round.name}</td>
+                            <td class="p-2">${formatCurrency(
+                              data.totalAsset
+                            )}</td>
+                            <td class="p-2">${formatCurrency(
+                              data.investmentAmount
+                            )}</td>
+                            <td class="p-2">${round.returnRate}%</td>
+                            <td class="p-2">${formatCurrency(endAsset)}</td>
+                        </tr>
+                     `;
+          }
+        }
+        tableHtml += "</tbody></table>";
+        historyContainer.innerHTML = `<h3 class="text-xl font-bold mb-4">${group.name} 투자 내역</h3>${tableHtml}`;
+      }
+
+      async function calculateAndApplyResults(finishedRound) {
+        const nextRoundIndex =
+          rounds.findIndex((r) => r.id === finishedRound.id) + 1;
+        if (nextRoundIndex >= rounds.length) {
+          console.log("All rounds finished.");
+          return;
+        }
+        const nextRoundId = rounds[nextRoundIndex].id;
+        const batch = writeBatch(db);
+        for (const group of groups) {
+          const currentInvestRef = doc(
+            db,
+            `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+            finishedRound.id
+          );
+          const currentInvestDoc = await getDoc(currentInvestRef);
+          if (currentInvestDoc.exists()) {
+            const data = currentInvestDoc.data();
+            const profit =
+              data.investmentAmount * (finishedRound.returnRate / 100);
+            const nextTotalAsset = data.totalAsset + profit;
+            const nextInvestRef = doc(
+              db,
+              `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+              nextRoundId
+            );
+            batch.update(nextInvestRef, { totalAsset: nextTotalAsset });
+          }
+        }
+        await batch.commit();
+      }
+
+      function displayInProgressRoundContent(round) {
+        const contentDiv = document.getElementById("admin-content");
+        contentDiv.classList.toggle("hidden", !round);
+        if (!round) return;
+
+        document.getElementById("admin-news-content").innerHTML = round.news;
+        const rateDisplay = document.getElementById(
+          "round-return-rate-display"
+        );
+        rateDisplay.textContent = `${round.returnRate}%`;
+        rateDisplay.className = `font-bold ${
+          round.returnRate >= 0 ? "text-red-600" : "text-blue-600"
+        }`;
+        renderAdminResults(round);
+        showAdminNewsView();
+      }
+
+      const toggleAdminView = (showNews) => {
+        document
+          .getElementById("admin-news-content")
+          .classList.toggle("hidden", !showNews);
+        document
+          .getElementById("admin-results-content")
+          .classList.toggle("hidden", showNews);
+      };
+      const showAdminNewsView = () => toggleAdminView(true);
+      document
+        .getElementById("view-news-btn")
+        .addEventListener("click", () => toggleAdminView(true));
+      document
+        .getElementById("view-results-btn")
+        .addEventListener("click", () => toggleAdminView(false));
+
+      async function renderAdminResults(currentRound) {
+        const tableBody = document.getElementById("results-table-body");
+        if (!currentRound) return;
+        tableBody.innerHTML =
+          '<tr><td colspan="7" class="p-4 text-center">데이터를 불러오는 중...</td></tr>';
+
+        const resultsData = await Promise.all(
+          groups.map(async (group) => {
+            const investDoc = await getDoc(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+                currentRound.id
+              )
+            );
+            return {
+              group,
+              investmentData: investDoc.exists() ? investDoc.data() : {},
+            };
+          })
+        );
+
+        tableBody.innerHTML = resultsData
+          .map(({ group, investmentData }) => {
+            const { totalAsset = 0, investmentAmount = 0 } = investmentData;
+            const cash = totalAsset - investmentAmount;
+            const profit = investmentAmount * (currentRound.returnRate / 100);
+            const endOfRoundAsset = totalAsset + profit;
+            const profitColor = profit >= 0 ? "text-red-500" : "text-blue-500";
+            const rateColor =
+              currentRound.returnRate >= 0 ? "text-red-500" : "text-blue-500";
+
+            return `
+                    <tr class="border-b">
+                        <td class="p-4 font-medium">${group.name}</td>
+                        <td class="p-4">${formatCurrency(totalAsset)}</td>
+                        <td class="p-4">${formatCurrency(investmentAmount)}</td>
+                        <td class="p-4">${formatCurrency(cash)}</td>
+                        <td class="p-4 font-bold ${rateColor}">${
+              currentRound.returnRate ?? "-"
+            }%</td>
+                        <td class="p-4 text-center font-bold ${profitColor}">${formatCurrency(
+              profit
+            )}</td>
+                        <td class="p-4 text-center font-bold">${formatCurrency(
+                          endOfRoundAsset
+                        )}</td>
+                    </tr>
+                `;
+          })
+          .join("");
+      }
+
+      function initParticipantPage(groupId, groupName) {
+        document.getElementById("group-name-display").textContent = groupName;
+        unsubscribeListeners.push(
+          onSnapshot(
+            collection(db, `artifacts/${appId}/public/data/rounds`),
+            () => updateAllParticipantData(groupId)
+          )
+        );
+        unsubscribeListeners.push(
+          onSnapshot(
+            doc(db, `artifacts/${appId}/public/data/game_state`, "main"),
+            () => updateAllParticipantData(groupId)
+          )
+        );
+      }
+
+      async function updateAllParticipantData(groupId) {
+        const roundsSnapshot = await getDocs(
+          collection(db, `artifacts/${appId}/public/data/rounds`)
+        );
+        rounds = roundsSnapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .sort(
+            (a, b) =>
+              parseInt(a.id.split("-")[1]) - parseInt(b.id.split("-")[1])
+          );
+
+        const groupsSnapshot = await getDocs(
+          collection(db, `artifacts/${appId}/public/data/groups`)
+        );
+        groups = groupsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const gameStateSnap = await getDoc(
+          doc(db, `artifacts/${appId}/public/data/game_state`, "main")
+        );
+        const gameState = gameStateSnap.exists()
+          ? gameStateSnap.data()
+          : { currentRoundId: null, isGameOver: false };
+
+        updateParticipantView(
+          groupId,
+          gameState.currentRoundId,
+          gameState.isGameOver
+        );
+        renderParticipantAssetChart(groupId);
+      }
+
+      async function updateParticipantView(
+        groupId,
+        currentRoundId,
+        isGameOver
+      ) {
+        const round = rounds.find((r) => r.id === currentRoundId);
+        const currentRoundText = document.getElementById("current-round-text");
+        const gameOverText = document.getElementById("game-over-text");
+        const newsContainer = document.getElementById("news-container");
+        const investmentContainer = document.getElementById(
+          "investment-container"
+        );
+        const allRoundsContainer = document.getElementById(
+          "all-rounds-results-container"
+        );
+        allRoundsContainer.innerHTML = "";
+
+        if (isGameOver) {
+          currentRoundText.classList.add("hidden");
+          gameOverText.classList.remove("hidden");
+          newsContainer.classList.add("hidden");
+          investmentContainer.classList.add("hidden");
+
+          const finishedRounds = rounds.filter((r) => r.status === "finished");
+          for (const finRound of finishedRounds) {
+            const roundResultEl = document.createElement("div");
+            roundResultEl.className = "bg-white p-6 rounded-xl shadow-lg";
+            const prevInvestSnap = await getDoc(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${groupId}/investments`,
+                finRound.id
+              )
+            );
+            if (prevInvestSnap.exists()) {
+              const data = prevInvestSnap.data();
+              const profit =
+                data.investmentAmount * (finRound.returnRate / 100);
+              const endOfRoundAsset = data.totalAsset + profit;
+              const groupReturnRate =
+                data.totalAsset > 0
+                  ? ((endOfRoundAsset - data.totalAsset) / data.totalAsset) *
+                    100
+                  : 0;
+              const rateColor =
+                finRound.returnRate >= 0 ? "text-red-500" : "text-blue-500";
+              const groupRateColor =
+                groupReturnRate >= 0 ? "text-red-500" : "text-blue-500";
+
+              roundResultEl.innerHTML = `
+                            <h3 class="text-2xl font-bold mb-4">📈 ${
+                              finRound.name
+                            } 결과</h3>
+                            <p class="text-xl">종료 후 자산: <strong class="text-blue-600">${formatCurrency(
+                              endOfRoundAsset
+                            )}</strong></p>
+                            <hr class="my-3">
+                            <p><strong>라운드 시작 자산:</strong> ${formatCurrency(
+                              data.totalAsset
+                            )}</p>
+                            <p><strong>투자금:</strong> ${formatCurrency(
+                              data.investmentAmount
+                            )}</p>
+                            <p><strong>시장 수익률:</strong> <span class="font-bold ${rateColor}">${
+                finRound.returnRate
+              }%</span></p>
+                            <p><strong>투자 성과:</strong> <span class="font-bold ${rateColor}">${formatCurrency(
+                profit
+              )}</span></p>
+                            <p><strong>우리 그룹 수익률:</strong> <span class="font-bold ${groupRateColor}">${groupReturnRate.toFixed(
+                2
+              )}%</span></p>
+                        `;
+              allRoundsContainer.appendChild(roundResultEl);
+            }
+          }
+        } else {
+          currentRoundText.classList.remove("hidden");
+          gameOverText.classList.add("hidden");
+
+          if (!round) {
+            document.getElementById("current-round-display").textContent =
+              "대기 중...";
+            newsContainer.classList.add("hidden");
+            investmentContainer.classList.add("hidden");
+          } else {
+            document.getElementById("current-round-display").textContent =
+              round.name;
+            newsContainer.classList.remove("hidden");
+            investmentContainer.classList.remove("hidden");
+            document.getElementById("participant-news-content").innerHTML =
+              round.news;
+
+            const investSnap = await getDoc(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${groupId}/investments`,
+                currentRoundId
+              )
+            );
+            const investData = investSnap.exists()
+              ? investSnap.data()
+              : { totalAsset: 0, investmentAmount: 0 };
+
+            document.getElementById("total-assets").textContent =
+              formatCurrency(investData.totalAsset);
+            document.getElementById("investment-amount").value =
+              investData.investmentAmount || "";
+            document.getElementById("cash-amount").textContent = formatCurrency(
+              investData.totalAsset - (investData.investmentAmount || 0)
+            );
+
+            const submitBtn = document.getElementById("submit-investment-btn");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "투자 결정하기";
+          }
+        }
+      }
+
+      document
+        .getElementById("investment-amount")
+        .addEventListener("input", (e) => {
+          const totalAssets = parseFloat(
+            document
+              .getElementById("total-assets")
+              .textContent.replace(/[^0-9.-]+/g, "")
+          );
+          let investment = parseFloat(e.target.value) || 0;
+          if (investment > totalAssets)
+            e.target.value = investment = totalAssets;
+          if (investment < 0) e.target.value = investment = 0;
+          document.getElementById("cash-amount").textContent = formatCurrency(
+            totalAssets - investment
+          );
+        });
+
+      document
+        .getElementById("investment-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const gameStateSnap = await getDoc(
+            doc(db, `artifacts/${appId}/public/data/game_state`, "main")
+          );
+          const currentRoundId = gameStateSnap.exists()
+            ? gameStateSnap.data().currentRoundId
+            : null;
+          if (!currentRoundId)
+            return showInvestmentFeedback(
+              "현재 진행중인 라운드가 없습니다.",
+              true
+            );
+
+          const investmentAmount = parseFloat(
+            document.getElementById("investment-amount").value
+          );
+          const totalAssets = parseFloat(
+            document
+              .getElementById("total-assets")
+              .textContent.replace(/[^0-9.-]+/g, "")
+          );
+          if (
+            isNaN(investmentAmount) ||
+            investmentAmount < 0 ||
+            investmentAmount > totalAssets
+          )
+            return showInvestmentFeedback(
+              "유효한 투자 금액을 입력하세요.",
+              true
+            );
+
+          const investmentRef = doc(
+            db,
+            `artifacts/${appId}/public/data/groups/${currentGroupId}/investments`,
+            currentRoundId
+          );
+          await updateDoc(investmentRef, { investmentAmount });
+          showInvestmentFeedback("투자가 성공적으로 저장되었습니다.");
+        });
+
+      function updateGroupFilter() {
+        const filter = document.getElementById("group-chart-filter");
+        const selectedValue = filter.value;
+        filter.innerHTML = '<option value="all">전체 보기</option>';
+        groups.forEach((g) => {
+          const option = document.createElement("option");
+          option.value = g.id;
+          option.textContent = g.name;
+          filter.appendChild(option);
+        });
+        filter.value = selectedValue;
+      }
+
+      async function renderAdminAssetChart() {
+        const chartContainer = document.getElementById("admin-chart-container");
+        const finishedRounds = rounds.filter((r) => r.status === "finished");
+
+        if (finishedRounds.length === 0 || groups.length === 0) {
+          chartContainer.classList.add("hidden");
+          return;
+        }
+        chartContainer.classList.remove("hidden");
+
+        const filter = document.getElementById("group-chart-filter");
+        const selectedGroupId = filter.value;
+
+        const labels = ["시작", ...finishedRounds.map((r) => r.name)];
+        let datasets = [];
+        const colors = ["#3b82f6", "#10b981", "#ef4444"];
+
+        const groupAssetHistories = {};
+        for (const group of groups) {
+          const assetHistory = [];
+          const firstInvestDoc = await getDoc(
+            doc(
+              db,
+              `artifacts/${appId}/public/data/groups/${group.id}/investments/round-1`
+            )
+          );
+          const initialAsset = firstInvestDoc.exists()
+            ? firstInvestDoc.data().totalAsset
+            : 0;
+          assetHistory.push(initialAsset);
+          for (const round of finishedRounds) {
+            const investDoc = await getDoc(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+                round.id
+              )
+            );
+            if (investDoc.exists()) {
+              const investData = investDoc.data();
+              const profit =
+                investData.investmentAmount * (round.returnRate / 100);
+              assetHistory.push(investData.totalAsset + profit);
+            } else {
+              assetHistory.push(assetHistory[assetHistory.length - 1]);
+            }
+          }
+          groupAssetHistories[group.id] = assetHistory;
+        }
+
+        groups.forEach((group, index) => {
+          datasets.push({
+            label: group.name,
+            data: groupAssetHistories[group.id],
+            borderColor: colors[index % colors.length],
+            hidden: selectedGroupId !== "all" && selectedGroupId !== group.id,
+          });
+        });
+
+        const totalAssetHistory = labels.map((_, i) => {
+          return Object.values(groupAssetHistories).reduce(
+            (sum, history) => sum + (history[i] || 0),
+            0
+          );
+        });
+        datasets.push({
+          label: "전체 자산 합계",
+          data: totalAssetHistory,
+          borderColor: "#a855f7",
+          fill: false,
+          tension: 0.1,
+        });
+
+        const averageAssetHistory = totalAssetHistory.map(
+          (total) => total / (groups.length || 1)
+        );
+        datasets.push({
+          label: "전체 자산 평균",
+          data: averageAssetHistory,
+          borderColor: "#f59e0b",
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0.1,
+        });
+
+        const longTermInvestorHistory = [10000000];
+        let currentAsset = 10000000;
+        for (const round of finishedRounds) {
+          currentAsset = currentAsset * (1 + round.returnRate / 100);
+          longTermInvestorHistory.push(currentAsset);
+        }
+        datasets.push({
+          label: "장기 투자 (1천만 시작)",
+          data: longTermInvestorHistory,
+          borderColor: "#14b8a6",
+          borderDash: [10, 5],
+          fill: false,
+          tension: 0.1,
+        });
+
+        if (selectedGroupId === "all") {
+          datasets.forEach((ds) => {
+            if (
+              [
+                "전체 자산 합계",
+                "전체 자산 평균",
+                "장기 투자 (1천만 시작)",
+              ].includes(ds.label)
+            ) {
+              ds.hidden = true;
+            } else {
+              ds.hidden = false;
+            }
+          });
+        } else {
+          datasets.forEach((ds) => {
+            ds.hidden =
+              ds.label !== groups.find((g) => g.id === selectedGroupId)?.name &&
+              ![
+                "전체 자산 합계",
+                "전체 자산 평균",
+                "장기 투자 (1천만 시작)",
+              ].includes(ds.label);
+          });
+        }
+
+        const ctx = document
+          .getElementById("admin-asset-chart")
+          .getContext("2d");
+        if (adminAssetChart) adminAssetChart.destroy();
+        adminAssetChart = new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              tooltip: {
+                callbacks: {
+                  label: (c) =>
+                    `${c.dataset.label}: ${formatCurrency(c.parsed.y)}`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                ticks: { callback: (v) => v.toLocaleString("ko-KR") + " 원" },
+              },
+            },
+          },
+        });
+      }
+
+      async function renderParticipantAssetChart(groupId) {
+        const chartContainer = document.getElementById(
+          "participant-chart-container"
+        );
+        const finishedRounds = rounds.filter((r) => r.status === "finished");
+
+        if (finishedRounds.length === 0 || groups.length === 0) {
+          chartContainer.classList.add("hidden");
+          return;
+        }
+        chartContainer.classList.remove("hidden");
+
+        const labels = ["시작", ...finishedRounds.map((r) => r.name)];
+        const datasets = [];
+        const myGroup = groups.find((g) => g.id === groupId);
+
+        const myGroupHistory = [];
+        const firstInvestDoc = await getDoc(
+          doc(
+            db,
+            `artifacts/${appId}/public/data/groups/${myGroup.id}/investments/round-1`
+          )
+        );
+        const initialAsset = firstInvestDoc.exists()
+          ? firstInvestDoc.data().totalAsset
+          : 0;
+        myGroupHistory.push(initialAsset);
+
+        for (const round of finishedRounds) {
+          const investDoc = await getDoc(
+            doc(
+              db,
+              `artifacts/${appId}/public/data/groups/${myGroup.id}/investments`,
+              round.id
+            )
+          );
+          if (investDoc.exists()) {
+            const investData = investDoc.data();
+            const profit =
+              investData.investmentAmount * (round.returnRate / 100);
+            myGroupHistory.push(investData.totalAsset + profit);
+          } else {
+            myGroupHistory.push(myGroupHistory[myGroupHistory.length - 1]);
+          }
+        }
+        datasets.push({
+          label: myGroup.name,
+          data: myGroupHistory,
+          borderColor: "#3b82f6",
+          backgroundColor: "#3b82f6" + "33",
+          fill: false,
+          tension: 0.1,
+          borderWidth: 2,
+        });
+
+        const averageHistory = [initialAsset];
+        for (const round of finishedRounds) {
+          let totalAssetsForRound = 0;
+          let groupsCounted = 0;
+          for (const group of groups) {
+            const investDoc = await getDoc(
+              doc(
+                db,
+                `artifacts/${appId}/public/data/groups/${group.id}/investments`,
+                round.id
+              )
+            );
+            if (investDoc.exists()) {
+              const investData = investDoc.data();
+              const profit =
+                investData.investmentAmount * (round.returnRate / 100);
+              totalAssetsForRound += investData.totalAsset + profit;
+              groupsCounted++;
+            }
+          }
+          averageHistory.push(
+            groupsCounted > 0
+              ? totalAssetsForRound / groupsCounted
+              : averageHistory[averageHistory.length - 1]
+          );
+        }
+        datasets.push({
+          label: "전체 평균",
+          data: averageHistory,
+          borderColor: "#6b7280",
+          backgroundColor: "#6b7280" + "33",
+          fill: false,
+          tension: 0.1,
+          borderDash: [5, 5],
+        });
+
+        const ctx = document
+          .getElementById("participant-asset-chart")
+          .getContext("2d");
+        if (participantAssetChart) participantAssetChart.destroy();
+        participantAssetChart = new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              tooltip: {
+                callbacks: {
+                  label: (c) =>
+                    `${c.dataset.label}: ${formatCurrency(c.parsed.y)}`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                ticks: { callback: (v) => v.toLocaleString("ko-KR") + " 원" },
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
